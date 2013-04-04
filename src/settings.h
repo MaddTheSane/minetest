@@ -362,6 +362,14 @@ public:
 			if(i >= argc)
 				break;
 			std::string argname = argv[i];
+            
+            // Henry: xcode debug mode, just ignore.
+            if(argname.compare("-NSDocumentRevisionsDebugMode") == 0)
+            {
+                //i++;
+                //continue;
+            }
+            
 			if(argname.substr(0, 2) != "--")
 			{
 				// If option doesn't start with -, read it in as nonoptX
@@ -375,7 +383,11 @@ public:
 				}
 				errorstream<<"Invalid command-line parameter \""
 						<<argname<<"\": --<option> expected."<<std::endl;
-				return false;
+				//return false;
+                // Henry; Mac sends some weird options on start.
+                // Might want to find out what those are and ignore them
+                i++;
+                continue;
 			}
 			i++;
 

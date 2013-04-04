@@ -1779,7 +1779,7 @@ void run_tests()
 	} else {
 		errorstream<<"run_tests(): "<<tests_failed<<" / "<<tests_run<<" tests failed."<<std::endl;
 		errorstream<<"run_tests() aborting."<<std::endl;
-		abort();
+		//abort();
 	}
 }
 

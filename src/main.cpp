@@ -859,7 +859,12 @@ int main(int argc, char *argv[])
 	{
 		fprintf( stderr, "%s: warning: could not set default locale\n", argv[0] );
 	}
-
+    
+#ifndef __APPLE__
+    // Henry: can't do this for apple, maybe try to find an alternative
+    // http://developer.apple.com/library/mac/#documentation/Darwin/Reference/ManPages/man3/setlocale.3.html
+    // already "C" by default.
+    
 	// Set locale. This is for forcing '.' as the decimal point.
 	try {
 		std::locale::global(std::locale(std::locale(""), "C", std::locale::numeric));
@@ -867,6 +872,8 @@ int main(int argc, char *argv[])
 	} catch (const std::exception& ex) {
 		errorstream<<"Could not set numeric locale to C"<<std::endl;
 	}
+#endif
+    
 	/*
 		Parse command line
 	*/
@@ -1042,7 +1049,13 @@ int main(int argc, char *argv[])
 				DIR_DELIM + "minetest.conf");
 		// Legacy configuration file location
 		filenames.push_back(porting::path_user +
-				DIR_DELIM + ".." + DIR_DELIM + "minetest.conf");
+                            DIR_DELIM + ".." + DIR_DELIM + "minetest.conf");
+        
+#if __APPLE__
+        // Henry: keeping files inside the app.
+		filenames.push_back(porting::path_share + DIR_DELIM + "minetest.conf");
+#endif
+        
 #if RUN_IN_PLACE
 		// Try also from a lower level (to aid having the same configuration
 		// for many RUN_IN_PLACE installs)
@@ -1397,7 +1410,7 @@ int main(int argc, char *argv[])
 	params.EventReceiver = &receiver;
 
 	device = createDeviceEx(params);
-
+    
 	if (device == 0)
 		return 1; // could not create selected driver.
 	
@@ -1448,6 +1461,8 @@ int main(int argc, char *argv[])
 	u16 font_size = g_settings->getU16("font_size");
 	gui::IGUIFont *font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size);
 	#else
+    
+    std::cout << "EPNIS: " << getTexturePath("fontlucida.png") << std::endl;
 	gui::IGUIFont* font = guienv->getFont(getTexturePath("fontlucida.png").c_str());
 	#endif
 	if(font)

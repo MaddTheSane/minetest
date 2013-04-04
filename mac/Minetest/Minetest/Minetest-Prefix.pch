@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'Minetest' target in the 'Minetest' project
+//
+
+#ifdef __OBJC__
+    #import <Cocoa/Cocoa.h>
+#endif

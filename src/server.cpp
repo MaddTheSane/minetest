@@ -595,11 +595,14 @@ void RemoteClient::SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks)
 			i != blocks.end(); ++i)
 	{
 		v3s16 p = i->first;
-
-		if(m_blocks_sending.find(p) != m_blocks_sending.end())
-			m_blocks_sending.erase(p);
-		if(m_blocks_sent.find(p) != m_blocks_sent.end())
-			m_blocks_sent.erase(p);
+        
+        if(!m_blocks_sending.empty())
+            if(m_blocks_sending.find(p) != m_blocks_sending.end())
+                m_blocks_sending.erase(p);
+        
+        if(!m_blocks_sent.empty())
+            if(m_blocks_sent.find(p) != m_blocks_sent.end())
+                m_blocks_sent.erase(p);
 	}
 }
 

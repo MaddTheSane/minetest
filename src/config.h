@@ -16,6 +16,13 @@
 #define STATIC_SHAREDIR ""
 #define BUILD_INFO "non-cmake"
 
+#ifdef __APPLE__
+#undef USE_SOUND
+#undef USE_FREETYPE
+#define USE_SOUND 1
+#define USE_FREETYPE 1
+#endif
+
 #ifdef USE_CMAKE_CONFIG_H
 	#include "cmake_config.h"
 	#undef PROJECT_NAME

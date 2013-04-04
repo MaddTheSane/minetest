@@ -35,6 +35,9 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+// Henry: added this to fix ustring errors
+#include "irrUString.h"
+
 namespace irr
 {
 namespace gui
