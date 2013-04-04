@@ -54,3 +54,25 @@ Makefile
 cmake_install.cmake
 locale/
 
+## Mac
+.DS_Store
+*.swp
+*.lock
+profile
+*~.nib
+
+## XCode
+DerivedData/
+xcuserdata
+Pods/
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.moved-aside
+Podfile.lock
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
