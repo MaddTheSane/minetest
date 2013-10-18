@@ -25,7 +25,7 @@
 
 */
 
-#include "jthread.h"
+#include "jthread/jthread.h"
 
 #ifndef _WIN32_WCE
 	#include <process.h>
@@ -139,6 +139,11 @@ void *JThread::GetReturnValue()
 		val = retval;
 	runningmutex.Unlock();
 	return val;
+}
+
+bool JThread::IsSameThread()
+{
+	return GetCurrentThreadId() == threadid;
 }
 
 #ifndef _WIN32_WCE

@@ -4,7 +4,6 @@
 -- Aliases for map generator outputs
 --
 
-minetest.register_alias("mapgen_air", "air")
 minetest.register_alias("mapgen_stone", "default:stone")
 minetest.register_alias("mapgen_tree", "default:tree")
 minetest.register_alias("mapgen_leaves", "default:leaves")
@@ -22,6 +21,7 @@ minetest.register_alias("mapgen_junglegrass", "default:junglegrass")
 minetest.register_alias("mapgen_stone_with_coal", "default:stone_with_coal")
 minetest.register_alias("mapgen_stone_with_iron", "default:stone_with_iron")
 minetest.register_alias("mapgen_mese", "default:mese")
+minetest.register_alias("mapgen_stair_cobble", "stairs:stair_cobble")
 
 --
 -- Ore generation
@@ -104,17 +104,17 @@ minetest.register_on_generated(function(minp, maxp, seed)
 		for divz=0+1,divs-1-1 do
 			local cx = minp.x + math.floor((divx+0.5)*divlen)
 			local cz = minp.z + math.floor((divz+0.5)*divlen)
-			if minetest.env:get_node({x=cx,y=1,z=cz}).name == "default:water_source" and
-					minetest.env:get_node({x=cx,y=0,z=cz}).name == "default:sand" then
+			if minetest.get_node({x=cx,y=1,z=cz}).name == "default:water_source" and
+					minetest.get_node({x=cx,y=0,z=cz}).name == "default:sand" then
 				local is_shallow = true
 				local num_water_around = 0
-				if minetest.env:get_node({x=cx-divlen*2,y=1,z=cz+0}).name == "default:water_source" then
+				if minetest.get_node({x=cx-divlen*2,y=1,z=cz+0}).name == "default:water_source" then
 					num_water_around = num_water_around + 1 end
-				if minetest.env:get_node({x=cx+divlen*2,y=1,z=cz+0}).name == "default:water_source" then
+				if minetest.get_node({x=cx+divlen*2,y=1,z=cz+0}).name == "default:water_source" then
 					num_water_around = num_water_around + 1 end
-				if minetest.env:get_node({x=cx+0,y=1,z=cz-divlen*2}).name == "default:water_source" then
+				if minetest.get_node({x=cx+0,y=1,z=cz-divlen*2}).name == "default:water_source" then
 					num_water_around = num_water_around + 1 end
-				if minetest.env:get_node({x=cx+0,y=1,z=cz+divlen*2}).name == "default:water_source" then
+				if minetest.get_node({x=cx+0,y=1,z=cz+divlen*2}).name == "default:water_source" then
 					num_water_around = num_water_around + 1 end
 				if num_water_around >= 2 then
 					is_shallow = false
@@ -122,8 +122,8 @@ minetest.register_on_generated(function(minp, maxp, seed)
 				if is_shallow then
 					for x1=-divlen,divlen do
 					for z1=-divlen,divlen do
-						if minetest.env:get_node({x=cx+x1,y=0,z=cz+z1}).name == "default:sand" then
-							minetest.env:set_node({x=cx+x1,y=0,z=cz+z1}, {name="default:clay"})
+						if minetest.get_node({x=cx+x1,y=0,z=cz+z1}).name == "default:sand" then
+							minetest.set_node({x=cx+x1,y=0,z=cz+z1}, {name="default:clay"})
 						end
 					end
 					end

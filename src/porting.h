@@ -29,6 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "debug.h"
 #include "constants.h"
 #include "gettime.h"
+#include "threads.h"
 
 #ifdef _MSC_VER
 	#define SWPRINTF_CHARSTRING L"%S"
@@ -42,7 +43,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #ifdef _WIN32
 	#ifndef _WIN32_WINNT
-		#define _WIN32_WINNT 0x0500
+		#define _WIN32_WINNT 0x0501
 	#endif
 	#include <windows.h>
 	
@@ -155,6 +156,9 @@ bool threadSetPriority(threadid_t tid, int prio);
 	Overflow can occur at any value higher than 10000000.
 */
 #ifdef _WIN32 // Windows
+#ifndef _WIN32_WINNT
+	#define _WIN32_WINNT 0x0501
+#endif
 	#include <windows.h>
 	
 	inline u32 getTimeS()

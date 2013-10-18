@@ -23,14 +23,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "connection.h"
 #include "environment.h"
 #include "irrlichttypes_extrabloated.h"
-#include "jmutex.h"
+#include "jthread/jmutex.h"
 #include <ostream>
+#include <map>
 #include <set>
 #include <vector>
 #include "clientobject.h"
 #include "gamedef.h"
 #include "inventorymanager.h"
-#include "filesys.h"
 #include "filecache.h"
 #include "localplayer.h"
 #include "server.h"
@@ -160,7 +160,10 @@ enum ClientEventType
 	CE_SHOW_FORMSPEC,
 	CE_SPAWN_PARTICLE,
 	CE_ADD_PARTICLESPAWNER,
-	CE_DELETE_PARTICLESPAWNER
+	CE_DELETE_PARTICLESPAWNER,
+	CE_HUDADD,
+	CE_HUDRM,
+	CE_HUDCHANGE
 };
 
 struct ClientEvent
@@ -183,8 +186,8 @@ struct ClientEvent
 			f32 camera_point_target_z;
 		} deathscreen;
 		struct{
-			std::string* formspec;
-			std::string* formname;
+			std::string *formspec;
+			std::string *formname;
 		} show_formspec;
 		struct{
 		} textures_updated;
@@ -217,7 +220,81 @@ struct ClientEvent
 		struct{
 			u32 id;
 		} delete_particlespawner;
+		struct{
+			u32 id;
+			u8 type;
+			v2f *pos;
+			std::string *name;
+			v2f *scale;
+			std::string *text;
+			u32 number;
+			u32 item;
+			u32 dir;
+			v2f *align;
+			v2f *offset;
+		} hudadd;
+		struct{
+			u32 id;
+		} hudrm;
+		struct{
+			u32 id;
+			HudElementStat stat;
+			v2f *v2fdata;
+			std::string *sdata;
+			u32 data;
+		} hudchange;
 	};
+};
+
+/*
+	Packet counter
+*/
+
+class PacketCounter
+{
+public:
+	PacketCounter()
+	{
+	}
+
+	void add(u16 command)
+	{
+		std::map<u16, u16>::iterator n = m_packets.find(command);
+		if(n == m_packets.end())
+		{
+			m_packets[command] = 1;
+		}
+		else
+		{
+			n->second++;
+		}
+	}
+
+	void clear()
+	{
+		for(std::map<u16, u16>::iterator
+				i = m_packets.begin();
+				i != m_packets.end(); ++i)
+		{
+			i->second = 0;
+		}
+	}
+
+	void print(std::ostream &o)
+	{
+		for(std::map<u16, u16>::iterator
+				i = m_packets.begin();
+				i != m_packets.end(); ++i)
+		{
+			o<<"cmd "<<i->first
+					<<" count "<<i->second
+					<<std::endl;
+		}
+	}
+
+private:
+	// command, count
+	std::map<u16, u16> m_packets;
 };
 
 class Client : public con::PeerHandler, public InventoryManager, public IGameDef
@@ -237,7 +314,8 @@ public:
 			IWritableItemDefManager *itemdef,
 			IWritableNodeDefManager *nodedef,
 			ISoundManager *sound,
-			MtEventManager *event
+			MtEventManager *event,
+			bool ipv6
 	);
 	
 	~Client();
@@ -279,6 +357,7 @@ public:
 	void sendChangePassword(const std::wstring oldpassword,
 			const std::wstring newpassword);
 	void sendDamage(u8 damage);
+	void sendBreath(u16 breath);
 	void sendRespawn();
 
 	ClientEnvironment& getEnv()
@@ -315,7 +394,7 @@ public:
 	// Prints a line or two of info
 	void printDebugInfo(std::ostream &os);
 
-	std::list<std::wstring> getConnectedPlayerNames();
+	std::list<std::string> getConnectedPlayerNames();
 
 	float getAnimationTime();
 
@@ -323,6 +402,7 @@ public:
 	void setCrack(int level, v3s16 pos);
 
 	u16 getHP();
+	u16 getBreath();
 
 	bool checkPrivilege(const std::string &priv)
 	{ return (m_privileges.count(priv) != 0); }
@@ -359,7 +439,7 @@ public:
 	bool nodedefReceived()
 	{ return m_nodedef_received; }
 	
-	void afterContentReceived();
+	void afterContentReceived(IrrlichtDevice *device, gui::IGUIFont* font);
 
 	float getRTT(void);
 
@@ -390,8 +470,6 @@ private:
 	void Receive();
 	
 	void sendPlayerPos();
-	// This sends the player's current name etc to the server
-	void sendPlayerInfo();
 	// Send the item number 'item' as player item to the server
 	void sendPlayerItem(u16 item);
 	
@@ -444,7 +522,6 @@ private:
 	u32 m_media_received_count;
 	bool m_itemdef_received;
 	bool m_nodedef_received;
-	friend class FarMesh;
 
 	// time_of_day speed approximation for old protocol
 	bool m_time_of_day_set;

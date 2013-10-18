@@ -20,13 +20,24 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef MAIN_HEADER
 #define MAIN_HEADER
 
+#include <string>
+
 // Settings
 class Settings;
 extern Settings *g_settings;
+extern std::string g_settings_path;
 
 // Global profiler
 class Profiler;
 extern Profiler *g_profiler;
+
+// Menu clouds
+class Clouds;
+extern Clouds *g_menuclouds;
+
+// Scene manager used for menu clouds
+namespace irr{namespace scene{class ISceneManager;}}
+extern irr::scene::ISceneManager *g_menucloudsmgr;
 
 // Debug streams
 

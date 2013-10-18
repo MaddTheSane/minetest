@@ -223,7 +223,7 @@ void TestCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 	// Set material
 	buf->getMaterial().setFlag(video::EMF_LIGHTING, false);
 	buf->getMaterial().setFlag(video::EMF_BACK_FACE_CULLING, false);
-	buf->getMaterial().setTexture(0, tsrc->getTextureRaw("rat.png"));
+	buf->getMaterial().setTexture(0, tsrc->getTexture("rat.png"));
 	buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, false);
 	buf->getMaterial().setFlag(video::EMF_FOG_ENABLE, true);
 	buf->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
@@ -393,7 +393,7 @@ void ItemCAO::addToScene(scene::ISceneManager *smgr, ITextureSource *tsrc,
 	buf->getMaterial().setFlag(video::EMF_LIGHTING, false);
 	buf->getMaterial().setFlag(video::EMF_BACK_FACE_CULLING, false);
 	// Initialize with a generated placeholder texture
-	buf->getMaterial().setTexture(0, tsrc->getTextureRaw(""));
+	buf->getMaterial().setTexture(0, tsrc->getTexture(""));
 	buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, false);
 	buf->getMaterial().setFlag(video::EMF_FOG_ENABLE, true);
 	buf->getMaterial().MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL;
@@ -661,6 +661,10 @@ public:
 		return false;
 	}
 
+	bool collideWithObjects() {
+		return m_prop.collideWithObjects;
+	}
+
 	void initialize(const std::string &data)
 	{
 		infostream<<"GenericCAO: Got init data"<<std::endl;
@@ -708,11 +712,15 @@ public:
 			if(player && player->isLocal()){
 				m_is_local_player = true;
 			}
+			m_env->addPlayerName(m_name.c_str());
 		}
 	}
 
 	~GenericCAO()
 	{
+		if(m_is_player){
+			m_env->removePlayerName(m_name.c_str());
+		}
 	}
 
 	static ClientActiveObject* create(IGameDef *gamedef, ClientEnvironment *env)
@@ -860,7 +868,7 @@ public:
 			m_spritenode = smgr->addBillboardSceneNode(
 					NULL, v2f(1, 1), v3f(0,0,0), -1);
 			m_spritenode->setMaterialTexture(0,
-					tsrc->getTextureRaw("unknown_block.png"));
+					tsrc->getTexture("unknown_node.png"));
 			m_spritenode->setMaterialFlag(video::EMF_LIGHTING, false);
 			m_spritenode->setMaterialFlag(video::EMF_BILINEAR_FILTER, false);
 			m_spritenode->setMaterialType(video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF);
@@ -1142,13 +1150,13 @@ public:
 				box.MaxEdge *= BS;
 				collisionMoveResult moveresult;
 				f32 pos_max_d = BS*0.125; // Distance per iteration
-				f32 stepheight = 0;
 				v3f p_pos = m_position;
 				v3f p_velocity = m_velocity;
 				v3f p_acceleration = m_acceleration;
 				moveresult = collisionMoveSimple(env,env->getGameDef(),
-						pos_max_d, box, stepheight, dtime,
-						p_pos, p_velocity, p_acceleration);
+						pos_max_d, box, m_prop.stepheight, dtime,
+						p_pos, p_velocity, p_acceleration,
+						this, m_prop.collideWithObjects);
 				// Apply results
 				m_position = p_pos;
 				m_velocity = p_velocity;
@@ -1200,6 +1208,12 @@ public:
 		}
 		if(getParent() == NULL && fabs(m_prop.automatic_rotate) > 0.001){
 			m_yaw += dtime * m_prop.automatic_rotate * 180 / M_PI;
+			updateNodePos();
+		}
+
+		if (getParent() == NULL && m_prop.automatic_face_movement_dir &&
+				(fabs(m_velocity.Z) > 0.001 || fabs(m_velocity.X) > 0.001)){
+			m_yaw = atan2(m_velocity.Z,m_velocity.X) * 180 / M_PI + m_prop.automatic_face_movement_dir_offset;
 			updateNodePos();
 		}
 	}
@@ -1264,12 +1278,12 @@ public:
 		{
 			if(m_prop.visual == "sprite")
 			{
-				std::string texturestring = "unknown_block.png";
+				std::string texturestring = "unknown_node.png";
 				if(m_prop.textures.size() >= 1)
 					texturestring = m_prop.textures[0];
 				texturestring += mod;
 				m_spritenode->setMaterialTexture(0,
-						tsrc->getTextureRaw(texturestring));
+						tsrc->getTexture(texturestring));
 
 				// This allows setting per-material colors. However, until a real lighting
 				// system is added, the code below will have no effect. Once MineTest
@@ -1296,7 +1310,7 @@ public:
 					if(texturestring == "")
 						continue; // Empty texture string means don't modify that material
 					texturestring += mod;
-					video::ITexture* texture = tsrc->getTextureRaw(texturestring);
+					video::ITexture* texture = tsrc->getTexture(texturestring);
 					if(!texture)
 					{
 						errorstream<<"GenericCAO::updateTextures(): Could not load texture "<<texturestring<<std::endl;
@@ -1304,8 +1318,8 @@ public:
 					}
 
 					// Set material flags and texture
-					m_animated_meshnode->setMaterialTexture(i, texture);
 					video::SMaterial& material = m_animated_meshnode->getMaterial(i);
+					material.TextureLayer[0].Texture = texture;
 					material.setFlag(video::EMF_LIGHTING, false);
 					material.setFlag(video::EMF_BILINEAR_FILTER, false);
 
@@ -1330,24 +1344,19 @@ public:
 			{
 				for (u32 i = 0; i < 6; ++i)
 				{
-					std::string texturestring = "unknown_block.png";
+					std::string texturestring = "unknown_node.png";
 					if(m_prop.textures.size() > i)
 						texturestring = m_prop.textures[i];
 					texturestring += mod;
-					AtlasPointer ap = tsrc->getTexture(texturestring);
 
-					// Get the tile texture and atlas transformation
-					video::ITexture* atlas = ap.atlas;
-					v2f pos = ap.pos;
-					v2f size = ap.size;
 
 					// Set material flags and texture
 					video::SMaterial& material = m_meshnode->getMaterial(i);
 					material.setFlag(video::EMF_LIGHTING, false);
 					material.setFlag(video::EMF_BILINEAR_FILTER, false);
-					material.setTexture(0, atlas);
-					material.getTextureMatrix(0).setTextureTranslate(pos.X, pos.Y);
-					material.getTextureMatrix(0).setTextureScale(size.X, size.Y);
+					material.setTexture(0,
+							tsrc->getTexture(texturestring));
+					material.getTextureMatrix(0).makeIdentity();
 
 					// This allows setting per-material colors. However, until a real lighting
 					// system is added, the code below will have no effect. Once MineTest
@@ -1374,7 +1383,7 @@ public:
 					tname += mod;
 					scene::IMeshBuffer *buf = mesh->getMeshBuffer(0);
 					buf->getMaterial().setTexture(0,
-							tsrc->getTextureRaw(tname));
+							tsrc->getTexture(tname));
 					
 					// This allows setting per-material colors. However, until a real lighting
 					// system is added, the code below will have no effect. Once MineTest
@@ -1399,7 +1408,7 @@ public:
 					tname += mod;
 					scene::IMeshBuffer *buf = mesh->getMeshBuffer(1);
 					buf->getMaterial().setTexture(0,
-							tsrc->getTextureRaw(tname));
+							tsrc->getTexture(tname));
 
 					// This allows setting per-material colors. However, until a real lighting
 					// system is added, the code below will have no effect. Once MineTest
@@ -1679,6 +1688,19 @@ public:
 
 			updateTexturePos();
 		}
+		else if(cmd == GENERIC_CMD_SET_PHYSICS_OVERRIDE)
+		{
+			float override_speed = readF1000(is);
+			float override_jump = readF1000(is);
+			float override_gravity = readF1000(is);
+			if(m_is_local_player)
+			{
+				LocalPlayer *player = m_env->getLocalPlayer();
+				player->physics_override_speed = override_speed;
+				player->physics_override_jump = override_jump;
+				player->physics_override_gravity = override_gravity;
+			}
+		}
 		else if(cmd == GENERIC_CMD_SET_ANIMATION)
 		{
 			m_animation_range = readV2F1000(is);
@@ -1718,8 +1740,29 @@ public:
 		{
 			/*s16 damage =*/ readS16(is);
 			s16 result_hp = readS16(is);
-			
+
+			// Use this instead of the send damage to not interfere with prediction
+			s16 damage = m_hp - result_hp;
+
 			m_hp = result_hp;
+
+			if (damage > 0) {
+				if (m_hp <= 0) {
+					// TODO: Execute defined fast response
+					// As there is no definition, make a smoke puff
+					ClientSimpleObject *simple = createSmokePuff(
+							m_smgr, m_env, m_position,
+							m_prop.visual_size * BS);
+					m_env->addSimpleObject(simple);
+				} else {
+					// TODO: Execute defined fast response
+					// Flashing shall suffice as there is no definition
+					m_reset_textures_timer = 0.05;
+					if(damage >= 2)
+						m_reset_textures_timer += 0.05 * damage;
+					updateTextures("^[brighten");
+				}
+			}
 		}
 		else if(cmd == GENERIC_CMD_UPDATE_ARMOR_GROUPS)
 		{

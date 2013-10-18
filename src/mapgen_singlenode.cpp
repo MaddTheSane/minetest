@@ -25,8 +25,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "nodedef.h"
 #include "voxelalgorithms.h"
 #include "profiler.h"
-#include "settings.h" // For g_settings
-#include "main.h" // For g_profiler
 #include "emerge.h"
 
 //////////////////////// Mapgen Singlenode parameter read/write
@@ -42,6 +40,7 @@ void MapgenSinglenodeParams::writeParams(Settings *settings) {
 ///////////////////////////////////////////////////////////////////////////////
 
 MapgenSinglenode::MapgenSinglenode(int mapgenid, MapgenSinglenodeParams *params) {
+	flags = params->flags;
 }
 
 
@@ -91,7 +90,9 @@ void MapgenSinglenode::makeChunk(BlockMakeData *data) {
 	updateLiquid(&data->transforming_liquid, node_min, node_max);
 
 	// Calculate lighting
-	calcLighting(node_min, node_max);
+	if (!(flags & MG_NOLIGHT))
+		calcLighting(node_min - v3s16(1, 0, 1) * MAP_BLOCKSIZE,
+					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
 	
 	this->generating = false;
 }

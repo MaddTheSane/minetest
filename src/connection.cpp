@@ -207,12 +207,13 @@ RPBSearchResult ReliablePacketBuffer::notFound()
 {
 	return m_list.end();
 }
-u16 ReliablePacketBuffer::getFirstSeqnum()
+bool ReliablePacketBuffer::getFirstSeqnum(u16 *result)
 {
 	if(empty())
-		throw NotFoundException("Buffer is empty");
+		return false;
 	BufferedPacket p = *m_list.begin();
-	return readU16(&p.data[BASE_HEADER_SIZE+1]);
+	*result = readU16(&p.data[BASE_HEADER_SIZE+1]);
+	return true;
 }
 BufferedPacket ReliablePacketBuffer::popFirst()
 {
@@ -520,10 +521,12 @@ void Peer::reportRTT(float rtt)
 	Connection
 */
 
-Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout):
+Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
+		bool ipv6):
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
+	m_socket(ipv6),
 	m_peer_id(0),
 	m_bc_peerhandler(NULL),
 	m_bc_receive_timeout(0),
@@ -535,10 +538,11 @@ Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout):
 }
 
 Connection::Connection(u32 protocol_id, u32 max_packet_size, float timeout,
-		PeerHandler *peerhandler):
+		bool ipv6, PeerHandler *peerhandler):
 	m_protocol_id(protocol_id),
 	m_max_packet_size(max_packet_size),
 	m_timeout(timeout),
+	m_socket(ipv6),
 	m_peer_id(0),
 	m_bc_peerhandler(peerhandler),
 	m_bc_receive_timeout(0),
@@ -697,7 +701,7 @@ void Connection::receive()
 
 	bool single_wait_done = false;
 	
-	for(;;)
+	for(u32 loop_i=0; loop_i<1000; loop_i++) // Limit in case of DoS
 	{
 	try{
 		/* Check if some buffer has relevant data */
@@ -1242,17 +1246,16 @@ bool Connection::checkIncomingBuffers(Channel *channel, u16 &peer_id,
 {
 	u16 firstseqnum = 0;
 	// Clear old packets from start of buffer
-	try{
 	for(;;){
-		firstseqnum = channel->incoming_reliables.getFirstSeqnum();
+		bool found = channel->incoming_reliables.getFirstSeqnum(&firstseqnum);
+		if(!found)
+			break;
 		if(seqnum_higher(channel->next_incoming_seqnum, firstseqnum))
 			channel->incoming_reliables.popFirst();
 		else
 			break;
 	}
 	// This happens if all packets are old
-	}catch(con::NotFoundException)
-	{}
 	
 	if(channel->incoming_reliables.empty() == false)
 	{
@@ -1433,7 +1436,8 @@ SharedBuffer<u8> Connection::processPacket(Channel *channel,
 	else if(type == TYPE_RELIABLE)
 	{
 		// Recursive reliable packets not allowed
-		assert(reliable == false);
+		if(reliable)
+			throw InvalidIncomingDataException("Found nested reliable packets");
 
 		if(packetdata.getSize() < RELIABLE_HEADER_SIZE)
 			throw InvalidIncomingDataException
