@@ -8,14 +8,20 @@
 
 /* Begin PBXBuildFile section */
 		55F2090A1811F2DF00AE835B /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209091811F2DF00AE835B /* libz.dylib */; };
-		D5ABD8ED170939790037071C /* libvorbisfile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8EC170939790037071C /* libvorbisfile.a */; };
-		D5ABD8F017093B1A0037071C /* libvorbis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8EE17093B1A0037071C /* libvorbis.a */; };
-		D5ABD8F117093B1A0037071C /* libvorbisenc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8EF17093B1A0037071C /* libvorbisenc.a */; };
+		55F2090D1811F58300AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
+		55F2090E1811F58400AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
+		55F209101811F63800AE835B /* freetype.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090F1811F63800AE835B /* freetype.framework */; };
+		55F209111811F63800AE835B /* freetype.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090F1811F63800AE835B /* freetype.framework */; };
+		55F209131811F65500AE835B /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; };
+		55F209141811F65500AE835B /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; };
+		55F209151811F6C900AE835B /* minetest.conf in Resources */ = {isa = PBXBuildFile; fileRef = D5ABD958170953E30037071C /* minetest.conf */; };
+		55F209171811F70500AE835B /* Vorbis.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; };
+		55F209181811F70800AE835B /* freetype.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090F1811F63800AE835B /* freetype.framework */; };
+		55F209191811F70A00AE835B /* IrrFramework.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
 		D5ABD8F317093B3D0037071C /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8F217093B3D0037071C /* OpenGL.framework */; };
 		D5ABD8F517093B5B0037071C /* OpenAL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8F417093B5B0037071C /* OpenAL.framework */; };
 		D5ABD90E17093BA50037071C /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD90D17093BA50037071C /* Carbon.framework */; };
 		D5ABD91017093BAD0037071C /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD90F17093BAD0037071C /* IOKit.framework */; };
-		D5ABD95B170954C10037071C /* minetest.conf in CopyFiles */ = {isa = PBXBuildFile; fileRef = D5ABD958170953E30037071C /* minetest.conf */; };
 		D5ABDB5E1709645A0037071C /* games in CopyFiles */ = {isa = PBXBuildFile; fileRef = D5ABDB5B170964320037071C /* games */; };
 		D5ABDBB6170964BD0037071C /* fonts in Resources */ = {isa = PBXBuildFile; fileRef = D5ABDBB1170964BC0037071C /* fonts */; };
 		D5ABDBB8170964BD0037071C /* mods in Resources */ = {isa = PBXBuildFile; fileRef = D5ABDBB2170964BC0037071C /* mods */; };
@@ -32,9 +38,6 @@
 		D5ABDBC8170971930037071C /* client in Resources */ = {isa = PBXBuildFile; fileRef = D5ABDBC6170971930037071C /* client */; };
 		D5ABDBC91709719D0037071C /* client in CopyFiles */ = {isa = PBXBuildFile; fileRef = D5ABDBC6170971930037071C /* client */; };
 		D5ABDBCF17097EB10037071C /* minetest-icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = D5ABDBCE17097EB10037071C /* minetest-icon.icns */; };
-		D5ABDC08170992290037071C /* libfreetype.6.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABDC07170992290037071C /* libfreetype.6.dylib */; };
-		D5ABDC09170992290037071C /* libfreetype.6.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABDC07170992290037071C /* libfreetype.6.dylib */; };
-		D5ABDC0A170992360037071C /* libfreetype.6.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = D5ABDC07170992290037071C /* libfreetype.6.dylib */; };
 		D5D6DDEF17091EBF001EB852 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D6DDEE17091EBF001EB852 /* Cocoa.framework */; };
 		D5D6DDF917091EBF001EB852 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D5D6DDF717091EBF001EB852 /* InfoPlist.strings */; };
 		D5D6DDFF17091EBF001EB852 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = D5D6DDFD17091EBF001EB852 /* Credits.rtf */; };
@@ -252,15 +255,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		D5ABD95A170954BD0037071C /* CopyFiles */ = {
+		55F209161811F6F200AE835B /* Copy Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 7;
+			dstSubfolderSpec = 10;
 			files = (
-				D5ABD95B170954C10037071C /* minetest.conf in CopyFiles */,
-				D5ABDC0A170992360037071C /* libfreetype.6.dylib in CopyFiles */,
+				55F209171811F70500AE835B /* Vorbis.framework in Copy Frameworks */,
+				55F209181811F70800AE835B /* freetype.framework in Copy Frameworks */,
+				55F209191811F70A00AE835B /* IrrFramework.framework in Copy Frameworks */,
 			);
+			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D5ABDB5D1709644F0037071C /* CopyFiles */ = {
@@ -283,9 +288,9 @@
 
 /* Begin PBXFileReference section */
 		55F209091811F2DF00AE835B /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
-		D5ABD8EC170939790037071C /* libvorbisfile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbisfile.a; path = "../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug/libvorbisfile.a"; sourceTree = "<group>"; };
-		D5ABD8EE17093B1A0037071C /* libvorbis.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbis.a; path = "../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug/libvorbis.a"; sourceTree = "<group>"; };
-		D5ABD8EF17093B1A0037071C /* libvorbisenc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbisenc.a; path = "../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug/libvorbisenc.a"; sourceTree = "<group>"; };
+		55F2090C1811F58300AE835B /* IrrFramework.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = IrrFramework.framework; sourceTree = "<group>"; };
+		55F2090F1811F63800AE835B /* freetype.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = freetype.framework; sourceTree = "<group>"; };
+		55F209121811F65500AE835B /* Vorbis.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Vorbis.framework; sourceTree = "<group>"; };
 		D5ABD8F217093B3D0037071C /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/OpenGL.framework; sourceTree = DEVELOPER_DIR; };
 		D5ABD8F417093B5B0037071C /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/OpenAL.framework; sourceTree = DEVELOPER_DIR; };
 		D5ABD90D17093BA50037071C /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/Carbon.framework; sourceTree = DEVELOPER_DIR; };
@@ -300,8 +305,6 @@
 		D5ABDBC5170968CB0037071C /* xCGUITTFont.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xCGUITTFont.h; sourceTree = "<group>"; };
 		D5ABDBC6170971930037071C /* client */ = {isa = PBXFileReference; lastKnownFileType = folder; name = client; path = ../../client; sourceTree = "<group>"; };
 		D5ABDBCE17097EB10037071C /* minetest-icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = "minetest-icon.icns"; path = "../minetest-icon.icns"; sourceTree = "<group>"; };
-		D5ABDC0217098F4D0037071C /* libIrrlicht.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libIrrlicht.a; path = "../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Release/libIrrlicht.a"; sourceTree = "<group>"; };
-		D5ABDC07170992290037071C /* libfreetype.6.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreetype.6.dylib; path = "../../../minetestdep/freetype-2.4.11/objs/.libs/libfreetype.6.dylib"; sourceTree = "<group>"; };
 		D5D6DDEA17091EBF001EB852 /* Minetest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Minetest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5D6DDEE17091EBF001EB852 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		D5D6DDF117091EBF001EB852 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -683,11 +686,10 @@
 				D5ABD90E17093BA50037071C /* Carbon.framework in Frameworks */,
 				D5ABD8F517093B5B0037071C /* OpenAL.framework in Frameworks */,
 				D5ABD8F317093B3D0037071C /* OpenGL.framework in Frameworks */,
+				55F209131811F65500AE835B /* Vorbis.framework in Frameworks */,
 				D5D6DDEF17091EBF001EB852 /* Cocoa.framework in Frameworks */,
-				D5ABD8ED170939790037071C /* libvorbisfile.a in Frameworks */,
-				D5ABD8F017093B1A0037071C /* libvorbis.a in Frameworks */,
-				D5ABD8F117093B1A0037071C /* libvorbisenc.a in Frameworks */,
-				D5ABDC08170992290037071C /* libfreetype.6.dylib in Frameworks */,
+				55F209101811F63800AE835B /* freetype.framework in Frameworks */,
+				55F2090D1811F58300AE835B /* IrrFramework.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -704,8 +706,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				55F2090E1811F58400AE835B /* IrrFramework.framework in Frameworks */,
+				55F209141811F65500AE835B /* Vorbis.framework in Frameworks */,
 				D5D6E032170920A9001EB852 /* Cocoa.framework in Frameworks */,
-				D5ABDC09170992290037071C /* libfreetype.6.dylib in Frameworks */,
+				55F209111811F63800AE835B /* freetype.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -721,6 +725,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		55F2090B1811F53800AE835B /* External Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				55F209121811F65500AE835B /* Vorbis.framework */,
+				55F2090F1811F63800AE835B /* freetype.framework */,
+				55F2090C1811F58300AE835B /* IrrFramework.framework */,
+			);
+			name = "External Frameworks";
+			path = "Mac Frameworks";
+			sourceTree = "<group>";
+		};
 		D5D6DC7217091BDC001EB852 = {
 			isa = PBXGroup;
 			children = (
@@ -756,12 +771,8 @@
 		D5D6DDED17091EBF001EB852 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				55F2090B1811F53800AE835B /* External Frameworks */,
 				55F209091811F2DF00AE835B /* libz.dylib */,
-				D5ABDC07170992290037071C /* libfreetype.6.dylib */,
-				D5ABD8EE17093B1A0037071C /* libvorbis.a */,
-				D5ABD8EF17093B1A0037071C /* libvorbisenc.a */,
-				D5ABD8EC170939790037071C /* libvorbisfile.a */,
-				D5ABDC0217098F4D0037071C /* libIrrlicht.a */,
 				D5ABD90F17093BAD0037071C /* IOKit.framework */,
 				D5ABD90D17093BA50037071C /* Carbon.framework */,
 				D5ABD8F417093B5B0037071C /* OpenAL.framework */,
@@ -1281,8 +1292,8 @@
 				D5D6DDE617091EBF001EB852 /* Sources */,
 				D5D6DDE717091EBF001EB852 /* Frameworks */,
 				D5D6DDE817091EBF001EB852 /* Resources */,
-				D5ABD95A170954BD0037071C /* CopyFiles */,
 				D5ABDB5D1709644F0037071C /* CopyFiles */,
+				55F209161811F6F200AE835B /* Copy Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1386,6 +1397,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				55F209151811F6C900AE835B /* minetest.conf in Resources */,
 				D5D6DDF917091EBF001EB852 /* InfoPlist.strings in Resources */,
 				D5D6DDFF17091EBF001EB852 /* Credits.rtf in Resources */,
 				D5D6DE0517091EBF001EB852 /* MainMenu.xib in Resources */,
@@ -1762,9 +1774,17 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)\"/Mac\\ Frameworks";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/Mac Frameworks/IrrFramework.framework/Headers\"",
+					"\"$(SRCROOT)/Mac Frameworks/freetype.framework/Headers\"",
+					"\"$(SRCROOT)/../../src/lua/src\"",
+					"\"$(SRCROOT)/../../src/jthread\"",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -1780,7 +1800,15 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)\"/Mac\\ Frameworks";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SRCROOT)/Mac Frameworks/IrrFramework.framework/Headers\"",
+					"\"$(SRCROOT)/Mac Frameworks/freetype.framework/Headers\"",
+					"\"$(SRCROOT)/../../src/lua/src\"",
+					"\"$(SRCROOT)/../../src/jthread\"",
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 			};
@@ -1792,10 +1820,6 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3\"",
-				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1806,24 +1830,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/include\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/include\"",
-					"\"$(SRCROOT)/../../../minetestdep/libvorbis-1.3.3/include\"",
-					"\"$(SRCROOT)/../../../minetestdep/libogg-1.3.0/include\"",
+					"$(inherited)",
+					"\"$(SRCROOT)/Mac Frameworks/Vorbis.framework/Headers\"",
 					"\"$(SRCROOT)/../../src/lua/src\"",
 					"\"$(SRCROOT)/../../src/jthread\"",
 				);
 				INFOPLIST_FILE = "Minetest/Minetest-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Debug\"",
-					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs\"",
-					"\"$(SRCROOT)/../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs/.libs\"",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Release\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11a/objs\"",
 					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1837,10 +1851,6 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3\"",
-				);
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
@@ -1850,24 +1860,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/include\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/include\"",
-					"\"$(SRCROOT)/../../../minetestdep/libvorbis-1.3.3/include\"",
-					"\"$(SRCROOT)/../../../minetestdep/libogg-1.3.0/include\"",
+					"$(inherited)",
+					"\"$(SRCROOT)/Mac Frameworks/Vorbis.framework/Headers\"",
 					"\"$(SRCROOT)/../../src/lua/src\"",
 					"\"$(SRCROOT)/../../src/jthread\"",
 				);
 				INFOPLIST_FILE = "Minetest/Minetest-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Debug\"",
-					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs\"",
-					"\"$(SRCROOT)/../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs/.libs\"",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Release\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11a/objs\"",
 					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1930,6 +1930,10 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/cwbetts/makestuff/minetest/mac/Minetest/Mac\\ Frameworks",
+				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1960,6 +1964,10 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/cwbetts/makestuff/minetest/mac/Minetest/Mac\\ Frameworks",
+				);
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
