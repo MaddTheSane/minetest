@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		55F2090A1811F2DF00AE835B /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209091811F2DF00AE835B /* libz.dylib */; };
 		D5ABD8ED170939790037071C /* libvorbisfile.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8EC170939790037071C /* libvorbisfile.a */; };
 		D5ABD8F017093B1A0037071C /* libvorbis.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8EE17093B1A0037071C /* libvorbis.a */; };
 		D5ABD8F117093B1A0037071C /* libvorbisenc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8EF17093B1A0037071C /* libvorbisenc.a */; };
@@ -31,8 +32,6 @@
 		D5ABDBC8170971930037071C /* client in Resources */ = {isa = PBXBuildFile; fileRef = D5ABDBC6170971930037071C /* client */; };
 		D5ABDBC91709719D0037071C /* client in CopyFiles */ = {isa = PBXBuildFile; fileRef = D5ABDBC6170971930037071C /* client */; };
 		D5ABDBCF17097EB10037071C /* minetest-icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = D5ABDBCE17097EB10037071C /* minetest-icon.icns */; };
-		D5ABDC0317098F4D0037071C /* libIrrlicht.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABDC0217098F4D0037071C /* libIrrlicht.a */; };
-		D5ABDC0417098F4D0037071C /* libIrrlicht.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABDC0217098F4D0037071C /* libIrrlicht.a */; };
 		D5ABDC08170992290037071C /* libfreetype.6.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABDC07170992290037071C /* libfreetype.6.dylib */; };
 		D5ABDC09170992290037071C /* libfreetype.6.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABDC07170992290037071C /* libfreetype.6.dylib */; };
 		D5ABDC0A170992360037071C /* libfreetype.6.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = D5ABDC07170992290037071C /* libfreetype.6.dylib */; };
@@ -173,7 +172,6 @@
 		D5D6E04C170920AA001EB852 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D6DDEE17091EBF001EB852 /* Cocoa.framework */; };
 		D5D6E054170920AA001EB852 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D5D6E052170920AA001EB852 /* InfoPlist.strings */; };
 		D5D6E057170920AA001EB852 /* MineTestServerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D5D6E056170920AA001EB852 /* MineTestServerTests.m */; };
-		D5D6E07917092A76001EB852 /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D6E07817092A76001EB852 /* libz.a */; };
 		D5F8D69F170D10E600B37424 /* lapi.c in Sources */ = {isa = PBXBuildFile; fileRef = D5F8D668170D10E600B37424 /* lapi.c */; };
 		D5F8D6A0170D10E600B37424 /* lapi.c in Sources */ = {isa = PBXBuildFile; fileRef = D5F8D668170D10E600B37424 /* lapi.c */; };
 		D5F8D6A1170D10E600B37424 /* lauxlib.c in Sources */ = {isa = PBXBuildFile; fileRef = D5F8D66A170D10E600B37424 /* lauxlib.c */; };
@@ -284,6 +282,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		55F209091811F2DF00AE835B /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		D5ABD8EC170939790037071C /* libvorbisfile.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbisfile.a; path = "../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug/libvorbisfile.a"; sourceTree = "<group>"; };
 		D5ABD8EE17093B1A0037071C /* libvorbis.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbis.a; path = "../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug/libvorbis.a"; sourceTree = "<group>"; };
 		D5ABD8EF17093B1A0037071C /* libvorbisenc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libvorbisenc.a; path = "../../../../Library/Developer/Xcode/DerivedData/Vorbis-gkkxzetijatxmaefziytuaoatvlb/Build/Products/Debug/libvorbisenc.a"; sourceTree = "<group>"; };
@@ -300,7 +299,7 @@
 		D5ABDBC11709653D0037071C /* builtin */ = {isa = PBXFileReference; lastKnownFileType = folder; name = builtin; path = ../../builtin; sourceTree = "<group>"; };
 		D5ABDBC5170968CB0037071C /* xCGUITTFont.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xCGUITTFont.h; sourceTree = "<group>"; };
 		D5ABDBC6170971930037071C /* client */ = {isa = PBXFileReference; lastKnownFileType = folder; name = client; path = ../../client; sourceTree = "<group>"; };
-		D5ABDBCE17097EB10037071C /* minetest-icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "minetest-icon.icns"; sourceTree = "<group>"; };
+		D5ABDBCE17097EB10037071C /* minetest-icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = "minetest-icon.icns"; path = "../minetest-icon.icns"; sourceTree = "<group>"; };
 		D5ABDC0217098F4D0037071C /* libIrrlicht.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libIrrlicht.a; path = "../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Release/libIrrlicht.a"; sourceTree = "<group>"; };
 		D5ABDC07170992290037071C /* libfreetype.6.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreetype.6.dylib; path = "../../../minetestdep/freetype-2.4.11/objs/.libs/libfreetype.6.dylib"; sourceTree = "<group>"; };
 		D5D6DDEA17091EBF001EB852 /* Minetest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Minetest.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -614,12 +613,11 @@
 		D5D6E03F170920A9001EB852 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		D5D6E040170920A9001EB852 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		D5D6E043170920AA001EB852 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		D5D6E04A170920AA001EB852 /* MineTestServerTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = MineTestServerTests.octest; path = MinetestServerTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5D6E04A170920AA001EB852 /* MinetestServerTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MinetestServerTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5D6E051170920AA001EB852 /* MineTestServerTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MineTestServerTests-Info.plist"; sourceTree = "<group>"; };
 		D5D6E053170920AA001EB852 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D5D6E055170920AA001EB852 /* MineTestServerTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MineTestServerTests.h; sourceTree = "<group>"; };
 		D5D6E056170920AA001EB852 /* MineTestServerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MineTestServerTests.m; sourceTree = "<group>"; };
-		D5D6E07817092A76001EB852 /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libz.a; path = "../../../minetestdep/zlib-1.2.5/libz.a"; sourceTree = "<group>"; };
 		D5F8D668170D10E600B37424 /* lapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lapi.c; path = lua/src/lapi.c; sourceTree = "<group>"; };
 		D5F8D669170D10E600B37424 /* lapi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lapi.h; path = lua/src/lapi.h; sourceTree = "<group>"; };
 		D5F8D66A170D10E600B37424 /* lauxlib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lauxlib.c; path = lua/src/lauxlib.c; sourceTree = "<group>"; };
@@ -680,16 +678,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				55F2090A1811F2DF00AE835B /* libz.dylib in Frameworks */,
 				D5ABD91017093BAD0037071C /* IOKit.framework in Frameworks */,
 				D5ABD90E17093BA50037071C /* Carbon.framework in Frameworks */,
 				D5ABD8F517093B5B0037071C /* OpenAL.framework in Frameworks */,
 				D5ABD8F317093B3D0037071C /* OpenGL.framework in Frameworks */,
 				D5D6DDEF17091EBF001EB852 /* Cocoa.framework in Frameworks */,
-				D5D6E07917092A76001EB852 /* libz.a in Frameworks */,
 				D5ABD8ED170939790037071C /* libvorbisfile.a in Frameworks */,
 				D5ABD8F017093B1A0037071C /* libvorbis.a in Frameworks */,
 				D5ABD8F117093B1A0037071C /* libvorbisenc.a in Frameworks */,
-				D5ABDC0317098F4D0037071C /* libIrrlicht.a in Frameworks */,
 				D5ABDC08170992290037071C /* libfreetype.6.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -708,7 +705,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D5D6E032170920A9001EB852 /* Cocoa.framework in Frameworks */,
-				D5ABDC0417098F4D0037071C /* libIrrlicht.a in Frameworks */,
 				D5ABDC09170992290037071C /* libfreetype.6.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -728,11 +724,6 @@
 		D5D6DC7217091BDC001EB852 = {
 			isa = PBXGroup;
 			children = (
-				D5ABDBCE17097EB10037071C /* minetest-icon.icns */,
-				D5ABD90F17093BAD0037071C /* IOKit.framework */,
-				D5ABD90D17093BA50037071C /* Carbon.framework */,
-				D5ABD8F417093B5B0037071C /* OpenAL.framework */,
-				D5ABD8F217093B3D0037071C /* OpenGL.framework */,
 				D5D6DE2117091F91001EB852 /* src */,
 				D5D6DDF417091EBF001EB852 /* Minetest */,
 				D5D6DE1117091EC0001EB852 /* MinetestTests */,
@@ -757,7 +748,7 @@
 				D5D6DDEA17091EBF001EB852 /* Minetest.app */,
 				D5D6DE0B17091EC0001EB852 /* MinetestTests.octest */,
 				D5D6E030170920A9001EB852 /* MinetestServer.app */,
-				D5D6E04A170920AA001EB852 /* MineTestServerTests.octest */,
+				D5D6E04A170920AA001EB852 /* MinetestServerTests.octest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -765,12 +756,16 @@
 		D5D6DDED17091EBF001EB852 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				55F209091811F2DF00AE835B /* libz.dylib */,
 				D5ABDC07170992290037071C /* libfreetype.6.dylib */,
 				D5ABD8EE17093B1A0037071C /* libvorbis.a */,
 				D5ABD8EF17093B1A0037071C /* libvorbisenc.a */,
 				D5ABD8EC170939790037071C /* libvorbisfile.a */,
-				D5D6E07817092A76001EB852 /* libz.a */,
 				D5ABDC0217098F4D0037071C /* libIrrlicht.a */,
+				D5ABD90F17093BAD0037071C /* IOKit.framework */,
+				D5ABD90D17093BA50037071C /* Carbon.framework */,
+				D5ABD8F417093B5B0037071C /* OpenAL.framework */,
+				D5ABD8F217093B3D0037071C /* OpenGL.framework */,
 				D5D6DDEE17091EBF001EB852 /* Cocoa.framework */,
 				D5D6DE0C17091EC0001EB852 /* SenTestingKit.framework */,
 				D5D6DDF017091EBF001EB852 /* Other Frameworks */,
@@ -802,6 +797,7 @@
 		D5D6DDF517091EBF001EB852 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				D5ABDBCE17097EB10037071C /* minetest-icon.icns */,
 				D5D6DDF617091EBF001EB852 /* Minetest-Info.plist */,
 				D5D6DDF717091EBF001EB852 /* InfoPlist.strings */,
 				D5D6DDFC17091EBF001EB852 /* Minetest-Prefix.pch */,
@@ -1349,7 +1345,7 @@
 			);
 			name = MinetestServerTests;
 			productName = MineTestServerTests;
-			productReference = D5D6E04A170920AA001EB852 /* MineTestServerTests.octest */;
+			productReference = D5D6E04A170920AA001EB852 /* MinetestServerTests.octest */;
 			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
@@ -1359,6 +1355,11 @@
 			isa = PBXProject;
 			attributes = {
 				LastUpgradeCheck = 0450;
+				TargetAttributes = {
+					D5D6E049170920AA001EB852 = {
+						TestTargetID = D5D6E02F170920A9001EB852;
+					};
+				};
 			};
 			buildConfigurationList = D5D6DC7717091BDC001EB852 /* Build configuration list for PBXProject "Minetest" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -1755,12 +1756,33 @@
 		D5D6DC7917091BDC001EB852 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
 		D5D6DC7A17091BDC001EB852 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -1768,27 +1790,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
 					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3\"",
 				);
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = "";
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -1814,10 +1826,7 @@
 					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11a/objs\"",
 					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -1826,25 +1835,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(SRCROOT)/../../../minetestdep/zlib-1.2.5\"",
 					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3\"",
 				);
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = "";
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -1870,9 +1870,7 @@
 					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11a/objs\"",
 					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = "";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -1881,36 +1879,24 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Minetest.app/Contents/MacOS/Minetest";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "MinetestTests/MinetestTests-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = octest;
 			};
@@ -1920,18 +1906,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Minetest.app/Contents/MacOS/Minetest";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
@@ -1940,9 +1918,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "MinetestTests/MinetestTests-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = octest;
 			};
@@ -1952,26 +1928,16 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -1983,10 +1949,7 @@
 					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs/.libs\"",
 					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -1995,20 +1958,11 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
-				GCC_VERSION = com.apple.compilers.llvmgcc42;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
@@ -2020,9 +1974,7 @@
 					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs/.libs\"",
 					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -2031,36 +1983,24 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/MineTestServer.app/Contents/MacOS/MineTestServer";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/MinetestServer.app/Contents/MacOS/MinetestServer";
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "MineTestServerTests/MineTestServerTests-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = octest;
 			};
@@ -2070,18 +2010,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/MineTestServer.app/Contents/MacOS/MineTestServer";
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/MinetestServer.app/Contents/MacOS/MinetestServer";
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
@@ -2090,9 +2022,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "MineTestServerTests/MineTestServerTests-Info.plist";
-				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
 				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = octest;
 			};
