@@ -2242,6 +2242,7 @@
 				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				FRAMEWORK_SEARCH_PATHS = "\"$(SRCROOT)\"/Mac\\ Frameworks";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -2255,6 +2256,7 @@
 					"\"$(SRCROOT)/../../src\"",
 					"\"$(SRCROOT)/../../src/script\"",
 				);
+				LLVM_LTO = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 			};
@@ -2266,10 +2268,6 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"/Users/cwbetts/makestuff/minetest/mac/Minetest/Mac\\ Frameworks",
-				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -2286,10 +2284,6 @@
 					"\"$(SRCROOT)/../../src/jthread\"",
 				);
 				INFOPLIST_FILE = "Minetest/Minetest-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -2301,10 +2295,6 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"/Users/cwbetts/makestuff/minetest/mac/Minetest/Mac\\ Frameworks",
-				);
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
@@ -2320,10 +2310,6 @@
 					"\"$(SRCROOT)/../../src/jthread\"",
 				);
 				INFOPLIST_FILE = "Minetest/Minetest-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -2384,10 +2370,6 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"/Users/cwbetts/makestuff/minetest/mac/Minetest/Mac\\ Frameworks",
-				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -2401,12 +2383,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "MineTestServer/MineTestServer-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Release\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs/.libs\"",
-					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -2418,10 +2394,6 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"/Users/cwbetts/makestuff/minetest/mac/Minetest/Mac\\ Frameworks",
-				);
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
@@ -2434,12 +2406,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				INFOPLIST_FILE = "MineTestServer/MineTestServer-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../minetestdep/irrlicht-1.7.3/source/Irrlicht/MacOSX/build/Release\"",
-					"\"$(SRCROOT)/../../../minetestdep/freetype-2.4.11/objs/.libs\"",
-					"\"$(SRCROOT)/../../../minetestdep/LuaJIT-2.0.1/src\"",
-				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
