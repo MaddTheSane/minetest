@@ -43,7 +43,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <list>
 
 #ifdef __APPLE__
-	#include "CoreFoundation/CoreFoundation.h"
+	#include <CoreFoundation/CoreFoundation.h>
 #endif
 
 namespace porting

@@ -18,8 +18,10 @@
 #ifdef __APPLE__
 #undef USE_SOUND
 #undef USE_FREETYPE
+#undef USE_CURL
 #define USE_SOUND 1
 #define USE_FREETYPE 1
+#define USE_CURL 1
 #endif
 
 #ifdef USE_CMAKE_CONFIG_H
