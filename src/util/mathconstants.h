@@ -1,7 +1,4 @@
-#include <math.h>
+#define _USE_MATH_DEFINES
 
-// MSVC doesn't seem to define this
-#ifndef M_PI
-	#define M_PI 3.1415926535
-#endif
+#include <math.h>
 
