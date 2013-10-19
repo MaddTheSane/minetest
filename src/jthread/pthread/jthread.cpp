@@ -25,7 +25,7 @@
 
 */
 
-#include "jthread.h"
+#include "jthread/jthread.h"
 #include <sys/time.h>
 #include <time.h>
 #include <stdlib.h>
@@ -146,6 +146,11 @@ void *JThread::GetReturnValue()
 		val = retval;
 	runningmutex.Unlock();
 	return val;
+}
+
+bool JThread::IsSameThread()
+{
+	return pthread_equal(pthread_self(), threadid);
 }
 
 void *JThread::TheThread(void *param)

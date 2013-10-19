@@ -7,8 +7,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: minetest\n"
 "Report-Msgid-Bugs-To: \n"
+<<<<<<< HEAD
 "POT-Creation-Date: 2013-03-30 19:56+0100\n"
 "PO-Revision-Date: 2013-03-31 15:40+0200\n"
+=======
+"POT-Creation-Date: 2013-09-07 22:01+0400\n"
+"PO-Revision-Date: 2013-06-01 18:09+0200\n"
+>>>>>>> orig/master
 "Last-Translator: Chynggyz Jumaliev <translatorky@lavabit.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: ky\n"
@@ -18,22 +23,21 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 1.4-dev\n"
 
-#: src/guiConfigureWorld.cpp:125
-msgid ""
-"Warning: Some mods are not configured yet.\n"
-"They will be enabled by default when you save the configuration.  "
-msgstr ""
+#: builtin/gamemgr.lua:23
+#, fuzzy
+msgid "Game Name"
+msgstr "Оюн"
 
-#: src/guiConfigureWorld.cpp:144
-msgid ""
-"Warning: Some configured mods are missing.\n"
-"Their setting will be removed when you save the configuration.  "
-msgstr ""
+#: builtin/gamemgr.lua:25 builtin/mainmenu.lua:301
+msgid "Create"
+msgstr "Жаратуу"
 
-#: src/guiConfigureWorld.cpp:208
-msgid "enabled"
-msgstr ""
+#: builtin/gamemgr.lua:26 builtin/mainmenu.lua:302 builtin/modmgr.lua:289
+#: builtin/modmgr.lua:406 src/guiKeyChangeMenu.cpp:195 src/keycode.cpp:223
+msgid "Cancel"
+msgstr "Жокко чыгаруу"
 
+<<<<<<< HEAD
 #: src/guiConfigureWorld.cpp:215
 msgid "Enable All"
 msgstr "Баарын күйгүзүү"
@@ -41,15 +45,26 @@ msgstr "Баарын күйгүзүү"
 #: src/guiConfigureWorld.cpp:222
 msgid "Disable All"
 msgstr "Баарын өчүрүү"
-
-#: src/guiConfigureWorld.cpp:228
-msgid "depends on:"
+=======
+#: builtin/gamemgr.lua:118
+msgid "Gamemgr: Unable to copy mod \"$1\" to game \"$2\""
 msgstr ""
 
-#: src/guiConfigureWorld.cpp:240
-msgid "is required by:"
+#: builtin/gamemgr.lua:216
+msgid "GAMES"
+msgstr ""
+>>>>>>> orig/master
+
+#: builtin/gamemgr.lua:217 builtin/mainmenu.lua:859
+#, fuzzy
+msgid "Games"
+msgstr "Оюн"
+
+#: builtin/gamemgr.lua:233
+msgid "Mods:"
 msgstr ""
 
+<<<<<<< HEAD
 #: src/guiConfigureWorld.cpp:262 src/guiCreateWorld.cpp:165
 #: src/guiKeyChangeMenu.cpp:179 src/keycode.cpp:223
 msgid "Cancel"
@@ -74,15 +89,49 @@ msgstr "Ооба"
 #: src/guiConfirmMenu.cpp:126
 msgid "No"
 msgstr "Жок"
+=======
+#: builtin/gamemgr.lua:234
+msgid "edit game"
+msgstr ""
 
-#: src/guiCreateWorld.cpp:116
+#: builtin/gamemgr.lua:237
+msgid "new game"
+msgstr ""
+
+#: builtin/gamemgr.lua:247
+msgid "EDIT GAME"
+msgstr ""
+
+#: builtin/gamemgr.lua:267
+msgid "Remove selected mod"
+msgstr ""
+
+#: builtin/gamemgr.lua:270
+msgid "<<-- Add mod"
+msgstr ""
+
+#: builtin/mainmenu.lua:159
+msgid "Ok"
+msgstr ""
+>>>>>>> orig/master
+
+#: builtin/mainmenu.lua:297
 msgid "World name"
+<<<<<<< HEAD
 msgstr "Дүйнөнүн аты"
+=======
+msgstr "Дүйнө аты"
 
-#: src/guiCreateWorld.cpp:135
+#: builtin/mainmenu.lua:298
+msgid "Mapgen"
+msgstr ""
+>>>>>>> orig/master
+
+#: builtin/mainmenu.lua:300
 msgid "Game"
 msgstr "Оюн"
 
+<<<<<<< HEAD
 #: src/guiCreateWorld.cpp:159
 msgid "Create"
 msgstr "Жаратуу"
@@ -94,36 +143,57 @@ msgstr "Сиз өлдүңүз."
 #: src/guiDeathScreen.cpp:104
 msgid "Respawn"
 msgstr "Кайтадан жаралуу"
+=======
+#: builtin/mainmenu.lua:314
+#, fuzzy
+msgid "Delete World \"$1\"?"
+msgstr "Дүйнөнү өчүрүү"
 
-#: src/guiFormSpecMenu.cpp:582
-msgid "Left click: Move all items, Right click: Move single item"
+#: builtin/mainmenu.lua:315 builtin/modmgr.lua:846
+msgid "Yes"
+msgstr "Ооба"
+
+#: builtin/mainmenu.lua:316
+msgid "No"
+msgstr "Жок"
+>>>>>>> orig/master
+
+#: builtin/mainmenu.lua:384
+msgid "A world named \"$1\" already exists"
 msgstr ""
 
+<<<<<<< HEAD
 #: src/guiFormSpecMenu.cpp:607 src/guiMessageMenu.cpp:109
 #: src/guiTextInputMenu.cpp:131
 msgid "Proceed"
 msgstr "Улантуу"
+=======
+#: builtin/mainmenu.lua:399
+msgid "No worldname given or no game selected"
+msgstr ""
+>>>>>>> orig/master
 
-#: src/guiKeyChangeMenu.cpp:114
-msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
+#: builtin/mainmenu.lua:852
+msgid "Singleplayer"
+msgstr "Бир кишилик"
+
+#: builtin/mainmenu.lua:853
+msgid "Client"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:151
-msgid "\"Use\" = climb down"
+#: builtin/mainmenu.lua:854
+msgid "Server"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:164
-msgid "Double tap \"jump\" to toggle fly"
+#: builtin/mainmenu.lua:855
+msgid "Settings"
+msgstr "Ырастоолор"
+
+#: builtin/mainmenu.lua:856
+msgid "Texture Packs"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:269
-msgid "Key already in use"
-msgstr ""
-
-#: src/guiKeyChangeMenu.cpp:347
-msgid "press key"
-msgstr ""
-
+<<<<<<< HEAD
 #: src/guiKeyChangeMenu.cpp:372
 msgid "Forward"
 msgstr "Алга"
@@ -147,19 +217,53 @@ msgstr "Колдонуу"
 #: src/guiKeyChangeMenu.cpp:377
 msgid "Jump"
 msgstr "Секирүү"
-
-#: src/guiKeyChangeMenu.cpp:378
-msgid "Sneak"
+=======
+#: builtin/mainmenu.lua:863
+msgid "Mods"
 msgstr ""
 
+#: builtin/mainmenu.lua:865
+msgid "Credits"
+msgstr "Алкыштар"
+
+#: builtin/mainmenu.lua:885
+msgid "CLIENT"
+msgstr ""
+
+#: builtin/mainmenu.lua:886
+msgid "Favorites:"
+msgstr "Тандалмалар:"
+
+#: builtin/mainmenu.lua:887
+msgid "Address/Port"
+msgstr "Дареги/порту"
+
+#: builtin/mainmenu.lua:888
+msgid "Name/Password"
+msgstr "Аты/сырсөзү"
+>>>>>>> orig/master
+
+#: builtin/mainmenu.lua:891
+#, fuzzy
+msgid "Public Serverlist"
+msgstr "Жалпылык серверлердин тизмеси:"
+
+<<<<<<< HEAD
 #: src/guiKeyChangeMenu.cpp:379
 msgid "Drop"
 msgstr "Ыргытуу"
+=======
+#: builtin/mainmenu.lua:896 builtin/mainmenu.lua:941 builtin/mainmenu.lua:1004
+#: builtin/modmgr.lua:271 src/keycode.cpp:229
+msgid "Delete"
+msgstr "Өчүрүү"
+>>>>>>> orig/master
 
-#: src/guiKeyChangeMenu.cpp:380
-msgid "Inventory"
-msgstr ""
+#: builtin/mainmenu.lua:900
+msgid "Connect"
+msgstr "Туташуу"
 
+<<<<<<< HEAD
 #: src/guiKeyChangeMenu.cpp:381
 msgid "Chat"
 msgstr "Маек"
@@ -171,47 +275,63 @@ msgstr "Команда"
 #: src/guiKeyChangeMenu.cpp:383
 msgid "Console"
 msgstr "Консоль"
+=======
+#: builtin/mainmenu.lua:942 builtin/mainmenu.lua:1005
+msgid "New"
+msgstr "Жаңы"
 
-#: src/guiKeyChangeMenu.cpp:384
-msgid "Toggle fly"
+#: builtin/mainmenu.lua:943 builtin/mainmenu.lua:1006
+msgid "Configure"
+msgstr "Ырастоо"
+
+#: builtin/mainmenu.lua:944
+#, fuzzy
+msgid "Start Game"
+msgstr "Оюнду баштоо/туташуу"
+>>>>>>> orig/master
+
+#: builtin/mainmenu.lua:945 builtin/mainmenu.lua:1008
+msgid "Select World:"
+msgstr "Дүйнөнү тандаңыз:"
+
+#: builtin/mainmenu.lua:946
+msgid "START SERVER"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:385
-msgid "Toggle fast"
+#: builtin/mainmenu.lua:947 builtin/mainmenu.lua:1010
+msgid "Creative Mode"
+msgstr "Жаратуу режими"
+
+#: builtin/mainmenu.lua:949 builtin/mainmenu.lua:1012
+msgid "Enable Damage"
+msgstr "Убалды күйгүзүү"
+
+#: builtin/mainmenu.lua:951
+msgid "Public"
+msgstr "Жалпылык"
+
+#: builtin/mainmenu.lua:953
+msgid "Name"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:386
-msgid "Toggle noclip"
+#: builtin/mainmenu.lua:955
+#, fuzzy
+msgid "Password"
+msgstr "Эски сырсөз"
+
+#: builtin/mainmenu.lua:956
+msgid "Server Port"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:387
-msgid "Range select"
+#: builtin/mainmenu.lua:966
+msgid "SETTINGS"
 msgstr ""
 
-#: src/guiKeyChangeMenu.cpp:388
-msgid "Print stacks"
-msgstr ""
+#: builtin/mainmenu.lua:967
+msgid "Fancy trees"
+msgstr "Кооз бактар"
 
-#: src/guiMainMenu.cpp:92
-msgid "Cannot create world: Name contains invalid characters"
-msgstr ""
-
-#: src/guiMainMenu.cpp:101
-msgid "Cannot create world: A world by this name already exists"
-msgstr ""
-
-#: src/guiMainMenu.cpp:283
-msgid "Singleplayer"
-msgstr ""
-
-#: src/guiMainMenu.cpp:284
-msgid "Multiplayer"
-msgstr ""
-
-#: src/guiMainMenu.cpp:285
-msgid "Advanced"
-msgstr ""
-
+<<<<<<< HEAD
 #: src/guiMainMenu.cpp:286
 msgid "Settings"
 msgstr "Ырастоолор"
@@ -235,59 +355,160 @@ msgstr "Жаңы"
 #: src/guiMainMenu.cpp:354
 msgid "Configure"
 msgstr "Ырастоо"
+=======
+#: builtin/mainmenu.lua:969
+msgid "Smooth Lighting"
+msgstr "Тегиз жарык"
 
-#: src/guiMainMenu.cpp:369 src/keycode.cpp:248
+#: builtin/mainmenu.lua:971
+msgid "3D Clouds"
+msgstr "3D-булуттар"
+
+#: builtin/mainmenu.lua:973
+#, fuzzy
+msgid "Opaque Water"
+msgstr "Күңүрт суу"
+
+#: builtin/mainmenu.lua:976
+msgid "Mip-Mapping"
+msgstr "Mip-текстуралоо"
+
+#: builtin/mainmenu.lua:978
+msgid "Anisotropic Filtering"
+msgstr "Анизатропия чыпкалоосу"
+
+#: builtin/mainmenu.lua:980
+msgid "Bi-Linear Filtering"
+msgstr "Экисызык чыпкалоосу"
+
+#: builtin/mainmenu.lua:982
+msgid "Tri-Linear Filtering"
+msgstr "Үчсызык чыпкалоосу"
+
+#: builtin/mainmenu.lua:985
+msgid "Shaders"
+msgstr "Көлөкөлөгүчтөр"
+
+#: builtin/mainmenu.lua:987
+msgid "Preload item visuals"
+msgstr ""
+>>>>>>> orig/master
+
+#: builtin/mainmenu.lua:989
+msgid "Enable Particles"
+msgstr "Бөлүкчөлөрдү күйгүзүү"
+
+#: builtin/mainmenu.lua:991
+#, fuzzy
+msgid "Finite Liquid"
+msgstr "Чектүү суюктук"
+
+#: builtin/mainmenu.lua:994
+msgid "Change keys"
+msgstr "Баскычтарды өзгөртүү"
+
+#: builtin/mainmenu.lua:1007 src/keycode.cpp:248
 msgid "Play"
 msgstr "Ойноо"
+<<<<<<< HEAD
+=======
 
-#: src/guiMainMenu.cpp:380 src/guiMainMenu.cpp:619
-msgid "Creative Mode"
+#: builtin/mainmenu.lua:1009
+msgid "SINGLE PLAYER"
+msgstr ""
+>>>>>>> orig/master
+
+#: builtin/mainmenu.lua:1022
+msgid "Select texture pack:"
 msgstr ""
 
-#: src/guiMainMenu.cpp:386 src/guiMainMenu.cpp:625
-msgid "Enable Damage"
+#: builtin/mainmenu.lua:1023
+msgid "TEXTURE PACKS"
 msgstr ""
 
+<<<<<<< HEAD
 #: src/guiMainMenu.cpp:406 src/guiMainMenu.cpp:541
 msgid "Name/Password"
 msgstr "Атыңыз/Сырсөзүңүз"
+=======
+#: builtin/mainmenu.lua:1043
+msgid "No information available"
+msgstr ""
+>>>>>>> orig/master
 
-#: src/guiMainMenu.cpp:442 src/guiMainMenu.cpp:459 src/guiMainMenu.cpp:1184
-msgid "Favorites:"
+#: builtin/mainmenu.lua:1071
+msgid "Core Developers"
 msgstr ""
 
-#: src/guiMainMenu.cpp:450 src/guiMainMenu.cpp:1194
-msgid "Public Server List:"
+#: builtin/mainmenu.lua:1082
+msgid "Active Contributors"
 msgstr ""
 
+<<<<<<< HEAD
 #: src/guiMainMenu.cpp:470 src/guiMainMenu.cpp:568
 msgid "Address/Port"
 msgstr "Адреси/Порту"
+=======
+#: builtin/mainmenu.lua:1092
+msgid "Previous Contributors"
+msgstr ""
+>>>>>>> orig/master
 
-#: src/guiMainMenu.cpp:497 src/guiMainMenu.cpp:1183
-msgid "Show Public"
+#: builtin/modmgr.lua:236
+msgid "MODS"
 msgstr ""
 
-#: src/guiMainMenu.cpp:501 src/guiMainMenu.cpp:1193
-msgid "Show Favorites"
+#: builtin/modmgr.lua:237
+msgid "Installed Mods:"
 msgstr ""
 
+<<<<<<< HEAD
 #: src/guiMainMenu.cpp:521
 msgid "Connect"
 msgstr "Туташуу"
+=======
+#: builtin/modmgr.lua:243 builtin/modstore.lua:253
+msgid "Install"
+msgstr ""
+>>>>>>> orig/master
 
-#: src/guiMainMenu.cpp:591
-msgid "Leave address blank to start a local server."
+#: builtin/modmgr.lua:244
+#, fuzzy
+msgid "Download"
+msgstr "Ылдый"
+
+#: builtin/modmgr.lua:256
+msgid "Rename"
 msgstr ""
 
-#: src/guiMainMenu.cpp:600
-msgid "Start Game / Connect"
+#: builtin/modmgr.lua:260 builtin/modmgr.lua:402
+#, fuzzy
+msgid "Depends:"
+msgstr "көз карандылыктары:"
+
+#: builtin/modmgr.lua:282
+msgid "Rename Modpack:"
 msgstr ""
 
-#: src/guiMainMenu.cpp:632
-msgid "Public"
+#: builtin/modmgr.lua:287 src/keycode.cpp:227
+msgid "Accept"
+msgstr "Кабыл алуу"
+
+#: builtin/modmgr.lua:381
+#, fuzzy
+msgid "World:"
+msgstr "Дүйнөнү тандаңыз:"
+
+#: builtin/modmgr.lua:385 builtin/modmgr.lua:387
+#, fuzzy
+msgid "Hide Game"
+msgstr "Оюн"
+
+#: builtin/modmgr.lua:391 builtin/modmgr.lua:393
+msgid "Hide mp content"
 msgstr ""
 
+<<<<<<< HEAD
 #: src/guiMainMenu.cpp:640 src/guiMainMenu.cpp:1113
 msgid "Delete world"
 msgstr "Дүйнөнү өчүрүү"
@@ -295,157 +516,336 @@ msgstr "Дүйнөнү өчүрүү"
 #: src/guiMainMenu.cpp:647
 msgid "Create world"
 msgstr "Дүйнөнү жаратуу"
-
-#: src/guiMainMenu.cpp:681
-msgid "Fancy trees"
+=======
+#: builtin/modmgr.lua:400
+msgid "Mod:"
 msgstr ""
 
-#: src/guiMainMenu.cpp:687
-msgid "Smooth Lighting"
+#: builtin/modmgr.lua:405 src/guiKeyChangeMenu.cpp:187
+msgid "Save"
+msgstr "Сактоо"
+
+#: builtin/modmgr.lua:422
+#, fuzzy
+msgid "Enable MP"
+msgstr "Баарын күйгүзүү"
+
+#: builtin/modmgr.lua:424
+#, fuzzy
+msgid "Disable MP"
+msgstr "Баарын өчүрүү"
+
+#: builtin/modmgr.lua:428 builtin/modmgr.lua:430
+msgid "enabled"
+msgstr "күйгүзүлгөн"
+
+#: builtin/modmgr.lua:436
+#, fuzzy
+msgid "Enable all"
+msgstr "Баарын күйгүзүү"
+
+#: builtin/modmgr.lua:551
+#, fuzzy
+msgid "Select Mod File:"
+msgstr "Дүйнөнү тандаңыз:"
+
+#: builtin/modmgr.lua:590
+msgid "Install Mod: file: \"$1\""
+msgstr ""
+>>>>>>> orig/master
+
+#: builtin/modmgr.lua:591
+msgid ""
+"\n"
+"Install Mod: unsupported filetype \"$1\""
 msgstr ""
 
+#: builtin/modmgr.lua:612
+#, fuzzy
+msgid "Failed to install $1 to $2"
+msgstr "Дүйнөнү инициалдаштыруу катасы"
+
+#: builtin/modmgr.lua:615
+msgid "Install Mod: unable to find suitable foldername for modpack $1"
+msgstr ""
+
+<<<<<<< HEAD
 #: src/guiMainMenu.cpp:693
 msgid "3D Clouds"
 msgstr "3D булуттар"
+=======
+#: builtin/modmgr.lua:635
+msgid "Install Mod: unable to find real modname for: $1"
+msgstr ""
+>>>>>>> orig/master
 
-#: src/guiMainMenu.cpp:699
-msgid "Opaque water"
+#: builtin/modmgr.lua:824
+msgid "Modmgr: failed to delete \"$1\""
 msgstr ""
 
-#: src/guiMainMenu.cpp:709
-msgid "Mip-Mapping"
+#: builtin/modmgr.lua:828
+msgid "Modmgr: invalid modpath \"$1\""
 msgstr ""
 
-#: src/guiMainMenu.cpp:716
-msgid "Anisotropic Filtering"
+#: builtin/modmgr.lua:845
+msgid "Are you sure you want to delete \"$1\"?"
 msgstr ""
 
-#: src/guiMainMenu.cpp:723
-msgid "Bi-Linear Filtering"
+#: builtin/modmgr.lua:847
+msgid "No of course not!"
 msgstr ""
 
-#: src/guiMainMenu.cpp:730
-msgid "Tri-Linear Filtering"
+#: builtin/modstore.lua:183
+msgid "Page $1 of $2"
 msgstr ""
 
-#: src/guiMainMenu.cpp:738
-msgid "Shaders"
+#: builtin/modstore.lua:243
+msgid "Rating"
 msgstr ""
 
-#: src/guiMainMenu.cpp:745
-msgid "Preload item visuals"
+#: builtin/modstore.lua:251
+msgid "re-Install"
 msgstr ""
 
-#: src/guiMainMenu.cpp:752
-msgid "Enable Particles"
+#: src/client.cpp:2915
+msgid "Item textures..."
+msgstr "Буюм текстуралары..."
+
+#: src/game.cpp:939
+msgid "Loading..."
+msgstr "Жүктөлүүдө..."
+
+#: src/game.cpp:999
+msgid "Creating server...."
+msgstr "Сервер жаратылууда...."
+
+#: src/game.cpp:1015
+msgid "Creating client..."
+msgstr "Клиент жаратылууда..."
+
+#: src/game.cpp:1024
+msgid "Resolving address..."
+msgstr "Дареги чечилүүдө..."
+
+#: src/game.cpp:1121
+msgid "Connecting to server..."
+msgstr "Серверге туташтырылууда..."
+
+#: src/game.cpp:1218
+#, fuzzy
+msgid "Item definitions..."
+msgstr "Буюм текстуралары..."
+
+#: src/game.cpp:1225
+msgid "Node definitions..."
 msgstr ""
 
-#: src/guiMainMenu.cpp:759
-msgid "Finite liquid"
+#: src/game.cpp:1232
+msgid "Media..."
 msgstr ""
 
-#: src/guiMainMenu.cpp:769
-msgid "Change keys"
+#: src/game.cpp:3405
+msgid "Shutting down stuff..."
+msgstr "Оюн өчүрүлүүдө..."
+
+#: src/game.cpp:3435
+msgid ""
+"\n"
+"Check debug.txt for details."
+msgstr ""
+"\n"
+"Толугураак маалымат үчүн, debug.txt'ти текшериңиз."
+
+#: src/guiDeathScreen.cpp:96
+msgid "You died."
+msgstr "Сиз өлдүңүз."
+
+#: src/guiDeathScreen.cpp:104
+msgid "Respawn"
+msgstr "Кайтадан жаралуу"
+
+#: src/guiFormSpecMenu.cpp:1569
+msgid "Left click: Move all items, Right click: Move single item"
+msgstr "Сол баскычы: Бардык буюмдарды ташуу, Оң баскычы: Бир буюмду ташуу"
+
+#: src/guiFormSpecMenu.cpp:1595 src/guiMessageMenu.cpp:107
+#: src/guiTextInputMenu.cpp:140
+msgid "Proceed"
+msgstr "Улантуу"
+
+#: src/guiKeyChangeMenu.cpp:121
+msgid "Keybindings. (If this menu screws up, remove stuff from minetest.conf)"
 msgstr ""
 
-#: src/guiMainMenu.cpp:1084
-msgid "Address required."
+#: src/guiKeyChangeMenu.cpp:161
+msgid "\"Use\" = climb down"
 msgstr ""
 
-#: src/guiMainMenu.cpp:1102
-msgid "Cannot delete world: Nothing selected"
+#: src/guiKeyChangeMenu.cpp:176
+msgid "Double tap \"jump\" to toggle fly"
 msgstr ""
 
-#: src/guiMainMenu.cpp:1117
-msgid "Files to be deleted"
+#: src/guiKeyChangeMenu.cpp:290
+msgid "Key already in use"
 msgstr ""
 
-#: src/guiMainMenu.cpp:1133
-msgid "Cannot create world: No games found"
+#: src/guiKeyChangeMenu.cpp:372
+msgid "press key"
+msgstr "баскычты басыңыз"
+
+#: src/guiKeyChangeMenu.cpp:400
+msgid "Forward"
+msgstr "Алга"
+
+#: src/guiKeyChangeMenu.cpp:401
+msgid "Backward"
+msgstr "Артка"
+
+#: src/guiKeyChangeMenu.cpp:402 src/keycode.cpp:228
+msgid "Left"
+msgstr "Солго"
+
+#: src/guiKeyChangeMenu.cpp:403 src/keycode.cpp:228
+msgid "Right"
+msgstr "Оңго"
+
+#: src/guiKeyChangeMenu.cpp:404
+msgid "Use"
+msgstr "Колдонуу"
+
+#: src/guiKeyChangeMenu.cpp:405
+msgid "Jump"
+msgstr "Секирүү"
+
+#: src/guiKeyChangeMenu.cpp:406
+msgid "Sneak"
+msgstr "Уурданып басуу"
+
+#: src/guiKeyChangeMenu.cpp:407
+msgid "Drop"
+msgstr "Ыргытуу"
+
+#: src/guiKeyChangeMenu.cpp:408
+msgid "Inventory"
+msgstr "Мүлк-шайман"
+
+#: src/guiKeyChangeMenu.cpp:409
+msgid "Chat"
+msgstr "Маек"
+
+#: src/guiKeyChangeMenu.cpp:410
+msgid "Command"
+msgstr "Команда"
+
+#: src/guiKeyChangeMenu.cpp:411
+msgid "Console"
+msgstr "Консоль"
+
+#: src/guiKeyChangeMenu.cpp:412
+msgid "Toggle fly"
+msgstr "Учууга которуу"
+
+#: src/guiKeyChangeMenu.cpp:413
+msgid "Toggle fast"
+msgstr "Тез басууга которуу"
+
+#: src/guiKeyChangeMenu.cpp:414
+msgid "Toggle noclip"
 msgstr ""
 
-#: src/guiMainMenu.cpp:1149
-msgid "Cannot configure world: Nothing selected"
+#: src/guiKeyChangeMenu.cpp:415
+msgid "Range select"
 msgstr ""
 
-#: src/guiMainMenu.cpp:1256
-msgid "Failed to delete all world files"
+#: src/guiKeyChangeMenu.cpp:416
+msgid "Print stacks"
 msgstr ""
 
-#: src/guiPasswordChange.cpp:108
+#: src/guiPasswordChange.cpp:107
 msgid "Old Password"
-msgstr ""
+msgstr "Эски сырсөз"
 
 #: src/guiPasswordChange.cpp:125
 msgid "New Password"
-msgstr ""
+msgstr "Жаңы сырсөз"
 
-#: src/guiPasswordChange.cpp:141
+#: src/guiPasswordChange.cpp:142
 msgid "Confirm Password"
-msgstr ""
+msgstr "Сырсөздү аныктоо"
 
-#: src/guiPasswordChange.cpp:158
+#: src/guiPasswordChange.cpp:160
 msgid "Change"
-msgstr ""
+msgstr "Өзгөртүү"
 
-#: src/guiPasswordChange.cpp:167
+#: src/guiPasswordChange.cpp:169
 msgid "Passwords do not match!"
-msgstr ""
+msgstr "Сырсөздөр дал келген жок!"
 
-#: src/guiPauseMenu.cpp:123
+#: src/guiPauseMenu.cpp:122
 msgid "Continue"
-msgstr ""
+msgstr "Улантуу"
 
-#: src/guiPauseMenu.cpp:132
+#: src/guiPauseMenu.cpp:133
 msgid "Change Password"
-msgstr ""
+msgstr "Сырсөздү өзгөртүү"
 
-#: src/guiPauseMenu.cpp:140
+#: src/guiPauseMenu.cpp:143
 msgid "Sound Volume"
-msgstr ""
+msgstr "Үн көлөмү"
 
-#: src/guiPauseMenu.cpp:147
+#: src/guiPauseMenu.cpp:152
 msgid "Exit to Menu"
-msgstr ""
-
-#: src/guiPauseMenu.cpp:154
-msgid "Exit to OS"
-msgstr ""
+msgstr "Менюга чыгуу"
 
 #: src/guiPauseMenu.cpp:161
+msgid "Exit to OS"
+msgstr "Оюндан чыгуу"
+
+#: src/guiPauseMenu.cpp:170
 msgid ""
 "Default Controls:\n"
-"- WASD: Walk\n"
-"- Mouse left: dig/hit\n"
+"- WASD: move\n"
+"- Space: jump/climb\n"
+"- Shift: sneak/go down\n"
+"- Q: drop item\n"
+"- I: inventory\n"
+"- Mouse: turn/look\n"
+"- Mouse left: dig/punch\n"
 "- Mouse right: place/use\n"
 "- Mouse wheel: select item\n"
-"- 0...9: select item\n"
-"- Shift: sneak\n"
-"- R: Toggle viewing all loaded chunks\n"
-"- I: Inventory menu\n"
-"- ESC: This menu\n"
-"- T: Chat\n"
+"- T: chat\n"
 msgstr ""
+"Жарыяланбас башкаруу:\n"
+"- WASD: басуу\n"
+"- Боштугу: секирүү/өйдө чыгуу\n"
+"- Shift: уурданып басуу/ылдый түшүү\n"
+"- Q: буюмду таштоо\n"
+"- I: мүлк-шайман\n"
+"- Чычканы: бурулуу/кароо\n"
+"- Сол чычкан баскычы: казуу/согуу\n"
+"- Оң чычкан баскычы: коюу/колдонуу\n"
+"- Чычкан дөңгөлөгү: буюмду тандоо\n"
+"- T: маек\n"
 
 #: src/guiVolumeChange.cpp:108
 msgid "Sound Volume: "
-msgstr ""
+msgstr "Үн көлөмү: "
 
-#: src/guiVolumeChange.cpp:121
+#: src/guiVolumeChange.cpp:122
 msgid "Exit"
-msgstr ""
+msgstr "Чыгуу"
 
 #: src/keycode.cpp:223
 msgid "Left Button"
-msgstr ""
+msgstr "Сол баскыч"
 
 #: src/keycode.cpp:223
 msgid "Middle Button"
-msgstr ""
+msgstr "Ортоңку баскыч"
 
 #: src/keycode.cpp:223
 msgid "Right Button"
-msgstr ""
+msgstr "Оң баскыч"
 
 #: src/keycode.cpp:223
 msgid "X Button 1"
@@ -453,11 +853,11 @@ msgstr ""
 
 #: src/keycode.cpp:224
 msgid "Back"
-msgstr ""
+msgstr "Артка"
 
 #: src/keycode.cpp:224
 msgid "Clear"
-msgstr ""
+msgstr "Тазалоо"
 
 #: src/keycode.cpp:224
 msgid "Return"
@@ -465,7 +865,7 @@ msgstr ""
 
 #: src/keycode.cpp:224
 msgid "Tab"
-msgstr ""
+msgstr "Tab"
 
 #: src/keycode.cpp:224
 msgid "X Button 2"
@@ -473,27 +873,27 @@ msgstr ""
 
 #: src/keycode.cpp:225
 msgid "Capital"
-msgstr ""
+msgstr "Caps Lock"
 
 #: src/keycode.cpp:225
 msgid "Control"
-msgstr ""
+msgstr "Ctrl"
 
 #: src/keycode.cpp:225
 msgid "Kana"
-msgstr ""
+msgstr "Кана"
 
 #: src/keycode.cpp:225
 msgid "Menu"
-msgstr ""
+msgstr "Меню"
 
 #: src/keycode.cpp:225
 msgid "Pause"
-msgstr ""
+msgstr "Пауза"
 
 #: src/keycode.cpp:225
 msgid "Shift"
-msgstr ""
+msgstr "Shift"
 
 #: src/keycode.cpp:226
 msgid "Convert"
@@ -501,7 +901,7 @@ msgstr ""
 
 #: src/keycode.cpp:226
 msgid "Escape"
-msgstr ""
+msgstr "Esc"
 
 #: src/keycode.cpp:226
 msgid "Final"
@@ -509,35 +909,31 @@ msgstr ""
 
 #: src/keycode.cpp:226
 msgid "Junja"
-msgstr ""
+msgstr "Junja"
 
 #: src/keycode.cpp:226
 msgid "Kanji"
-msgstr ""
+msgstr "Кандзи"
 
 #: src/keycode.cpp:226
 msgid "Nonconvert"
 msgstr ""
 
 #: src/keycode.cpp:227
-msgid "Accept"
-msgstr ""
-
-#: src/keycode.cpp:227
 msgid "End"
-msgstr ""
+msgstr "End"
 
 #: src/keycode.cpp:227
 msgid "Home"
-msgstr ""
+msgstr "Home"
 
 #: src/keycode.cpp:227
 msgid "Mode Change"
-msgstr ""
+msgstr "Режимди өзгөртүү"
 
 #: src/keycode.cpp:227
 msgid "Next"
-msgstr ""
+msgstr "Кийинки"
 
 #: src/keycode.cpp:227
 msgid "Prior"
@@ -545,159 +941,159 @@ msgstr ""
 
 #: src/keycode.cpp:227
 msgid "Space"
-msgstr ""
+msgstr "Боштук"
 
 #: src/keycode.cpp:228
 msgid "Down"
-msgstr ""
+msgstr "Ылдый"
 
 #: src/keycode.cpp:228
 msgid "Execute"
-msgstr ""
+msgstr "Аткаруу"
 
 #: src/keycode.cpp:228
 msgid "Print"
-msgstr ""
+msgstr "Басма"
 
 #: src/keycode.cpp:228
 msgid "Select"
-msgstr ""
+msgstr "Тандоо"
 
 #: src/keycode.cpp:228
 msgid "Up"
-msgstr ""
+msgstr "Өйдө"
 
 #: src/keycode.cpp:229
 msgid "Help"
-msgstr ""
+msgstr "Жардам"
 
 #: src/keycode.cpp:229
 msgid "Insert"
-msgstr ""
+msgstr "Insert"
 
 #: src/keycode.cpp:229
 msgid "Snapshot"
-msgstr ""
+msgstr "Тез сүрөт"
 
 #: src/keycode.cpp:232
 msgid "Left Windows"
-msgstr ""
+msgstr "Сол Windows"
 
 #: src/keycode.cpp:233
 msgid "Apps"
-msgstr ""
+msgstr "Тиркемелер"
 
 #: src/keycode.cpp:233
 msgid "Numpad 0"
-msgstr ""
+msgstr "Кош. клав. 0"
 
 #: src/keycode.cpp:233
 msgid "Numpad 1"
-msgstr ""
+msgstr "Кош. клав. 1"
 
 #: src/keycode.cpp:233
 msgid "Right Windows"
-msgstr ""
+msgstr "Оң Windows"
 
 #: src/keycode.cpp:233
 msgid "Sleep"
-msgstr ""
+msgstr "Уйку"
 
 #: src/keycode.cpp:234
 msgid "Numpad 2"
-msgstr ""
+msgstr "Кош. клав. 2"
 
 #: src/keycode.cpp:234
 msgid "Numpad 3"
-msgstr ""
+msgstr "Кош. клав. 3"
 
 #: src/keycode.cpp:234
 msgid "Numpad 4"
-msgstr ""
+msgstr "Кош. клав. 4"
 
 #: src/keycode.cpp:234
 msgid "Numpad 5"
-msgstr ""
+msgstr "Кош. клав. 5"
 
 #: src/keycode.cpp:234
 msgid "Numpad 6"
-msgstr ""
+msgstr "Кош. клав. 6"
 
 #: src/keycode.cpp:234
 msgid "Numpad 7"
-msgstr ""
+msgstr "Кош. клав. 7"
 
 #: src/keycode.cpp:235
 msgid "Numpad *"
-msgstr ""
+msgstr "Кош. клав. *"
 
 #: src/keycode.cpp:235
 msgid "Numpad +"
-msgstr ""
+msgstr "Кош. клав. +"
 
 #: src/keycode.cpp:235
 msgid "Numpad -"
-msgstr ""
+msgstr "Кош. клав. -"
 
 #: src/keycode.cpp:235
 msgid "Numpad /"
-msgstr ""
+msgstr "Кош. клав. /"
 
 #: src/keycode.cpp:235
 msgid "Numpad 8"
-msgstr ""
+msgstr "Кош. клав. 8"
 
 #: src/keycode.cpp:235
 msgid "Numpad 9"
-msgstr ""
+msgstr "Кош. клав. 9"
 
 #: src/keycode.cpp:239
 msgid "Num Lock"
-msgstr ""
+msgstr "Num Lock"
 
 #: src/keycode.cpp:239
 msgid "Scroll Lock"
-msgstr ""
+msgstr "Scroll Lock"
 
 #: src/keycode.cpp:240
 msgid "Left Shift"
-msgstr ""
+msgstr "Сол Shift"
 
 #: src/keycode.cpp:240
 msgid "Right Shift"
-msgstr ""
+msgstr "Оң Shift"
 
 #: src/keycode.cpp:241
 msgid "Left Control"
-msgstr ""
+msgstr "Сол Ctrl"
 
 #: src/keycode.cpp:241
 msgid "Left Menu"
-msgstr ""
+msgstr "Сол меню"
 
 #: src/keycode.cpp:241
 msgid "Right Control"
-msgstr ""
+msgstr "Оң Ctrl"
 
 #: src/keycode.cpp:241
 msgid "Right Menu"
-msgstr ""
+msgstr "Оң меню"
 
 #: src/keycode.cpp:243
 msgid "Comma"
-msgstr ""
+msgstr "Үтүр"
 
 #: src/keycode.cpp:243
 msgid "Minus"
-msgstr ""
+msgstr "Кемитүү белгиси"
 
 #: src/keycode.cpp:243
 msgid "Period"
-msgstr ""
+msgstr "Айланма сан"
 
 #: src/keycode.cpp:243
 msgid "Plus"
-msgstr ""
+msgstr "Кошуу белгиси"
 
 #: src/keycode.cpp:247
 msgid "Attn"
@@ -725,34 +1121,98 @@ msgstr ""
 
 #: src/keycode.cpp:248
 msgid "Zoom"
+msgstr "Масштаб"
+
+#: src/main.cpp:1411
+msgid "needs_fallback_font"
 msgstr ""
 
-#: src/main.cpp:1506
+#: src/main.cpp:1486
 msgid "Main Menu"
-msgstr ""
+msgstr "Башкы меню"
 
-#: src/main.cpp:1830
-msgid "Failed to initialize world"
-msgstr ""
-
-#: src/main.cpp:1842
+#: src/main.cpp:1662
 msgid "No world selected and no address provided. Nothing to do."
-msgstr ""
+msgstr "Дүйнө тандалган жок жана дареги киргизилген жок. Кылууга эч нерсе жок."
 
-#: src/main.cpp:1850
+#: src/main.cpp:1670
 msgid "Could not find or load game \""
-msgstr ""
+msgstr "Оюнду табуу же жүктөө мүмкүн эмес \""
 
-#: src/main.cpp:1864
+#: src/main.cpp:1684
 msgid "Invalid gamespec."
 msgstr ""
 
-#: src/main.cpp:1904
+#: src/main.cpp:1729
 msgid "Connection error (timed out?)"
-msgstr ""
+msgstr "Туташтыруу катасы (убактыңыз өтүп кеттиби?)"
 
-#: src/main.cpp:1915
-msgid ""
-"\n"
-"Check debug.txt for details."
-msgstr ""
+#~ msgid "is required by:"
+#~ msgstr "талап кылынганы:"
+
+#~ msgid "Configuration saved.  "
+#~ msgstr "Конфигурация сакталды.  "
+
+#~ msgid "Warning: Configuration not consistent.  "
+#~ msgstr "Эскертүү: Туура эмес конфигурация.  "
+
+#~ msgid "Multiplayer"
+#~ msgstr "Көп кишилик"
+
+#~ msgid "Advanced"
+#~ msgstr "Кошумча"
+
+#~ msgid "Show Public"
+#~ msgstr "Жалпылыкты көрсөтүү"
+
+#~ msgid "Show Favorites"
+#~ msgstr "Тандалмаларды көрсөтүү"
+
+#~ msgid "Leave address blank to start a local server."
+#~ msgstr "Жергиликтүү серверди жүргүзүү үчүн даректи бош калтырыңыз."
+
+#~ msgid "Create world"
+#~ msgstr "Дүйнөнү жаратуу"
+
+#~ msgid "Address required."
+#~ msgstr "Дареги талап кылынат."
+
+#~ msgid "Cannot delete world: Nothing selected"
+#~ msgstr "Дүнөнү жаратуу мүмкүн эмес: Эч нерсе тандалган жок"
+
+#~ msgid "Files to be deleted"
+#~ msgstr "Өчүрүлө турган файлдар"
+
+#~ msgid "Cannot create world: No games found"
+#~ msgstr "Дүйнөнү жаратуу мүмкүн эмес: Оюндар табылган жок"
+
+#~ msgid "Cannot configure world: Nothing selected"
+#~ msgstr "Дүйнөнү ырастоо мүмкүн эмес: Эч нерсе тандалган жок"
+
+#~ msgid "Failed to delete all world files"
+#~ msgstr "Бардык дүйнө файлдарын өчүрүү оңунан чыккан жок"
+
+#~ msgid ""
+#~ "Default Controls:\n"
+#~ "- WASD: Walk\n"
+#~ "- Mouse left: dig/hit\n"
+#~ "- Mouse right: place/use\n"
+#~ "- Mouse wheel: select item\n"
+#~ "- 0...9: select item\n"
+#~ "- Shift: sneak\n"
+#~ "- R: Toggle viewing all loaded chunks\n"
+#~ "- I: Inventory menu\n"
+#~ "- ESC: This menu\n"
+#~ "- T: Chat\n"
+#~ msgstr ""
+#~ "Жарыяланбас башкаруу:\n"
+#~ "- WASD: Басуу\n"
+#~ "- Сол кнопкасы: казуу/согуу\n"
+#~ "- Оң кнопкасы: коюу/колдонуу\n"
+#~ "- Чычкан дөңгөлөгү: буюмду тандоо\n"
+#~ "- 0...9: буюмду тандоо\n"
+#~ "- Shift: уурданып басуу\n"
+#~ "- R: алыс кароо\n"
+#~ "- I: мүлк-шайман\n"
+#~ "- ESC: бул меню\n"
+#~ "- T: маек\n"

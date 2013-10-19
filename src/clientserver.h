@@ -20,10 +20,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef CLIENTSERVER_HEADER
 #define CLIENTSERVER_HEADER
 
-#include "util/pointer.h"
-
-SharedBuffer<u8> makePacket_TOCLIENT_TIME_OF_DAY(u16 time, float time_speed);
-
 /*
 	changes by PROTOCOL_VERSION:
 
@@ -88,9 +84,25 @@ SharedBuffer<u8> makePacket_TOCLIENT_TIME_OF_DAY(u16 time, float time_speed);
 	PROTOCOL_VERSION 18:
 		damageGroups added to ToolCapabilities
 		sound_place added to ItemDefinition
+	PROTOCOL_VERSION 19:
+		GENERIC_CMD_SET_PHYSICS_OVERRIDE
+	PROTOCOL_VERSION 20:
+		TOCLIENT_HUDADD
+		TOCLIENT_HUDRM
+		TOCLIENT_HUDCHANGE
+		TOCLIENT_HUD_SET_FLAGS
+	PROTOCOL_VERSION 21:
+		TOCLIENT_BREATH
+		TOSERVER_BREATH
+		range added to ItemDefinition
+		drowning, leveled and liquid_range added to ContentFeatures
+		stepheight and collideWithObjects added to object properties
+		version, heat and humidity transfer in MapBock
+		automatic_face_movement_dir and automatic_face_movement_dir_offset
+			added to object properties
 */
 
-#define LATEST_PROTOCOL_VERSION 18
+#define LATEST_PROTOCOL_VERSION 21
 
 // Server's supported network protocol range
 #define SERVER_PROTOCOL_VERSION_MIN 13
@@ -431,6 +443,62 @@ enum ToClientCommand
 		u16 command
 		u32 id
 	*/
+
+	TOCLIENT_HUDADD = 0x49,
+	/*
+		u16 command
+		u32 id
+		u8 type
+		v2f1000 pos
+		u32 len
+		u8[len] name
+		v2f1000 scale
+		u32 len2
+		u8[len2] text
+		u32 number
+		u32 item
+		u32 dir
+		v2f1000 align
+		v2f1000 offset
+	*/
+
+	TOCLIENT_HUDRM = 0x4a,
+	/*
+		u16 command
+		u32 id
+	*/
+
+	TOCLIENT_HUDCHANGE = 0x4b,
+	/*
+		u16 command
+		u32 id
+		u8 stat
+		[v2f1000 data |
+		 u32 len
+		 u8[len] data |
+		 u32 data]
+	*/
+
+	TOCLIENT_HUD_SET_FLAGS = 0x4c,
+	/*
+		u16 command
+		u32 flags
+		u32 mask
+	*/
+
+	TOCLIENT_HUD_SET_PARAM = 0x4d,
+	/*
+		u16 command
+		u16 param
+		u16 len
+		u8[len] value
+	*/
+
+	TOCLIENT_BREATH = 0x4e,
+	/*
+		u16 command
+		u16 breath
+	*/
 };
 
 enum ToServerCommand
@@ -440,7 +508,7 @@ enum ToServerCommand
 		Sent first after connected.
 
 		[0] u16 TOSERVER_INIT
-		[2] u8 SER_FMT_VER_HIGHEST
+		[2] u8 SER_FMT_VER_HIGHEST_READ
 		[3] u8[20] player_name
 		[23] u8[28] password (new in some version)
 		[51] u16 minimum supported network protocol version (added sometime)
@@ -653,6 +721,12 @@ enum ToServerCommand
 	TOSERVER_RECEIVED_MEDIA = 0x41,
 	/*
 		u16 command
+	*/
+
+	TOSERVER_BREATH = 0x42,
+	/*
+		u16 command
+		u16 breath
 	*/
 };
 

@@ -1,9 +1,34 @@
+/*
+Minetest
+Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2.1 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program; if not, write to the Free Software Foundation, Inc.,
+51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
 #ifndef EMERGE_HEADER
 #define EMERGE_HEADER
 
 #include <map>
-#include <queue>
-#include "util/thread.h"
+#include "irr_v3d.h"
+#include "util/container.h"
+#include "map.h" // for ManualMapVoxelManipulator
+
+#define MGPARAMS_SET_MGNAME      1
+#define MGPARAMS_SET_SEED        2
+#define MGPARAMS_SET_WATER_LEVEL 4
+#define MGPARAMS_SET_FLAGS       8
 
 #define BLOCK_EMERGE_ALLOWGEN (1<<0)
 
@@ -11,15 +36,16 @@
 	{ if (enable_mapgen_debug_info) \
 	infostream << "EmergeThread: " x << std::endl; }
 
+class EmergeThread;
 class Mapgen;
-class MapgenParams;
-class MapgenFactory;
+struct MapgenParams;
+struct MapgenFactory;
 class Biome;
 class BiomeDefManager;
-class EmergeThread;
-class ManualMapVoxelManipulator;
-
-#include "server.h"
+class Decoration;
+class Ore;
+class INodeDefManager;
+class Settings;
 
 struct BlockMakeData {
 	ManualMapVoxelManipulator *vmanip;
@@ -44,8 +70,18 @@ struct BlockEmergeData {
 	u8 flags;
 };
 
-class EmergeManager {
+class IBackgroundBlockEmerger
+{
 public:
+	virtual bool enqueueBlockEmerge(u16 peer_id, v3s16 p,
+			bool allow_generate) = 0;
+	virtual ~IBackgroundBlockEmerger() {}
+};
+
+class EmergeManager : public IBackgroundBlockEmerger {
+public:
+	INodeDefManager *ndef;
+
 	std::map<std::string, MapgenFactory *> mglist;
 	
 	std::vector<Mapgen *> mapgen;
@@ -58,6 +94,10 @@ public:
 	u16 qlimit_diskonly;
 	u16 qlimit_generate;
 	
+	MapgenParams *luaoverride_params;
+	u32 luaoverride_params_modified;
+	u32 luaoverride_flagmask;
+	
 	//block emerge queue data structures
 	JMutex queuemutex;
 	std::map<v3s16, BlockEmergeData *> blocks_enqueued;
@@ -66,14 +106,17 @@ public:
 	//Mapgen-related structures
 	BiomeDefManager *biomedef;
 	std::vector<Ore *> ores;
+	std::vector<Decoration *> decorations;
 
-	EmergeManager(IGameDef *gamedef, BiomeDefManager *bdef);
+	EmergeManager(IGameDef *gamedef);
 	~EmergeManager();
 
 	void initMapgens(MapgenParams *mgparams);
+	Mapgen *getCurrentMapgen();
 	Mapgen *createMapgen(std::string mgname, int mgid,
 						MapgenParams *mgparams);
 	MapgenParams *createMapgenParams(std::string mgname);
+	void triggerAllThreads();
 	bool enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate);
 	
 	void registerMapgen(std::string name, MapgenFactory *mgfactory);
@@ -85,45 +128,6 @@ public:
 	int getGroundLevelAtPoint(v2s16 p);
 	bool isBlockUnderground(v3s16 blockpos);
 	u32 getBlockSeed(v3s16 p);
-};
-
-class EmergeThread : public SimpleThread
-{
-	Server *m_server;
-	ServerMap *map;
-	EmergeManager *emerge;
-	Mapgen *mapgen;
-	bool enable_mapgen_debug_info;
-	int id;
-	
-public:
-	Event qevent;
-	std::queue<v3s16> blockqueue;
-	
-	EmergeThread(Server *server, int ethreadid):
-		SimpleThread(),
-		m_server(server),
-		map(NULL),
-		emerge(NULL),
-		mapgen(NULL),
-		id(ethreadid)
-	{
-	}
-
-	void *Thread();
-
-	void trigger()
-	{
-		setRun(true);
-		if(IsRunning() == false)
-		{
-			Start();
-		}
-	}
-
-	bool popBlockEmerge(v3s16 *pos, u8 *flags);
-	bool getBlockOrStartGen(v3s16 p, MapBlock **b, 
-							BlockMakeData *data, bool allow_generate);
 };
 
 #endif

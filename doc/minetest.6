@@ -1,5 +1,5 @@
 .\" Minetest man page
-.TH minetest 6 "11 March 2012" "" ""
+.TH minetest 6 "10 September 2013" "" ""
 
 .SH NAME
 minetest \- Multiplayer infinite-world block sandbox
@@ -37,6 +37,9 @@ Disable main menu
 \-\-help
 Show allowed options
 .TP
+\-\-version
+Show version information
+.TP
 \-\-logfile <value>
 Set logfile path (debug.txt)
 .TP
@@ -61,6 +64,9 @@ Run dedicated server
 \-\-speedtests
 Run speed tests
 .TP
+\-\-videomodes
+List available video modes
+.TP
 \-\-info
 Print more information to console
 .TP
@@ -72,6 +78,10 @@ Print enormous amounts of information to console
 .TP
 \-\-world <value>
 Set world path
+.TP
+\-\-migrate <value>
+Migrate from current map backend to another. Possible values are sqlite3
+and leveldb. Only works when using --server.
 
 .SH BUGS
 Please report all bugs to Perttu Ahola <celeron55@gmail.com>.
@@ -85,7 +95,7 @@ This man page was originally written by
 Juhani Numminen <juhaninumminen0@gmail.com>.
 
 .SH WWW
-http://c55.me/minetest/
+http://www.minetest.net/
 
 .SH "SEE ALSO"
 .BR minetestserver(6)

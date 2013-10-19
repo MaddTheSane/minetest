@@ -58,6 +58,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "guiMessageMenu.h"
 #include "filesys.h"
 #include "config.h"
+#include "version.h"
 #include "guiMainMenu.h"
 #include "game.h"
 #include "keycode.h"
@@ -76,6 +77,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "subgame.h"
 #include "quicktune.h"
 #include "serverlist.h"
+#include "guiEngine.h"
+#include "mapsector.h"
+
+#include "database-sqlite3.h"
+#ifdef USE_LEVELDB
+#include "database-leveldb.h"
+#endif
 
 /*
 	Settings.
@@ -83,10 +91,15 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 Settings main_settings;
 Settings *g_settings = &main_settings;
+std::string g_settings_path;
 
 // Global profiler
 Profiler main_profiler;
 Profiler *g_profiler = &main_profiler;
+
+// Menu clouds are created later
+Clouds *g_menuclouds = 0;
+irr::scene::ISceneManager *g_menucloudsmgr = 0;
 
 /*
 	Debug streams
@@ -196,7 +209,6 @@ u32 getTime(TimePrecision prec) {
 		return 0;
 	return g_timegetter->getTime(prec);
 }
-
 #endif
 
 class StderrLogOutput: public ILogOutput
@@ -239,7 +251,7 @@ public:
 		*/
 		if(noMenuActive() == false)
 		{
-			return false;
+			return g_menumgr.preprocessEvent(event);
 		}
 
 		// Remember whether each key is down or up
@@ -612,122 +624,7 @@ private:
 	bool rightreleased;
 };
 
-//Draw the tiled menu background
-void drawMenuBackground(video::IVideoDriver* driver) {
-	core::dimension2d<u32> screensize = driver->getScreenSize();
-
-	std::string path = getTexturePath("menubg.png");
-	if (path[0]) {
-		static const video::ITexture *bgtexture =
-			driver->getTexture(path.c_str());
-
-		if (bgtexture) {
-			s32 scaledsize = 128;
-		
-			// The important difference between destsize and screensize is
-			// that destsize is rounded to whole scaled pixels.
-			// These formulas use component-wise multiplication and division of v2u32.
-			v2u32 texturesize = bgtexture->getSize();
-			v2u32 sourcesize = texturesize * screensize / scaledsize + v2u32(1,1);
-			v2u32 destsize = scaledsize * sourcesize / texturesize;
-		
-			// Default texture wrapping mode in Irrlicht is ETC_REPEAT.
-			driver->draw2DImage(bgtexture,
-				core::rect<s32>(0, 0, destsize.X, destsize.Y),
-				core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
-				NULL, NULL, true);
-		}
-	}
-}
-
-//Draw the footer at the bottom of the window
-void drawMenuFooter(video::IVideoDriver* driver, bool clouds) {
-	core::dimension2d<u32> screensize = driver->getScreenSize();
-	std::string path = getTexturePath(clouds ?
-						"menufooter_clouds.png" : "menufooter.png");
-	if (path[0]) {
-		static const video::ITexture *footertexture =
-			driver->getTexture(path.c_str());
-
-		if (footertexture) {
-			f32 mult = (((f32)screensize.Width)) /
-				((f32)footertexture->getOriginalSize().Width);
-
-			v2s32 footersize(((f32)footertexture->getOriginalSize().Width) * mult,
-					((f32)footertexture->getOriginalSize().Height) * mult);
-
-			// Don't draw the footer if there isn't enough room
-			s32 free_space = (((s32)screensize.Height)-320)/2;
-			if (free_space > footersize.Y) {
-				core::rect<s32> rect(0,0,footersize.X,footersize.Y);
-				rect += v2s32(screensize.Width/2,screensize.Height-footersize.Y);
-				rect -= v2s32(footersize.X/2, 0);
-
-				driver->draw2DImage(footertexture, rect,
-					core::rect<s32>(core::position2d<s32>(0,0),
-					core::dimension2di(footertexture->getSize())),
-					NULL, NULL, true);
-			}
-		}
-	}
-}
-
-// Draw the Header over the main menu
-void drawMenuHeader(video::IVideoDriver* driver) {
-	core::dimension2d<u32> screensize = driver->getScreenSize();
-
-	std::string path = getTexturePath("menuheader.png");
-	if (path[0]) {
-		static const video::ITexture *splashtexture =
-		driver->getTexture(path.c_str());
-
-		if(splashtexture) {
-			f32 mult = (((f32)screensize.Width / 2)) /
-				((f32)splashtexture->getOriginalSize().Width);
-
-			v2s32 splashsize(((f32)splashtexture->getOriginalSize().Width) * mult,
-					((f32)splashtexture->getOriginalSize().Height) * mult);
-
-			// Don't draw the header is there isn't enough room
-			s32 free_space = (((s32)screensize.Height)-320)/2;
-			if (free_space > splashsize.Y) {
-				core::rect<s32> splashrect(0, 0, splashsize.X, splashsize.Y);
-				splashrect += v2s32((screensize.Width/2)-(splashsize.X/2),
-					((free_space/2)-splashsize.Y/2)+10);
-
-				video::SColor bgcolor(255,50,50,50);
-
-				driver->draw2DImage(splashtexture, splashrect,
-					core::rect<s32>(core::position2d<s32>(0,0),
-					core::dimension2di(splashtexture->getSize())),
-					NULL, NULL, true);
-			}
-		}
-	}
-}
-
-// Draw the Splash over the clouds and under the main menu
-void drawMenuSplash(video::IVideoDriver* driver) {
-	core::dimension2d<u32> screensize = driver->getScreenSize();
-	std::string path = getTexturePath("menusplash.png");
-	if (path[0]) {
-		static const video::ITexture *splashtexture =
-			driver->getTexture(path.c_str());
-
-		if(splashtexture) {
-			core::rect<s32> splashrect(0, 0, screensize.Width, screensize.Height);
-
-			video::SColor bgcolor(255,50,50,50);
-
-			driver->draw2DImage(splashtexture, splashrect,
-				core::rect<s32>(core::position2d<s32>(0,0),
-				core::dimension2di(splashtexture->getSize())),
-				NULL, NULL, true);
-		}
-	}
-}
-
-#endif
+#endif // !SERVER
 
 // These are defined global so that they're not optimized too much.
 // Can't change them to volatile.
@@ -875,6 +772,8 @@ int main(int argc, char *argv[])
 	std::map<std::string, ValueSpec> allowed_options;
 	allowed_options.insert(std::make_pair("help", ValueSpec(VALUETYPE_FLAG,
 			_("Show allowed options"))));
+	allowed_options.insert(std::make_pair("version", ValueSpec(VALUETYPE_FLAG,
+			_("Show version information"))));
 	allowed_options.insert(std::make_pair("config", ValueSpec(VALUETYPE_STRING,
 			_("Load configuration from specified file"))));
 	allowed_options.insert(std::make_pair("port", ValueSpec(VALUETYPE_STRING,
@@ -899,7 +798,11 @@ int main(int argc, char *argv[])
 			_("Set logfile path ('' = no logging)"))));
 	allowed_options.insert(std::make_pair("gameid", ValueSpec(VALUETYPE_STRING,
 			_("Set gameid (\"--gameid list\" prints available ones)"))));
+	allowed_options.insert(std::make_pair("migrate", ValueSpec(VALUETYPE_STRING,
+			_("Migrate from current map backend to another (Only works when using minetestserver or with --server)"))));
 #ifndef SERVER
+	allowed_options.insert(std::make_pair("videomodes", ValueSpec(VALUETYPE_FLAG,
+			_("Show available video modes"))));
 	allowed_options.insert(std::make_pair("speedtests", ValueSpec(VALUETYPE_FLAG,
 			_("Run speed tests"))));
 	allowed_options.insert(std::make_pair("address", ValueSpec(VALUETYPE_STRING,
@@ -941,6 +844,18 @@ int main(int argc, char *argv[])
 		}
 
 		return cmd_args.getFlag("help") ? 0 : 1;
+	}
+
+	if(cmd_args.getFlag("version"))
+	{
+#ifdef SERVER
+		dstream<<"minetestserver "<<minetest_version_hash<<std::endl;
+#else
+		dstream<<"Minetest "<<minetest_version_hash<<std::endl;
+		dstream<<"Using Irrlicht "<<IRRLICHT_SDK_VERSION<<std::endl;
+#endif
+		dstream<<"Build info: "<<minetest_build_info<<std::endl;
+		return 0;
 	}
 	
 	/*
@@ -999,11 +914,11 @@ int main(int argc, char *argv[])
 		print_worldspecs(worldspecs, dstream);
 		return 0;
 	}
-	
+
 	// Print startup message
 	infostream<<PROJECT_NAME<<
-			" "<<_("with")<<" SER_FMT_VER_HIGHEST="<<(int)SER_FMT_VER_HIGHEST
-			<<", "<<BUILD_INFO
+			" "<<_("with")<<" SER_FMT_VER_HIGHEST_READ="<<(int)SER_FMT_VER_HIGHEST_READ
+			<<", "<<minetest_build_info
 			<<std::endl;
 	
 	/*
@@ -1022,7 +937,7 @@ int main(int argc, char *argv[])
 	*/
 	
 	// Path of configuration file in use
-	std::string configpath = "";
+	g_settings_path = "";
 	
 	if(cmd_args.exists("config"))
 	{
@@ -1033,7 +948,7 @@ int main(int argc, char *argv[])
 					<<cmd_args.get("config")<<"\""<<std::endl;
 			return 1;
 		}
-		configpath = cmd_args.get("config");
+		g_settings_path = cmd_args.get("config");
 	}
 	else
 	{
@@ -1055,14 +970,14 @@ int main(int argc, char *argv[])
 			bool r = g_settings->readConfigFile(filenames[i].c_str());
 			if(r)
 			{
-				configpath = filenames[i];
+				g_settings_path = filenames[i];
 				break;
 			}
 		}
 		
 		// If no path found, use the first one (menu creates the file)
-		if(configpath == "")
-			configpath = filenames[0];
+		if(g_settings_path == "")
+			g_settings_path = filenames[0];
 	}
 	
 	// Initialize debug streams
@@ -1103,7 +1018,19 @@ int main(int argc, char *argv[])
 	{
 		run_tests();
 	}
-	
+
+	std::string language = g_settings->get("language");
+	if (language.length()) {
+#ifndef _WIN32
+		setenv("LANGUAGE", language.c_str(), 1);
+#else
+		char *lang_str = (char*)calloc(10 + language.length(), sizeof(char));
+		strcat(lang_str, "LANGUAGE=");
+		strcat(lang_str, language.c_str());
+		putenv(lang_str);
+#endif
+	}
+
 	/*
 		Game parameters
 	*/
@@ -1180,6 +1107,7 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 	}
+
 
 	/*
 		Run dedicated server if asked to or no other option
@@ -1302,7 +1230,66 @@ int main(int argc, char *argv[])
 		verbosestream<<_("Using gameid")<<" ["<<gamespec.id<<"]"<<std::endl;
 
 		// Create server
-		Server server(world_path, configpath, gamespec, false);
+		Server server(world_path, gamespec, false);
+
+		// Database migration
+		if (cmd_args.exists("migrate")) {
+			std::string migrate_to = cmd_args.get("migrate");
+			Settings world_mt;
+			bool success = world_mt.readConfigFile((world_path + DIR_DELIM + "world.mt").c_str());
+			if (!success) {
+				errorstream << "Cannot read world.mt" << std::endl;
+				return 1;
+			}
+			if (!world_mt.exists("backend")) {
+				errorstream << "Please specify your current backend in world.mt file:"
+					<< std::endl << "	backend = {sqlite3|leveldb|dummy}" << std::endl;
+				return 1;
+			}
+			std::string backend = world_mt.get("backend");
+			Database *new_db;
+			if (backend == migrate_to) {
+				errorstream << "Cannot migrate: new backend is same as the old one" << std::endl;
+				return 1;
+			}
+			if (migrate_to == "sqlite3")
+				new_db = new Database_SQLite3(&(ServerMap&)server.getMap(), world_path);
+			#if USE_LEVELDB
+			else if (migrate_to == "leveldb")
+				new_db = new Database_LevelDB(&(ServerMap&)server.getMap(), world_path);
+			#endif
+			else {
+				errorstream << "Migration to " << migrate_to << " is not supported" << std::endl;
+				return 1;
+			}
+
+			std::list<v3s16> blocks;
+			ServerMap &old_map = ((ServerMap&)server.getMap());
+			old_map.listAllLoadableBlocks(blocks);
+			int count = 0;
+			new_db->beginSave();
+			for (std::list<v3s16>::iterator i = blocks.begin(); i != blocks.end(); ++i) {
+				MapBlock *block = old_map.loadBlock(*i);
+				new_db->saveBlock(block);
+				MapSector *sector = old_map.getSectorNoGenerate(v2s16(i->X, i->Z));
+				sector->deleteBlock(block);
+				++count;
+				if (count % 500 == 0)
+					actionstream << "Migrated " << count << " blocks "
+						<< (100.0 * count / blocks.size()) << "\% completed" << std::endl;
+			}
+			new_db->endSave();
+
+			actionstream << "Successfully migrated " << count << " blocks" << std::endl;
+			world_mt.set("backend", migrate_to);
+			if(!world_mt.updateConfigFile((world_path + DIR_DELIM + "world.mt").c_str()))
+				errorstream<<"Failed to update world.mt!"<<std::endl;
+			else
+				actionstream<<"world.mt updated"<<std::endl;
+
+			return 0;
+		}
+
 		server.start(port);
 		
 		// Run server
@@ -1379,10 +1366,64 @@ int main(int argc, char *argv[])
 	}
 
 	/*
-		Create device and exit if creation failed
+		List video modes if requested
 	*/
 
 	MyEventReceiver receiver;
+
+	if(cmd_args.getFlag("videomodes")){
+		IrrlichtDevice *nulldevice;
+
+		SIrrlichtCreationParameters params = SIrrlichtCreationParameters();
+		params.DriverType    = video::EDT_NULL;
+		params.WindowSize    = core::dimension2d<u32>(640, 480);
+		params.Bits          = 24;
+		params.AntiAlias     = fsaa;
+		params.Fullscreen    = false;
+		params.Stencilbuffer = false;
+		params.Vsync         = vsync;
+		params.EventReceiver = &receiver;
+		params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
+
+		nulldevice = createDeviceEx(params);
+
+		if(nulldevice == 0)
+			return 1;
+
+		dstream<<_("Available video modes (WxHxD):")<<std::endl;
+
+		video::IVideoModeList *videomode_list =
+				nulldevice->getVideoModeList();
+
+		if(videomode_list == 0){
+			nulldevice->drop();
+			return 1;
+		}
+
+		s32 videomode_count = videomode_list->getVideoModeCount();
+		core::dimension2d<u32> videomode_res;
+		s32 videomode_depth;
+		for (s32 i = 0; i < videomode_count; ++i){
+			videomode_res = videomode_list->getVideoModeResolution(i);
+			videomode_depth = videomode_list->getVideoModeDepth(i);
+			dstream<<videomode_res.Width<<"x"<<videomode_res.Height
+					<<"x"<<videomode_depth<<std::endl;
+		}
+
+		dstream<<_("Active video mode (WxHxD):")<<std::endl;
+		videomode_res = videomode_list->getDesktopResolution();
+		videomode_depth = videomode_list->getDesktopDepth();
+		dstream<<videomode_res.Width<<"x"<<videomode_res.Height
+				<<"x"<<videomode_depth<<std::endl;
+
+		nulldevice->drop();
+
+		return 0;
+	}
+
+	/*
+		Create device and exit if creation failed
+	*/
 
 	IrrlichtDevice *device;
 
@@ -1395,6 +1436,7 @@ int main(int argc, char *argv[])
 	params.Stencilbuffer = false;
 	params.Vsync         = vsync;
 	params.EventReceiver = &receiver;
+	params.HighPrecisionFPU = g_settings->getBool("high_precision_fpu");
 
 	device = createDeviceEx(params);
 
@@ -1426,6 +1468,7 @@ int main(int argc, char *argv[])
 	{
 		dstream<<"Running speed tests"<<std::endl;
 		SpeedTests();
+		device->drop();
 		return 0;
 	}
 	
@@ -1443,12 +1486,22 @@ int main(int argc, char *argv[])
 
 	guienv = device->getGUIEnvironment();
 	gui::IGUISkin* skin = guienv->getSkin();
-	#if USE_FREETYPE
 	std::string font_path = g_settings->get("font_path");
-	u16 font_size = g_settings->getU16("font_size");
-	gui::IGUIFont *font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size);
+	gui::IGUIFont *font;
+	#if USE_FREETYPE
+	bool use_freetype = g_settings->getBool("freetype");
+	if (use_freetype) {
+		std::string fallback;
+		if (is_yes(gettext("needs_fallback_font")))
+			fallback = "fallback_";
+		u16 font_size = g_settings->getU16(fallback + "font_size");
+		font_path = g_settings->get(fallback + "font_path");
+		font = gui::CGUITTFont::createTTFont(guienv, font_path.c_str(), font_size);
+	} else {
+		font = guienv->getFont(font_path.c_str());
+	}
 	#else
-	gui::IGUIFont* font = guienv->getFont(getTexturePath("fontlucida.png").c_str());
+	font = guienv->getFont(font_path.c_str());
 	#endif
 	if(font)
 		skin->setFont(font);
@@ -1477,6 +1530,19 @@ int main(int argc, char *argv[])
 	skin->setColor(gui::EGDC_FOCUSED_EDITABLE, video::SColor(255,96,134,49));
 #endif
 
+
+	// Create the menu clouds
+	if (!g_menucloudsmgr)
+		g_menucloudsmgr = smgr->createNewSceneManager();
+	if (!g_menuclouds)
+		g_menuclouds = new Clouds(g_menucloudsmgr->getRootSceneNode(),
+			g_menucloudsmgr, -1, rand(), 100);
+	g_menuclouds->update(v2f(0, 0), video::SColor(255,200,200,255));
+	scene::ICameraSceneNode* camera;
+	camera = g_menucloudsmgr->addCameraSceneNode(0,
+				v3f(0,0,0), v3f(0, 60, 100));
+	camera->setFarValue(10000);
+
 	/*
 		GUI stuff
 	*/
@@ -1501,7 +1567,9 @@ int main(int argc, char *argv[])
 	while(device->run() && kill == false)
 	{
 		// Set the window caption
-		device->setWindowCaption((std::wstring(L"Minetest [")+wgettext("Main Menu")+L"]").c_str());
+		wchar_t* text = wgettext("Main Menu");
+		device->setWindowCaption((std::wstring(L"Minetest [")+text+L"]").c_str());
+		delete[] text;
 
 		// This is used for catching disconnects
 		try
@@ -1552,68 +1620,36 @@ int main(int argc, char *argv[])
 				
 				// Initialize menu data
 				MainMenuData menudata;
-				if(g_settings->exists("selected_mainmenu_tab"))
-					menudata.selected_tab = g_settings->getS32("selected_mainmenu_tab");
-				if(g_settings->exists("selected_serverlist"))
-					menudata.selected_serverlist = g_settings->getS32("selected_serverlist");
-				menudata.address = narrow_to_wide(address);
-				menudata.name = narrow_to_wide(playername);
-				menudata.port = narrow_to_wide(itos(port));
+				menudata.address = address;
+				menudata.name = playername;
+				menudata.port = itos(port);
+				menudata.errormessage = wide_to_narrow(error_message);
+				error_message = L"";
 				if(cmd_args.exists("password"))
-					menudata.password = narrow_to_wide(cmd_args.get("password"));
-				menudata.fancy_trees = g_settings->getBool("new_style_leaves");
-				menudata.smooth_lighting = g_settings->getBool("smooth_lighting");
-				menudata.clouds_3d = g_settings->getBool("enable_3d_clouds");
-				menudata.opaque_water = g_settings->getBool("opaque_water");
-				menudata.mip_map = g_settings->getBool("mip_map");
-				menudata.anisotropic_filter = g_settings->getBool("anisotropic_filter");
-				menudata.bilinear_filter = g_settings->getBool("bilinear_filter");
-				menudata.trilinear_filter = g_settings->getBool("trilinear_filter");
-				menudata.enable_shaders = g_settings->getS32("enable_shaders");
-				menudata.preload_item_visuals = g_settings->getBool("preload_item_visuals");
-				menudata.enable_particles = g_settings->getBool("enable_particles");
-				menudata.liquid_finite = g_settings->getBool("liquid_finite");
-				driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, menudata.mip_map);
-				menudata.creative_mode = g_settings->getBool("creative_mode");
-				menudata.enable_damage = g_settings->getBool("enable_damage");
+					menudata.password = cmd_args.get("password");
+
+				driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, g_settings->getBool("mip_map"));
+
 				menudata.enable_public = g_settings->getBool("server_announce");
-				// Default to selecting nothing
-				menudata.selected_world = -1;
-				// Get world listing for the menu
+
 				std::vector<WorldSpec> worldspecs = getAvailableWorlds();
-				// If there is only one world, select it
-				if(worldspecs.size() == 1){
-					menudata.selected_world = 0;
-				}
-				// Otherwise try to select according to selected_world_path
-				else if(g_settings->exists("selected_world_path")){
-					std::string trypath = g_settings->get("selected_world_path");
-					for(u32 i=0; i<worldspecs.size(); i++){
-						if(worldspecs[i].path == trypath){
-							menudata.selected_world = i;
-							break;
-						}
-					}
-				}
+
 				// If a world was commanded, append and select it
 				if(commanded_world != ""){
+
 					std::string gameid = getWorldGameId(commanded_world, true);
 					std::string name = _("[--world parameter]");
 					if(gameid == ""){
 						gameid = g_settings->get("default_game");
 						name += " [new]";
 					}
-					WorldSpec spec(commanded_world, name, gameid);
-					worldspecs.push_back(spec);
-					menudata.selected_world = worldspecs.size()-1;
+					//TODO find within worldspecs and set config
 				}
-				// Copy worldspecs to menu
-				menudata.worlds = worldspecs;
 
 				if(skip_main_menu == false)
 				{
 					video::IVideoDriver* driver = device->getVideoDriver();
-					float fps_max = g_settings->getFloat("fps_max");
+
 					infostream<<"Waiting for other menus"<<std::endl;
 					while(device->run() && kill == false)
 					{
@@ -1621,7 +1657,6 @@ int main(int argc, char *argv[])
 							break;
 						driver->beginScene(true, true,
 								video::SColor(255,128,128,128));
-						drawMenuBackground(driver);
 						guienv->drawAll();
 						driver->endScene();
 						// On some computers framerate doesn't seem to be
@@ -1630,151 +1665,43 @@ int main(int argc, char *argv[])
 					}
 					infostream<<"Waited for other menus"<<std::endl;
 
-					GUIMainMenu *menu =
-							new GUIMainMenu(guienv, guiroot, -1, 
-								&g_menumgr, &menudata, g_gamecallback);
-					menu->allowFocusRemoval(true);
-
-					// Clouds for the main menu
-					bool cloud_menu_background = false;
-					Clouds *clouds = NULL;
-					if (g_settings->getBool("menu_clouds")) {
-						cloud_menu_background = true;
-						clouds = new Clouds(smgr->getRootSceneNode(),
-											smgr, -1, rand(), 100);
-						clouds->update(v2f(0, 0), video::SColor(255,200,200,255));
-
-						// A camera to see the clouds
-						scene::ICameraSceneNode* camera;
-						camera = smgr->addCameraSceneNode(0,
-									v3f(0,0,0), v3f(0, 60, 100));
-						camera->setFarValue(10000);
-					}
-
-					if(error_message != L"")
-					{
-						verbosestream<<"error_message = "
-								<<wide_to_narrow(error_message)<<std::endl;
-
-						GUIMessageMenu *menu2 =
-								new GUIMessageMenu(guienv, guiroot, -1, 
-									&g_menumgr, error_message.c_str());
-						menu2->drop();
-						error_message = L"";
-					}
-
-					// Time is in milliseconds, for clouds
-					u32 lasttime = device->getTimer()->getTime();
-
-					infostream<<"Created main menu"<<std::endl;
-
-					while(device->run() && kill == false)
-					{
-						if(menu->getStatus() == true)
-							break;
-
-						// Time calc for the clouds
-						f32 dtime; // in seconds
-						if (cloud_menu_background) {
-							u32 time = device->getTimer()->getTime();
-							if(time > lasttime)
-								dtime = (time - lasttime) / 1000.0;
- 							else
-								dtime = 0;
-							lasttime = time;
-						}
-
-						//driver->beginScene(true, true, video::SColor(255,0,0,0));
-						driver->beginScene(true, true, video::SColor(255,140,186,250));
-
-						if (cloud_menu_background) {
-							// *3 otherwise the clouds would move very slowly
-							clouds->step(dtime*3); 
-							clouds->render();
-							smgr->drawAll();
-							drawMenuSplash(driver);
-							drawMenuFooter(driver, true);
-							drawMenuHeader(driver);
-						} else {
-							drawMenuBackground(driver);
-							drawMenuFooter(driver, false);
-						}
-
-						guienv->drawAll();
-
-						driver->endScene();
-						
-						// On some computers framerate doesn't seem to be
-						// automatically limited
-						if (cloud_menu_background) {
-							// Time of frame without fps limit
-							float busytime;
-							u32 busytime_u32;
-							// not using getRealTime is necessary for wine
-							u32 time = device->getTimer()->getTime();
-							if(time > lasttime)
-								busytime_u32 = time - lasttime;
-							else
-								busytime_u32 = 0;
-							busytime = busytime_u32 / 1000.0;
-
-							// FPS limiter
-							u32 frametime_min = 1000./fps_max;
-			
-							if(busytime_u32 < frametime_min) {
-								u32 sleeptime = frametime_min - busytime_u32;
-								device->sleep(sleeptime);
-							}
-						} else {
-							sleep_ms(25);
-						}
-					}
+					GUIEngine* temp = new GUIEngine(device, guiroot, &g_menumgr,smgr,&menudata,kill);
 					
-					infostream<<"Dropping main menu"<<std::endl;
-
-					menu->drop();
-					if (cloud_menu_background) {
-						clouds->drop();
-						smgr->clear();
-					}
+					delete temp;
+					//once finished you'll never end up here
+					smgr->clear();
 				}
 
-				playername = wide_to_narrow(menudata.name);
-				if (playername == "")
-					playername = std::string("Guest") + itos(myrand_range(1000,9999));
-				password = translatePassword(playername, menudata.password);
+				if(menudata.errormessage != ""){
+					error_message = narrow_to_wide(menudata.errormessage);
+					continue;
+				}
+
+				//update worldspecs (necessary as new world may have been created)
+				worldspecs = getAvailableWorlds();
+
+				if (menudata.name == "")
+					menudata.name = std::string("Guest") + itos(myrand_range(1000,9999));
+				else
+					playername = menudata.name;
+
+				password = translatePassword(playername, narrow_to_wide(menudata.password));
 				//infostream<<"Main: password hash: '"<<password<<"'"<<std::endl;
 
-				address = wide_to_narrow(menudata.address);
-				int newport = stoi(wide_to_narrow(menudata.port));
+				address = menudata.address;
+				int newport = stoi(menudata.port);
 				if(newport != 0)
 					port = newport;
+
 				simple_singleplayer_mode = menudata.simple_singleplayer_mode;
+
 				// Save settings
-				g_settings->setS32("selected_mainmenu_tab", menudata.selected_tab);
-				g_settings->setS32("selected_serverlist", menudata.selected_serverlist);
-				g_settings->set("new_style_leaves", itos(menudata.fancy_trees));
-				g_settings->set("smooth_lighting", itos(menudata.smooth_lighting));
-				g_settings->set("enable_3d_clouds", itos(menudata.clouds_3d));
-				g_settings->set("opaque_water", itos(menudata.opaque_water));
-
-				g_settings->set("mip_map", itos(menudata.mip_map));
-				g_settings->set("anisotropic_filter", itos(menudata.anisotropic_filter));
-				g_settings->set("bilinear_filter", itos(menudata.bilinear_filter));
-				g_settings->set("trilinear_filter", itos(menudata.trilinear_filter));
-
-				g_settings->setS32("enable_shaders", menudata.enable_shaders);
-				g_settings->set("preload_item_visuals", itos(menudata.preload_item_visuals));
-				g_settings->set("enable_particles", itos(menudata.enable_particles));
-				g_settings->set("liquid_finite", itos(menudata.liquid_finite));
-
-				g_settings->set("creative_mode", itos(menudata.creative_mode));
-				g_settings->set("enable_damage", itos(menudata.enable_damage));
-				g_settings->set("server_announce", itos(menudata.enable_public));
 				g_settings->set("name", playername);
 				g_settings->set("address", address);
 				g_settings->set("port", itos(port));
-				if(menudata.selected_world != -1)
+
+				if((menudata.selected_world >= 0) &&
+						(menudata.selected_world < (int)worldspecs.size()))
 					g_settings->set("selected_world_path",
 							worldspecs[menudata.selected_world].path);
 
@@ -1792,47 +1719,26 @@ int main(int argc, char *argv[])
 					current_playername = "singleplayer";
 					current_password = "";
 					current_address = "";
-					current_port = 30011;
+					current_port = myrand_range(49152, 65535);
 				}
 				else if (address != "")
 				{
 					ServerListSpec server;
 					server["name"] = menudata.servername;
-					server["address"] = wide_to_narrow(menudata.address);
-					server["port"] = wide_to_narrow(menudata.port);
+					server["address"] = menudata.address;
+					server["port"] = menudata.port;
 					server["description"] = menudata.serverdescription;
 					ServerList::insert(server);
 				}
 				
 				// Set world path to selected one
-				if(menudata.selected_world != -1){
+				if ((menudata.selected_world >= 0) &&
+					(menudata.selected_world < (int)worldspecs.size())) {
 					worldspec = worldspecs[menudata.selected_world];
 					infostream<<"Selected world: "<<worldspec.name
 							<<" ["<<worldspec.path<<"]"<<std::endl;
 				}
-
-				// Only refresh if so requested
-				if(menudata.only_refresh){
-					infostream<<"Refreshing menu"<<std::endl;
-					continue;
-				}
 				
-				// Create new world if requested
-				if(menudata.create_world_name != L"")
-				{
-					std::string path = porting::path_user + DIR_DELIM
-							"worlds" + DIR_DELIM
-							+ wide_to_narrow(menudata.create_world_name);
-					// Create world if it doesn't exist
-					if(!initializeWorld(path, menudata.create_world_gameid)){
-						error_message = wgettext("Failed to initialize world");
-						errorstream<<wide_to_narrow(error_message)<<std::endl;
-						continue;
-					}
-					g_settings->set("selected_world_path", path);
-					continue;
-				}
-
 				// If local game
 				if(current_address == "")
 				{
@@ -1870,10 +1776,15 @@ int main(int argc, char *argv[])
 				// Continue to game
 				break;
 			}
-			
+
 			// Break out of menu-game loop to shut down cleanly
-			if(device->run() == false || kill == true)
+			if(device->run() == false || kill == true) {
+				if(g_settings_path != "") {
+					g_settings->updateConfigFile(
+						g_settings_path.c_str());
+				}
 				break;
+			}
 
 			/*
 				Run game
@@ -1890,27 +1801,17 @@ int main(int argc, char *argv[])
 				current_address,
 				current_port,
 				error_message,
-				configpath,
 				chat_backend,
 				gamespec,
 				simple_singleplayer_mode
 			);
+			smgr->clear();
 
 		} //try
 		catch(con::PeerNotFoundException &e)
 		{
 			error_message = wgettext("Connection error (timed out?)");
 			errorstream<<wide_to_narrow(error_message)<<std::endl;
-		}
-		catch(ServerError &e)
-		{
-			error_message = narrow_to_wide(e.what());
-			errorstream<<wide_to_narrow(error_message)<<std::endl;
-		}
-		catch(ModError &e)
-		{
-			errorstream<<e.what()<<std::endl;
-			error_message = narrow_to_wide(e.what()) + wgettext("\nCheck debug.txt for details.");
 		}
 #ifdef NDEBUG
 		catch(std::exception &e)
@@ -1934,7 +1835,11 @@ int main(int argc, char *argv[])
 			break;
 		}
 	} // Menu-game loop
-	
+
+
+	g_menuclouds->drop();
+	g_menucloudsmgr->drop();
+
 	delete input;
 
 	/*
@@ -1942,11 +1847,16 @@ int main(int argc, char *argv[])
 	*/
 	device->drop();
 
+#if USE_FREETYPE
+	if (use_freetype)
+		font->drop();
+#endif
+
 #endif // !SERVER
 	
 	// Update configuration file
-	if(configpath != "")
-		g_settings->updateConfigFile(configpath.c_str());
+	if(g_settings_path != "")
+		g_settings->updateConfigFile(g_settings_path.c_str());
 	
 	// Print modified quicktune values
 	{

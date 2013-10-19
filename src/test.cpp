@@ -36,6 +36,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "settings.h"
 #include "log.h"
 #include "util/string.h"
+#include "filesys.h"
 #include "voxelalgorithms.h"
 #include "inventory.h"
 #include "util/numeric.h"
@@ -69,20 +70,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	A few item and node definitions for those tests that need them
 */
 
-#define CONTENT_STONE 0
-#define CONTENT_GRASS 0x800
-#define CONTENT_TORCH 100
+static content_t CONTENT_STONE;
+static content_t CONTENT_GRASS;
+static content_t CONTENT_TORCH;
 
 void define_some_nodes(IWritableItemDefManager *idef, IWritableNodeDefManager *ndef)
 {
-	content_t i;
 	ItemDefinition itemdef;
 	ContentFeatures f;
 
 	/*
 		Stone
 	*/
-	i = CONTENT_STONE;
 	itemdef = ItemDefinition();
 	itemdef.type = ITEM_NODE;
 	itemdef.name = "default:stone";
@@ -98,12 +97,11 @@ void define_some_nodes(IWritableItemDefManager *idef, IWritableNodeDefManager *n
 		f.tiledef[i].name = "default_stone.png";
 	f.is_ground_content = true;
 	idef->registerItem(itemdef);
-	ndef->set(i, f);
+	CONTENT_STONE = ndef->set(f.name, f);
 
 	/*
 		Grass
 	*/
-	i = CONTENT_GRASS;
 	itemdef = ItemDefinition();
 	itemdef.type = ITEM_NODE;
 	itemdef.name = "default:dirt_with_grass";
@@ -121,12 +119,11 @@ void define_some_nodes(IWritableItemDefManager *idef, IWritableNodeDefManager *n
 		f.tiledef[i].name = "default_dirt.png^default_grass_side.png";
 	f.is_ground_content = true;
 	idef->registerItem(itemdef);
-	ndef->set(i, f);
+	CONTENT_GRASS = ndef->set(f.name, f);
 
 	/*
 		Torch (minimal definition for lighting tests)
 	*/
-	i = CONTENT_TORCH;
 	itemdef = ItemDefinition();
 	itemdef.type = ITEM_NODE;
 	itemdef.name = "default:torch";
@@ -137,7 +134,7 @@ void define_some_nodes(IWritableItemDefManager *idef, IWritableNodeDefManager *n
 	f.sunlight_propagates = true;
 	f.light_source = LIGHT_MAX-1;
 	idef->registerItem(itemdef);
-	ndef->set(i, f);
+	CONTENT_TORCH = ndef->set(f.name, f);
 }
 
 struct TestBase
@@ -160,14 +157,226 @@ struct TestUtilities: public TestBase
 		UASSERT(fabs(wrapDegrees(-0.5) - (-0.5)) < 0.001);
 		UASSERT(fabs(wrapDegrees(-365.5) - (-5.5)) < 0.001);
 		UASSERT(lowercase("Foo bAR") == "foo bar");
+		UASSERT(trim("\n \t\r  Foo bAR  \r\n\t\t  ") == "Foo bAR");
+		UASSERT(trim("\n \t\r    \r\n\t\t  ") == "");
 		UASSERT(is_yes("YeS") == true);
 		UASSERT(is_yes("") == false);
 		UASSERT(is_yes("FAlse") == false);
+		UASSERT(is_yes("-1") == true);
+		UASSERT(is_yes("0") == false);
+		UASSERT(is_yes("1") == true);
+		UASSERT(is_yes("2") == true);
 		const char *ends[] = {"abc", "c", "bc", NULL};
 		UASSERT(removeStringEnd("abc", ends) == "");
 		UASSERT(removeStringEnd("bc", ends) == "b");
 		UASSERT(removeStringEnd("12c", ends) == "12");
 		UASSERT(removeStringEnd("foo", ends) == "");
+	}
+};
+
+struct TestPath: public TestBase
+{
+	// adjusts a POSIX path to system-specific conventions
+	// -> changes '/' to DIR_DELIM
+	// -> absolute paths start with "C:\\" on windows
+	std::string p(std::string path)
+	{
+		for(size_t i = 0; i < path.size(); ++i){
+			if(path[i] == '/'){
+				path.replace(i, 1, DIR_DELIM);
+				i += std::string(DIR_DELIM).size() - 1; // generally a no-op
+			}
+		}
+
+		#ifdef _WIN32
+		if(path[0] == '\\')
+			path = "C:" + path;
+		#endif
+
+		return path;
+	}
+
+	void Run()
+	{
+		std::string path, result, removed;
+
+		/*
+			Test fs::IsDirDelimiter
+		*/
+		UASSERT(fs::IsDirDelimiter('/') == true);
+		UASSERT(fs::IsDirDelimiter('A') == false);
+		UASSERT(fs::IsDirDelimiter(0) == false);
+		#ifdef _WIN32
+		UASSERT(fs::IsDirDelimiter('\\') == true);
+		#else
+		UASSERT(fs::IsDirDelimiter('\\') == false);
+		#endif
+
+		/*
+			Test fs::PathStartsWith
+		*/
+		{
+			const int numpaths = 12;
+			std::string paths[numpaths] = {
+				"",
+				p("/"),
+				p("/home/user/minetest"),
+				p("/home/user/minetest/bin"),
+				p("/home/user/.minetest"),
+				p("/tmp/dir/file"),
+				p("/tmp/file/"),
+				p("/tmP/file"),
+				p("/tmp"),
+				p("/tmp/dir"),
+				p("/home/user2/minetest/worlds"),
+				p("/home/user2/minetest/world"),
+			};
+			/*
+				expected fs::PathStartsWith results
+				0 = returns false
+				1 = returns true
+				2 = returns false on windows, false elsewhere
+				3 = returns true on windows, true elsewhere
+				4 = returns true if and only if
+				    FILESYS_CASE_INSENSITIVE is true
+			*/
+			int expected_results[numpaths][numpaths] = {
+				{1,2,0,0,0,0,0,0,0,0,0,0},
+				{1,1,0,0,0,0,0,0,0,0,0,0},
+				{1,1,1,0,0,0,0,0,0,0,0,0},
+				{1,1,1,1,0,0,0,0,0,0,0,0},
+				{1,1,0,0,1,0,0,0,0,0,0,0},
+				{1,1,0,0,0,1,0,0,1,1,0,0},
+				{1,1,0,0,0,0,1,4,1,0,0,0},
+				{1,1,0,0,0,0,4,1,4,0,0,0},
+				{1,1,0,0,0,0,0,0,1,0,0,0},
+				{1,1,0,0,0,0,0,0,1,1,0,0},
+				{1,1,0,0,0,0,0,0,0,0,1,0},
+				{1,1,0,0,0,0,0,0,0,0,0,1},
+			};
+
+			for (int i = 0; i < numpaths; i++)
+			for (int j = 0; j < numpaths; j++){
+				/*verbosestream<<"testing fs::PathStartsWith(\""
+					<<paths[i]<<"\", \""
+					<<paths[j]<<"\")"<<std::endl;*/
+				bool starts = fs::PathStartsWith(paths[i], paths[j]);
+				int expected = expected_results[i][j];
+				if(expected == 0){
+					UASSERT(starts == false);
+				}
+				else if(expected == 1){
+					UASSERT(starts == true);
+				}
+				#ifdef _WIN32
+				else if(expected == 2){
+					UASSERT(starts == false);
+				}
+				else if(expected == 3){
+					UASSERT(starts == true);
+				}
+				#else
+				else if(expected == 2){
+					UASSERT(starts == true);
+				}
+				else if(expected == 3){
+					UASSERT(starts == false);
+				}
+				#endif
+				else if(expected == 4){
+					UASSERT(starts == (bool)FILESYS_CASE_INSENSITIVE);
+				}
+			}
+		}
+
+		/*
+			Test fs::RemoveLastPathComponent
+		*/
+		UASSERT(fs::RemoveLastPathComponent("") == "");
+		path = p("/home/user/minetest/bin/..//worlds/world1");
+		result = fs::RemoveLastPathComponent(path, &removed, 0);
+		UASSERT(result == path);
+		UASSERT(removed == "");
+		result = fs::RemoveLastPathComponent(path, &removed, 1);
+		UASSERT(result == p("/home/user/minetest/bin/..//worlds"));
+		UASSERT(removed == p("world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 2);
+		UASSERT(result == p("/home/user/minetest/bin/.."));
+		UASSERT(removed == p("worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 3);
+		UASSERT(result == p("/home/user/minetest/bin"));
+		UASSERT(removed == p("../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 4);
+		UASSERT(result == p("/home/user/minetest"));
+		UASSERT(removed == p("bin/../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 5);
+		UASSERT(result == p("/home/user"));
+		UASSERT(removed == p("minetest/bin/../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 6);
+		UASSERT(result == p("/home"));
+		UASSERT(removed == p("user/minetest/bin/../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 7);
+		#ifdef _WIN32
+		UASSERT(result == "C:");
+		#else
+		UASSERT(result == "");
+		#endif
+		UASSERT(removed == p("home/user/minetest/bin/../worlds/world1"));
+
+		/*
+			Now repeat the test with a trailing delimiter
+		*/
+		path = p("/home/user/minetest/bin/..//worlds/world1/");
+		result = fs::RemoveLastPathComponent(path, &removed, 0);
+		UASSERT(result == path);
+		UASSERT(removed == "");
+		result = fs::RemoveLastPathComponent(path, &removed, 1);
+		UASSERT(result == p("/home/user/minetest/bin/..//worlds"));
+		UASSERT(removed == p("world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 2);
+		UASSERT(result == p("/home/user/minetest/bin/.."));
+		UASSERT(removed == p("worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 3);
+		UASSERT(result == p("/home/user/minetest/bin"));
+		UASSERT(removed == p("../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 4);
+		UASSERT(result == p("/home/user/minetest"));
+		UASSERT(removed == p("bin/../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 5);
+		UASSERT(result == p("/home/user"));
+		UASSERT(removed == p("minetest/bin/../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 6);
+		UASSERT(result == p("/home"));
+		UASSERT(removed == p("user/minetest/bin/../worlds/world1"));
+		result = fs::RemoveLastPathComponent(path, &removed, 7);
+		#ifdef _WIN32
+		UASSERT(result == "C:");
+		#else
+		UASSERT(result == "");
+		#endif
+		UASSERT(removed == p("home/user/minetest/bin/../worlds/world1"));
+
+		/*
+			Test fs::RemoveRelativePathComponent
+		*/
+		path = p("/home/user/minetest/bin");
+		result = fs::RemoveRelativePathComponents(path);
+		UASSERT(result == path);
+		path = p("/home/user/minetest/bin/../worlds/world1");
+		result = fs::RemoveRelativePathComponents(path);
+		UASSERT(result == p("/home/user/minetest/worlds/world1"));
+		path = p("/home/user/minetest/bin/../worlds/world1/");
+		result = fs::RemoveRelativePathComponents(path);
+		UASSERT(result == p("/home/user/minetest/worlds/world1"));
+		path = p(".");
+		result = fs::RemoveRelativePathComponents(path);
+		UASSERT(result == "");
+		path = p("./subdir/../..");
+		result = fs::RemoveRelativePathComponents(path);
+		UASSERT(result == "");
+		path = p("/a/b/c/.././../d/../e/f/g/../h/i/j/../../../..");
+		result = fs::RemoveRelativePathComponents(path);
+		UASSERT(result == p("/a/e"));
 	}
 };
 
@@ -405,7 +614,7 @@ struct TestCompress: public TestBase
 		fromdata[3]=1;
 		
 		std::ostringstream os(std::ios_base::binary);
-		compress(fromdata, os, SER_FMT_VER_HIGHEST);
+		compress(fromdata, os, SER_FMT_VER_HIGHEST_READ);
 
 		std::string str_out = os.str();
 		
@@ -420,7 +629,7 @@ struct TestCompress: public TestBase
 		std::istringstream is(str_out, std::ios_base::binary);
 		std::ostringstream os2(std::ios_base::binary);
 
-		decompress(is, os2, SER_FMT_VER_HIGHEST);
+		decompress(is, os2, SER_FMT_VER_HIGHEST_READ);
 		std::string str_out2 = os2.str();
 
 		infostream<<"decompress: ";
@@ -464,7 +673,7 @@ struct TestCompress: public TestBase
 			std::string str_decompressed = os_decompressed.str();
 			UTEST(str_decompressed.size() == data_in.size(), "Output size not"
 					" equal (output: %u, input: %u)",
-					str_decompressed.size(), data_in.size());
+					(unsigned int)str_decompressed.size(), (unsigned int)data_in.size());
 			for(u32 i=0; i<size && i<str_decompressed.size(); i++){
 				UTEST(str_decompressed[i] == data_in[i],
 						"index out[%i]=%i differs from in[%i]=%i",
@@ -1293,26 +1502,56 @@ struct TestSocket: public TestBase
 	void Run()
 	{
 		const int port = 30003;
-		UDPSocket socket;
-		socket.Bind(port);
 
-		const char sendbuffer[] = "hello world!";
-		socket.Send(Address(127,0,0,1,port), sendbuffer, sizeof(sendbuffer));
-
-		sleep_ms(50);
-
-		char rcvbuffer[256];
-		memset(rcvbuffer, 0, sizeof(rcvbuffer));
-		Address sender;
-		for(;;)
+		// IPv6 socket test
 		{
-			int bytes_read = socket.Receive(sender, rcvbuffer, sizeof(rcvbuffer));
-			if(bytes_read < 0)
-				break;
+			UDPSocket socket6(true);
+			socket6.Bind(port);
+
+			const char sendbuffer[] = "hello world!";
+			IPv6AddressBytes bytes;
+			bytes.bytes[15] = 1;
+			socket6.Send(Address(&bytes, port), sendbuffer, sizeof(sendbuffer));
+
+			sleep_ms(50);
+
+			char rcvbuffer[256];
+			memset(rcvbuffer, 0, sizeof(rcvbuffer));
+			Address sender;
+			for(;;)
+			{
+				int bytes_read = socket6.Receive(sender, rcvbuffer, sizeof(rcvbuffer));
+				if(bytes_read < 0)
+					break;
+			}
+			//FIXME: This fails on some systems
+			UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer))==0);
+			UASSERT(memcmp(sender.getAddress6().sin6_addr.s6_addr, Address(&bytes, 0).getAddress6().sin6_addr.s6_addr, 16) == 0);
 		}
-		//FIXME: This fails on some systems
-		UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer))==0);
-		UASSERT(sender.getAddress() == Address(127,0,0,1, 0).getAddress());
+
+		// IPv4 socket test
+		{
+			UDPSocket socket(false);
+			socket.Bind(port);
+
+			const char sendbuffer[] = "hello world!";
+			socket.Send(Address(127,0,0,1,port), sendbuffer, sizeof(sendbuffer));
+
+			sleep_ms(50);
+
+			char rcvbuffer[256];
+			memset(rcvbuffer, 0, sizeof(rcvbuffer));
+			Address sender;
+			for(;;)
+			{
+				int bytes_read = socket.Receive(sender, rcvbuffer, sizeof(rcvbuffer));
+				if(bytes_read < 0)
+					break;
+			}
+			//FIXME: This fails on some systems
+			UASSERT(strncmp(sendbuffer, rcvbuffer, sizeof(sendbuffer))==0);
+			UASSERT(sender.getAddress().sin_addr.s_addr == Address(127,0,0,1, 0).getAddress().sin_addr.s_addr);
+		}
 	}
 };
 
@@ -1412,12 +1651,12 @@ struct TestConnection: public TestBase
 		Handler hand_client("client");
 		
 		infostream<<"** Creating server Connection"<<std::endl;
-		con::Connection server(proto_id, 512, 5.0, &hand_server);
+		con::Connection server(proto_id, 512, 5.0, false, &hand_server);
 		server.Serve(30001);
 		
 		infostream<<"** Creating client Connection"<<std::endl;
-		con::Connection client(proto_id, 512, 5.0, &hand_client);
-
+		con::Connection client(proto_id, 512, 5.0, false, &hand_client);
+		
 		UASSERT(hand_server.count == 0);
 		UASSERT(hand_client.count == 0);
 		
@@ -1452,7 +1691,7 @@ struct TestConnection: public TestBase
 		// Server should not have added client yet
 		UASSERT(hand_server.count == 0);
 		
-		sleep_ms(50);
+		sleep_ms(100);
 
 		try
 		{
@@ -1755,6 +1994,7 @@ void run_tests()
 
 	infostream<<"run_tests() started"<<std::endl;
 	TEST(TestUtilities);
+	TEST(TestPath);
 	TEST(TestSettings);
 	TEST(TestCompress);
 	TEST(TestSerialization);
@@ -1772,6 +2012,10 @@ void run_tests()
 		TEST(TestConnection);
 		dout_con<<"=== END RUNNING UNIT TESTS FOR CONNECTION ==="<<std::endl;
 	}
+
+	delete idef;
+	delete ndef;
+
 	if(tests_failed == 0){
 		infostream<<"run_tests(): "<<tests_failed<<" / "<<tests_run<<" tests failed."<<std::endl;
 		infostream<<"run_tests() passed."<<std::endl;

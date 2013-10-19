@@ -59,6 +59,11 @@ public:
 	float last_yaw;
 	unsigned int last_keyPressed;
 
+	float camera_impact;
+
+	std::string hotbar_image;
+	std::string hotbar_selected_image;
+
 private:
 	// This is used for determining the sneaking range
 	v3s16 m_sneak_node;

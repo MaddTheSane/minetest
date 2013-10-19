@@ -12,3 +12,21 @@ td, th {
 div#table table {
   width: 100%;
 }
+
+.mts_mods, .mts_clients_list {
+  visibility: hidden; 
+  border:gray solid 1px; 
+  position:absolute; 
+  z-index:100; 
+  background-color:white; 
+  padding:.5em;
+}
+
+.mts_version:hover .mts_mods, .mts_clients:hover .mts_clients_list {
+  visibility: visible;
+}
+
+.mts_version.mts_is_mods, .mts_clients.mts_is_clients  {
+  text-decoration:underline; 
+  text-decoration-style:dashed;
+}

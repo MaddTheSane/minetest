@@ -1,6 +1,7 @@
 /*
 Minetest
 Copyright (C) 2010-2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2010-2013 kwolekr, Ryan Kwolek <kwolekr@minetest.net>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -20,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <math.h>
 #include "noise.h"
 #include <iostream>
+#include <string.h> // memset
 #include "debug.h"
 #include "util/numeric.h"
 
@@ -532,6 +534,41 @@ float *Noise::perlinMap2D(float x, float y) {
 		g *= np->persist;
 	}
 
+	return result;
+}
+
+
+float *Noise::perlinMap2DModulated(float x, float y, float *persist_map) {
+	float f = 1.0;
+	int i, j, index, oct;
+
+	x /= np->spread.X;
+	y /= np->spread.Y;
+
+	memset(result, 0, sizeof(float) * sx * sy);
+	
+	float *g = new float[sx * sy];
+	for (index = 0; index != sx * sy; index++)
+		g[index] = 1.0;
+
+	for (oct = 0; oct < np->octaves; oct++) {
+		gradientMap2D(x * f, y * f,
+			f / np->spread.X, f / np->spread.Y,
+			seed + np->seed + oct);
+
+		index = 0;
+		for (j = 0; j != sy; j++) {
+			for (i = 0; i != sx; i++) {
+				result[index] += g[index] * buf[index];
+				g[index] *= persist_map[index];
+				index++;
+			}
+		}
+
+		f *= 2.0;
+	}
+	
+	delete[] g;
 	return result;
 }
 

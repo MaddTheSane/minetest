@@ -22,6 +22,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "gettime.h"
 #include "nodedef.h"
 #include "util/timetaker.h"
+#include <string.h>  // memcpy, memset
 
 /*
 	Debug stuff
@@ -264,7 +265,7 @@ void VoxelManipulator::clearFlag(u8 flags)
 	// 0-1ms on moderate area
 	TimeTaker timer("clearFlag", &clearflag_time);
 
-	v3s16 s = m_area.getExtent();
+	//v3s16 s = m_area.getExtent();
 
 	/*dstream<<"clearFlag clearing area of size "
 			<<""<<s.X<<"x"<<s.Y<<"x"<<s.Z<<""
