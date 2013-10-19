@@ -23,10 +23,6 @@
 		55F2092A1811FDEF00AE835B /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209291811FDEF00AE835B /* libsqlite3.dylib */; };
 		55F2092D181200B800AE835B /* mapgen_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F2092C181200B800AE835B /* mapgen_math.cpp */; };
 		55F2092E181200B800AE835B /* mapgen_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F2092C181200B800AE835B /* mapgen_math.cpp */; };
-		55F20932181200EE00AE835B /* s_env.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F20930181200EE00AE835B /* s_env.cpp */; };
-		55F20933181200EE00AE835B /* s_env.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F20930181200EE00AE835B /* s_env.cpp */; };
-		55F209361812010200AE835B /* scripting_game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209341812010200AE835B /* scripting_game.cpp */; };
-		55F209371812010200AE835B /* scripting_game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209341812010200AE835B /* scripting_game.cpp */; };
 		55F2093A1812012300AE835B /* mapgen_v7.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209381812012300AE835B /* mapgen_v7.cpp */; };
 		55F2093B1812012300AE835B /* mapgen_v7.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209381812012300AE835B /* mapgen_v7.cpp */; };
 		55F2093E1812014C00AE835B /* cavegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F2093C1812014C00AE835B /* cavegen.cpp */; };
@@ -100,6 +96,20 @@
 		55F209DA181201F500AE835B /* scripting_game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F2098F181201F500AE835B /* scripting_game.cpp */; };
 		55F209DB181201F500AE835B /* scripting_mainmenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F20991181201F500AE835B /* scripting_mainmenu.cpp */; };
 		55F209DC181201F500AE835B /* scripting_mainmenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F20991181201F500AE835B /* scripting_mainmenu.cpp */; };
+		55F209DF1812029400AE835B /* convert_json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209DD1812029400AE835B /* convert_json.cpp */; };
+		55F209E01812029400AE835B /* convert_json.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209DD1812029400AE835B /* convert_json.cpp */; };
+		55F209E3181202D200AE835B /* pathfinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209E1181202D200AE835B /* pathfinder.cpp */; };
+		55F209E4181202D200AE835B /* pathfinder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209E1181202D200AE835B /* pathfinder.cpp */; };
+		55F209E71812030800AE835B /* database-dummy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209E51812030800AE835B /* database-dummy.cpp */; };
+		55F209E81812030800AE835B /* database-dummy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209E51812030800AE835B /* database-dummy.cpp */; };
+		55F209EB1812032600AE835B /* database-leveldb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209E91812032600AE835B /* database-leveldb.cpp */; };
+		55F209EC1812032600AE835B /* database-leveldb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209E91812032600AE835B /* database-leveldb.cpp */; };
+		55F209EF1812035600AE835B /* database.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209ED1812035600AE835B /* database.cpp */; };
+		55F209F01812035600AE835B /* database.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209ED1812035600AE835B /* database.cpp */; };
+		55F209F31812039000AE835B /* version.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209F11812039000AE835B /* version.cpp */; };
+		55F209F41812039000AE835B /* version.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209F11812039000AE835B /* version.cpp */; };
+		55F209F7181203E500AE835B /* guiFileSelectMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209F5181203E500AE835B /* guiFileSelectMenu.cpp */; };
+		55F209FA1812042900AE835B /* guiEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55F209F81812042900AE835B /* guiEngine.cpp */; };
 		D5ABD8F317093B3D0037071C /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8F217093B3D0037071C /* OpenGL.framework */; };
 		D5ABD8F517093B5B0037071C /* OpenAL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD8F417093B5B0037071C /* OpenAL.framework */; };
 		D5ABD90E17093BA50037071C /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5ABD90D17093BA50037071C /* Carbon.framework */; };
@@ -354,10 +364,6 @@
 		55F209291811FDEF00AE835B /* libsqlite3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsqlite3.dylib; path = usr/lib/libsqlite3.dylib; sourceTree = SDKROOT; };
 		55F2092C181200B800AE835B /* mapgen_math.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mapgen_math.cpp; sourceTree = "<group>"; };
 		55F2092F181200C000AE835B /* mapgen_math.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mapgen_math.h; sourceTree = "<group>"; };
-		55F20930181200EE00AE835B /* s_env.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = s_env.cpp; path = script/cpp_api/s_env.cpp; sourceTree = "<group>"; };
-		55F20931181200EE00AE835B /* s_env.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = s_env.h; path = script/cpp_api/s_env.h; sourceTree = "<group>"; };
-		55F209341812010200AE835B /* scripting_game.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = scripting_game.cpp; path = script/scripting_game.cpp; sourceTree = "<group>"; };
-		55F209351812010200AE835B /* scripting_game.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = scripting_game.h; path = script/scripting_game.h; sourceTree = "<group>"; };
 		55F209381812012300AE835B /* mapgen_v7.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mapgen_v7.cpp; sourceTree = "<group>"; };
 		55F209391812012300AE835B /* mapgen_v7.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mapgen_v7.h; sourceTree = "<group>"; };
 		55F2093C1812014C00AE835B /* cavegen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cavegen.cpp; sourceTree = "<group>"; };
@@ -434,6 +440,22 @@
 		55F20990181201F500AE835B /* scripting_game.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scripting_game.h; sourceTree = "<group>"; };
 		55F20991181201F500AE835B /* scripting_mainmenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = scripting_mainmenu.cpp; sourceTree = "<group>"; };
 		55F20992181201F500AE835B /* scripting_mainmenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scripting_mainmenu.h; sourceTree = "<group>"; };
+		55F209DD1812029400AE835B /* convert_json.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = convert_json.cpp; sourceTree = "<group>"; };
+		55F209DE1812029400AE835B /* convert_json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = convert_json.h; sourceTree = "<group>"; };
+		55F209E1181202D200AE835B /* pathfinder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pathfinder.cpp; sourceTree = "<group>"; };
+		55F209E2181202D200AE835B /* pathfinder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pathfinder.h; sourceTree = "<group>"; };
+		55F209E51812030800AE835B /* database-dummy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "database-dummy.cpp"; sourceTree = "<group>"; };
+		55F209E61812030800AE835B /* database-dummy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "database-dummy.h"; sourceTree = "<group>"; };
+		55F209E91812032600AE835B /* database-leveldb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "database-leveldb.cpp"; sourceTree = "<group>"; };
+		55F209EA1812032600AE835B /* database-leveldb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "database-leveldb.h"; sourceTree = "<group>"; };
+		55F209ED1812035600AE835B /* database.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = database.cpp; sourceTree = "<group>"; };
+		55F209EE1812035600AE835B /* database.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = database.h; sourceTree = "<group>"; };
+		55F209F11812039000AE835B /* version.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = version.cpp; sourceTree = "<group>"; };
+		55F209F21812039000AE835B /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
+		55F209F5181203E500AE835B /* guiFileSelectMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiFileSelectMenu.cpp; sourceTree = "<group>"; };
+		55F209F6181203E500AE835B /* guiFileSelectMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiFileSelectMenu.h; sourceTree = "<group>"; };
+		55F209F81812042900AE835B /* guiEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiEngine.cpp; sourceTree = "<group>"; };
+		55F209F91812042900AE835B /* guiEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiEngine.h; sourceTree = "<group>"; };
 		D5ABD8F217093B3D0037071C /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/OpenGL.framework; sourceTree = DEVELOPER_DIR; };
 		D5ABD8F417093B5B0037071C /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/OpenAL.framework; sourceTree = DEVELOPER_DIR; };
 		D5ABD90D17093BA50037071C /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk/System/Library/Frameworks/Carbon.framework; sourceTree = DEVELOPER_DIR; };
@@ -1045,6 +1067,22 @@
 		D5D6DE2117091F91001EB852 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				55F209F81812042900AE835B /* guiEngine.cpp */,
+				55F209F91812042900AE835B /* guiEngine.h */,
+				55F209F5181203E500AE835B /* guiFileSelectMenu.cpp */,
+				55F209F6181203E500AE835B /* guiFileSelectMenu.h */,
+				55F209F11812039000AE835B /* version.cpp */,
+				55F209F21812039000AE835B /* version.h */,
+				55F209ED1812035600AE835B /* database.cpp */,
+				55F209EE1812035600AE835B /* database.h */,
+				55F209E91812032600AE835B /* database-leveldb.cpp */,
+				55F209EA1812032600AE835B /* database-leveldb.h */,
+				55F209E51812030800AE835B /* database-dummy.cpp */,
+				55F209E61812030800AE835B /* database-dummy.h */,
+				55F209E1181202D200AE835B /* pathfinder.cpp */,
+				55F209E2181202D200AE835B /* pathfinder.h */,
+				55F209DD1812029400AE835B /* convert_json.cpp */,
+				55F209DE1812029400AE835B /* convert_json.h */,
 				55F20947181201F400AE835B /* script */,
 				55F209431812018300AE835B /* database-sqlite3.cpp */,
 				55F209441812018300AE835B /* database-sqlite3.h */,
@@ -1054,10 +1092,6 @@
 				55F209391812012300AE835B /* mapgen_v7.h */,
 				55F2093C1812014C00AE835B /* cavegen.cpp */,
 				55F2093D1812014C00AE835B /* cavegen.h */,
-				55F209341812010200AE835B /* scripting_game.cpp */,
-				55F209351812010200AE835B /* scripting_game.h */,
-				55F20930181200EE00AE835B /* s_env.cpp */,
-				55F20931181200EE00AE835B /* s_env.h */,
 				55F2092C181200B800AE835B /* mapgen_math.cpp */,
 				55F2092F181200C000AE835B /* mapgen_math.h */,
 				D5F8D667170D10CC00B37424 /* lua */,
@@ -1672,7 +1706,6 @@
 				D5D6DF9917091F91001EB852 /* content_cso.cpp in Sources */,
 				55F209BF181201F500AE835B /* l_item.cpp in Sources */,
 				D5D6DF9A17091F91001EB852 /* content_mapblock.cpp in Sources */,
-				55F20932181200EE00AE835B /* s_env.cpp in Sources */,
 				D5D6DF9B17091F91001EB852 /* content_mapnode.cpp in Sources */,
 				D5D6DF9C17091F91001EB852 /* content_nodemeta.cpp in Sources */,
 				D5D6DF9D17091F91001EB852 /* content_sao.cpp in Sources */,
@@ -1682,6 +1715,7 @@
 				D5D6DF9F17091F91001EB852 /* debug.cpp in Sources */,
 				D5D6DFA017091F91001EB852 /* defaultsettings.cpp in Sources */,
 				D5D6DFA117091F91001EB852 /* dungeongen.cpp in Sources */,
+				55F209DF1812029400AE835B /* convert_json.cpp in Sources */,
 				D5D6DFA217091F91001EB852 /* emerge.cpp in Sources */,
 				55F209D5181201F500AE835B /* l_util.cpp in Sources */,
 				D5D6DFA317091F91001EB852 /* environment.cpp in Sources */,
@@ -1694,8 +1728,8 @@
 				55F209B7181201F500AE835B /* l_base.cpp in Sources */,
 				55F209BD181201F500AE835B /* l_inventory.cpp in Sources */,
 				D5D6DFAE17091F91001EB852 /* guiFormSpecMenu.cpp in Sources */,
+				55F209F31812039000AE835B /* version.cpp in Sources */,
 				D5D6DFAF17091F91001EB852 /* guiKeyChangeMenu.cpp in Sources */,
-				55F209361812010200AE835B /* scripting_game.cpp in Sources */,
 				D5D6DFB117091F91001EB852 /* guiMessageMenu.cpp in Sources */,
 				D5D6DFB217091F91001EB852 /* guiPasswordChange.cpp in Sources */,
 				D5D6DFB317091F91001EB852 /* guiPauseMenu.cpp in Sources */,
@@ -1723,11 +1757,13 @@
 				D5D6DFED17091F91001EB852 /* mapblock_mesh.cpp in Sources */,
 				D5D6DFEE17091F91001EB852 /* mapgen.cpp in Sources */,
 				55F209BB181201F500AE835B /* l_env.cpp in Sources */,
+				55F209F7181203E500AE835B /* guiFileSelectMenu.cpp in Sources */,
 				D5D6DFEF17091F91001EB852 /* mapgen_indev.cpp in Sources */,
 				D5D6DFF017091F91001EB852 /* mapgen_singlenode.cpp in Sources */,
 				55F209C9181201F500AE835B /* l_noise.cpp in Sources */,
 				D5D6DFF117091F91001EB852 /* mapgen_v6.cpp in Sources */,
 				D5D6DFF217091F91001EB852 /* mapnode.cpp in Sources */,
+				55F209EB1812032600AE835B /* database-leveldb.cpp in Sources */,
 				D5D6DFF317091F91001EB852 /* mapsector.cpp in Sources */,
 				D5D6DFF417091F91001EB852 /* mesh.cpp in Sources */,
 				D5D6DFF517091F91001EB852 /* mods.cpp in Sources */,
@@ -1739,6 +1775,7 @@
 				D5D6DFFB17091F91001EB852 /* object_properties.cpp in Sources */,
 				D5D6DFFC17091F91001EB852 /* particles.cpp in Sources */,
 				55F20995181201F500AE835B /* c_content.cpp in Sources */,
+				55F209E71812030800AE835B /* database-dummy.cpp in Sources */,
 				55F209C3181201F500AE835B /* l_mapgen.cpp in Sources */,
 				55F209C1181201F500AE835B /* l_mainmenu.cpp in Sources */,
 				D5D6DFFD17091F91001EB852 /* player.cpp in Sources */,
@@ -1753,6 +1790,7 @@
 				D5D6E01517091F91001EB852 /* serverobject.cpp in Sources */,
 				D5D6E01617091F91001EB852 /* sha1.cpp in Sources */,
 				D5D6E01717091F91001EB852 /* shader.cpp in Sources */,
+				55F209FA1812042900AE835B /* guiEngine.cpp in Sources */,
 				55F209CF181201F500AE835B /* l_rollback.cpp in Sources */,
 				D5D6E01817091F91001EB852 /* sky.cpp in Sources */,
 				55F209D7181201F500AE835B /* l_vmanip.cpp in Sources */,
@@ -1798,6 +1836,7 @@
 				D5F8D6BB170D10E600B37424 /* lmem.c in Sources */,
 				55F209421812016600AE835B /* hud.cpp in Sources */,
 				D5F8D6BD170D10E600B37424 /* loadlib.c in Sources */,
+				55F209EF1812035600AE835B /* database.cpp in Sources */,
 				55F209B9181201F500AE835B /* l_craft.cpp in Sources */,
 				D5F8D6BF170D10E600B37424 /* lobject.c in Sources */,
 				55F209CD181201F500AE835B /* l_particles.cpp in Sources */,
@@ -1811,6 +1850,7 @@
 				D5F8D6CF170D10E600B37424 /* ltablib.c in Sources */,
 				D5F8D6D1170D10E600B37424 /* ltm.c in Sources */,
 				D5F8D6D7170D10E600B37424 /* lundump.c in Sources */,
+				55F209E3181202D200AE835B /* pathfinder.cpp in Sources */,
 				D5F8D6D9170D10E600B37424 /* lvm.c in Sources */,
 				D5F8D6DB170D10E600B37424 /* lzio.c in Sources */,
 				D5F8D6DD170D10E600B37424 /* print.c in Sources */,
@@ -1841,14 +1881,15 @@
 				D5F8D6A2170D10E600B37424 /* lauxlib.c in Sources */,
 				55F2099C181201F500AE835B /* c_types.cpp in Sources */,
 				D5F8D6A4170D10E600B37424 /* lbaselib.c in Sources */,
+				55F209E81812030800AE835B /* database-dummy.cpp in Sources */,
 				D5F8D6A6170D10E600B37424 /* lcode.c in Sources */,
 				D5F8D6A8170D10E600B37424 /* ldblib.c in Sources */,
 				55F209D2181201F500AE835B /* l_server.cpp in Sources */,
 				D5F8D6AA170D10E600B37424 /* ldebug.c in Sources */,
 				55F209A4181201F500AE835B /* s_entity.cpp in Sources */,
-				55F20933181200EE00AE835B /* s_env.cpp in Sources */,
 				D5F8D6AC170D10E600B37424 /* ldo.c in Sources */,
 				D5F8D6AE170D10E600B37424 /* ldump.c in Sources */,
+				55F209E4181202D200AE835B /* pathfinder.cpp in Sources */,
 				D5F8D6B0170D10E600B37424 /* lfunc.c in Sources */,
 				55F209AA181201F500AE835B /* s_item.cpp in Sources */,
 				D5F8D6B2170D10E600B37424 /* lgc.c in Sources */,
@@ -1857,6 +1898,7 @@
 				55F209B4181201F500AE835B /* s_server.cpp in Sources */,
 				55F209C6181201F500AE835B /* l_nodemeta.cpp in Sources */,
 				55F2099A181201F500AE835B /* c_internal.cpp in Sources */,
+				55F209F41812039000AE835B /* version.cpp in Sources */,
 				D5F8D6B4170D10E600B37424 /* linit.c in Sources */,
 				D5F8D6B6170D10E600B37424 /* liolib.c in Sources */,
 				55F209A8181201F500AE835B /* s_inventory.cpp in Sources */,
@@ -1864,11 +1906,11 @@
 				D5F8D6BA170D10E600B37424 /* lmathlib.c in Sources */,
 				D5F8D6BC170D10E600B37424 /* lmem.c in Sources */,
 				55F20998181201F500AE835B /* c_converter.cpp in Sources */,
+				55F209EC1812032600AE835B /* database-leveldb.cpp in Sources */,
 				55F209BE181201F500AE835B /* l_inventory.cpp in Sources */,
 				D5F8D6BE170D10E600B37424 /* loadlib.c in Sources */,
 				D5F8D6C0170D10E600B37424 /* lobject.c in Sources */,
 				D5F8D6C2170D10E600B37424 /* lopcodes.c in Sources */,
-				55F209371812010200AE835B /* scripting_game.cpp in Sources */,
 				D5F8D6C4170D10E600B37424 /* loslib.c in Sources */,
 				55F209D4181201F500AE835B /* l_settings.cpp in Sources */,
 				55F209CC181201F500AE835B /* l_object.cpp in Sources */,
@@ -1880,6 +1922,7 @@
 				55F2093F1812014C00AE835B /* cavegen.cpp in Sources */,
 				55F209B8181201F500AE835B /* l_base.cpp in Sources */,
 				55F209C8181201F500AE835B /* l_nodetimer.cpp in Sources */,
+				55F209E01812029400AE835B /* convert_json.cpp in Sources */,
 				55F209BC181201F500AE835B /* l_env.cpp in Sources */,
 				D5F8D6CA170D10E600B37424 /* lstring.c in Sources */,
 				55F209BA181201F500AE835B /* l_craft.cpp in Sources */,
@@ -1899,6 +1942,7 @@
 				55F209A6181201F500AE835B /* s_env.cpp in Sources */,
 				55F209A2181201F500AE835B /* s_base.cpp in Sources */,
 				D5F8D6DE170D10E600B37424 /* print.c in Sources */,
+				55F209F01812035600AE835B /* database.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
