@@ -2,6 +2,20 @@
 // Prefix header for all source files of the 'MineTestServer' target in the 'MineTestServer' project
 //
 
+#include <CoreFoundation/CoreFoundation.h>
 #ifdef __OBJC__
     #import <Cocoa/Cocoa.h>
+#endif
+
+#ifdef __cplusplus
+#include <new>
+#include <vector>
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <set>
+#include <map>
+#include <list>
+#include <algorithm>
+#include "irrlicht.h"
 #endif
