@@ -8,6 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		55807D7918F7685700FC774F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 55807D7818F7685700FC774F /* Images.xcassets */; };
+		55807D7C18F7781B00FC774F /* jevent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D7B18F7781B00FC774F /* jevent.cpp */; };
+		55807D7F18F7784400FC774F /* httpfetch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D7E18F7784400FC774F /* httpfetch.cpp */; };
+		55807D8118F7789700FC774F /* marshall.c in Sources */ = {isa = PBXBuildFile; fileRef = 55807D8018F7789700FC774F /* marshall.c */; };
+		55807D8418F778BB00FC774F /* clientiface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D8318F778BB00FC774F /* clientiface.cpp */; };
+		55807D8618F778E600FC774F /* jsemaphore.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D8518F778E600FC774F /* jsemaphore.cpp */; };
+		55807D8B18F77AC700FC774F /* l_async_events.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D8A18F77AC700FC774F /* l_async_events.cpp */; };
+		55807D8E18F77AEA00FC774F /* clientmedia.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D8D18F77AEA00FC774F /* clientmedia.cpp */; };
+		55807D9118F77B0600FC774F /* guiTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D9018F77B0600FC774F /* guiTable.cpp */; };
+		55807D9418F77B2600FC774F /* gettext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D9318F77B2600FC774F /* gettext.cpp */; };
 		55F2090A1811F2DF00AE835B /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209091811F2DF00AE835B /* libz.dylib */; };
 		55F2090D1811F58300AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
 		55F2090E1811F58400AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
@@ -422,6 +431,23 @@
 
 /* Begin PBXFileReference section */
 		55807D7818F7685700FC774F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		55807D7B18F7781B00FC774F /* jevent.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = jevent.cpp; sourceTree = "<group>"; };
+		55807D7D18F7784400FC774F /* httpfetch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = httpfetch.h; sourceTree = "<group>"; };
+		55807D7E18F7784400FC774F /* httpfetch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = httpfetch.cpp; sourceTree = "<group>"; };
+		55807D8018F7789700FC774F /* marshall.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = marshall.c; sourceTree = "<group>"; };
+		55807D8218F778BB00FC774F /* clientiface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clientiface.h; sourceTree = "<group>"; };
+		55807D8318F778BB00FC774F /* clientiface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clientiface.cpp; sourceTree = "<group>"; };
+		55807D8518F778E600FC774F /* jsemaphore.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = jsemaphore.cpp; sourceTree = "<group>"; };
+		55807D8718F778F200FC774F /* jevent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jevent.h; sourceTree = "<group>"; };
+		55807D8818F778F200FC774F /* jsemaphore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = jsemaphore.h; sourceTree = "<group>"; };
+		55807D8918F77AC700FC774F /* l_async_events.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = l_async_events.h; sourceTree = "<group>"; };
+		55807D8A18F77AC700FC774F /* l_async_events.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = l_async_events.cpp; sourceTree = "<group>"; };
+		55807D8C18F77AEA00FC774F /* clientmedia.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clientmedia.h; sourceTree = "<group>"; };
+		55807D8D18F77AEA00FC774F /* clientmedia.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = clientmedia.cpp; sourceTree = "<group>"; };
+		55807D8F18F77B0600FC774F /* guiTable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiTable.h; sourceTree = "<group>"; };
+		55807D9018F77B0600FC774F /* guiTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiTable.cpp; sourceTree = "<group>"; };
+		55807D9218F77B2600FC774F /* gettext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gettext.h; sourceTree = "<group>"; };
+		55807D9318F77B2600FC774F /* gettext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gettext.cpp; sourceTree = "<group>"; };
 		55F209091811F2DF00AE835B /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		55F2090C1811F58300AE835B /* IrrFramework.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = IrrFramework.framework; sourceTree = "<group>"; };
 		55F2090F1811F63800AE835B /* freetype.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = freetype.framework; sourceTree = "<group>"; };
@@ -970,6 +996,9 @@
 		55F2096A181201F400AE835B /* lua_api */ = {
 			isa = PBXGroup;
 			children = (
+				55807D8018F7789700FC774F /* marshall.c */,
+				55807D8918F77AC700FC774F /* l_async_events.h */,
+				55807D8A18F77AC700FC774F /* l_async_events.cpp */,
 				55F2096C181201F400AE835B /* l_base.cpp */,
 				55F2096D181201F400AE835B /* l_base.h */,
 				55F2096E181201F400AE835B /* l_craft.cpp */,
@@ -1085,6 +1114,16 @@
 		D5D6DE2117091F91001EB852 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				55807D9218F77B2600FC774F /* gettext.h */,
+				55807D9318F77B2600FC774F /* gettext.cpp */,
+				55807D8F18F77B0600FC774F /* guiTable.h */,
+				55807D9018F77B0600FC774F /* guiTable.cpp */,
+				55807D8C18F77AEA00FC774F /* clientmedia.h */,
+				55807D8D18F77AEA00FC774F /* clientmedia.cpp */,
+				55807D8218F778BB00FC774F /* clientiface.h */,
+				55807D8318F778BB00FC774F /* clientiface.cpp */,
+				55807D7D18F7784400FC774F /* httpfetch.h */,
+				55807D7E18F7784400FC774F /* httpfetch.cpp */,
 				55F209F81812042900AE835B /* guiEngine.cpp */,
 				55F209F91812042900AE835B /* guiEngine.h */,
 				55F209F5181203E500AE835B /* guiFileSelectMenu.cpp */,
@@ -1350,6 +1389,8 @@
 		D5D6DEA217091F91001EB852 /* jthread */ = {
 			isa = PBXGroup;
 			children = (
+				55807D8718F778F200FC774F /* jevent.h */,
+				55807D8818F778F200FC774F /* jsemaphore.h */,
 				D5D6DEA417091F91001EB852 /* jmutex.h */,
 				D5D6DEA517091F91001EB852 /* jmutexautolock.h */,
 				D5D6DEA617091F91001EB852 /* jthread.h */,
@@ -1361,7 +1402,9 @@
 		D5D6DEA817091F91001EB852 /* pthread */ = {
 			isa = PBXGroup;
 			children = (
+				55807D7B18F7781B00FC774F /* jevent.cpp */,
 				D5D6DEA917091F91001EB852 /* jmutex.cpp */,
+				55807D8518F778E600FC774F /* jsemaphore.cpp */,
 				D5D6DEAA17091F91001EB852 /* jthread.cpp */,
 			);
 			path = pthread;
@@ -1489,6 +1532,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D5D6DE1A17091EC0001EB852 /* Build configuration list for PBXNativeTarget "Minetest" */;
 			buildPhases = (
+				55807D7A18F7732500FC774F /* ShellScript */,
 				D5D6DDE617091EBF001EB852 /* Sources */,
 				D5D6DDE717091EBF001EB852 /* Frameworks */,
 				D5D6DDE817091EBF001EB852 /* Resources */,
@@ -1583,6 +1627,25 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		55807D7A18F7732500FC774F /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/../../.git",
+				"$(SRCROOT)/../../src/cmake_config_githash.h.in",
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/cmake_config_githash.h",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "echo \"#ifndef CMAKE_CONFIG_GITHASH_H\n#define CMAKE_CONFIG_GITHASH_H\n#define CMAKE_VERSION_GITHASH \\\"0.4.9-181-g889b6a7\\\"\n#endif\" > ${DERIVED_FILE_DIR}/cmake_config_githash.h";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		D5D6DDE617091EBF001EB852 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -1619,6 +1682,7 @@
 				55F209B3181201F500AE835B /* s_server.cpp in Sources */,
 				D5D6DF9E17091F91001EB852 /* craftdef.cpp in Sources */,
 				55F209A3181201F500AE835B /* s_entity.cpp in Sources */,
+				55807D7C18F7781B00FC774F /* jevent.cpp in Sources */,
 				D5D6DF9F17091F91001EB852 /* debug.cpp in Sources */,
 				D5D6DFA017091F91001EB852 /* defaultsettings.cpp in Sources */,
 				D5D6DFA117091F91001EB852 /* dungeongen.cpp in Sources */,
@@ -1648,9 +1712,11 @@
 				D5D6DFBB17091F91001EB852 /* jsoncpp.cpp in Sources */,
 				D5D6DFBF17091F91001EB852 /* jmutex.cpp in Sources */,
 				D5D6DFC017091F91001EB852 /* jthread.cpp in Sources */,
+				55807D8618F778E600FC774F /* jsemaphore.cpp in Sources */,
 				D5D6DFC317091F91001EB852 /* keycode.cpp in Sources */,
 				55F2093E1812014C00AE835B /* cavegen.cpp in Sources */,
 				55F209AF181201F500AE835B /* s_nodemeta.cpp in Sources */,
+				55807D9418F77B2600FC774F /* gettext.cpp in Sources */,
 				D5D6DFC417091F91001EB852 /* light.cpp in Sources */,
 				D5D6DFC517091F91001EB852 /* localplayer.cpp in Sources */,
 				D5D6DFC617091F91001EB852 /* log.cpp in Sources */,
@@ -1666,6 +1732,7 @@
 				D5D6DFEF17091F91001EB852 /* mapgen_indev.cpp in Sources */,
 				D5D6DFF017091F91001EB852 /* mapgen_singlenode.cpp in Sources */,
 				55F209C9181201F500AE835B /* l_noise.cpp in Sources */,
+				55807D8118F7789700FC774F /* marshall.c in Sources */,
 				D5D6DFF117091F91001EB852 /* mapgen_v6.cpp in Sources */,
 				D5D6DFF217091F91001EB852 /* mapnode.cpp in Sources */,
 				55F209EB1812032600AE835B /* database-leveldb.cpp in Sources */,
@@ -1705,6 +1772,7 @@
 				D5D6E01E17091F91001EB852 /* staticobject.cpp in Sources */,
 				D5D6E01F17091F91001EB852 /* subgame.cpp in Sources */,
 				D5D6E02017091F91001EB852 /* test.cpp in Sources */,
+				55807D8B18F77AC700FC774F /* l_async_events.cpp in Sources */,
 				D5D6E02117091F91001EB852 /* tile.cpp in Sources */,
 				D5D6E02217091F91001EB852 /* tool.cpp in Sources */,
 				55F209D1181201F500AE835B /* l_server.cpp in Sources */,
@@ -1717,6 +1785,7 @@
 				D5D6E02917091F91001EB852 /* timetaker.cpp in Sources */,
 				D5D6E02A17091F91001EB852 /* voxel.cpp in Sources */,
 				55F2093A1812012300AE835B /* mapgen_v7.cpp in Sources */,
+				55807D8E18F77AEA00FC774F /* clientmedia.cpp in Sources */,
 				D5D6E02B17091F91001EB852 /* voxelalgorithms.cpp in Sources */,
 				55F209DB181201F500AE835B /* scripting_mainmenu.cpp in Sources */,
 				D5F8D69F170D10E600B37424 /* lapi.c in Sources */,
@@ -1731,6 +1800,7 @@
 				55F209D9181201F500AE835B /* scripting_game.cpp in Sources */,
 				D5F8D6B1170D10E600B37424 /* lgc.c in Sources */,
 				D5F8D6B3170D10E600B37424 /* linit.c in Sources */,
+				55807D9118F77B0600FC774F /* guiTable.cpp in Sources */,
 				55F209CB181201F500AE835B /* l_object.cpp in Sources */,
 				D5F8D6B5170D10E600B37424 /* liolib.c in Sources */,
 				55F209AB181201F500AE835B /* s_mainmenu.cpp in Sources */,
@@ -1744,6 +1814,7 @@
 				55F209EF1812035600AE835B /* database.cpp in Sources */,
 				55F209B9181201F500AE835B /* l_craft.cpp in Sources */,
 				D5F8D6BF170D10E600B37424 /* lobject.c in Sources */,
+				55807D8418F778BB00FC774F /* clientiface.cpp in Sources */,
 				55F209CD181201F500AE835B /* l_particles.cpp in Sources */,
 				D5F8D6C1170D10E600B37424 /* lopcodes.c in Sources */,
 				D5F8D6C3170D10E600B37424 /* loslib.c in Sources */,
@@ -1755,6 +1826,7 @@
 				D5F8D6CF170D10E600B37424 /* ltablib.c in Sources */,
 				D5F8D6D1170D10E600B37424 /* ltm.c in Sources */,
 				D5F8D6D7170D10E600B37424 /* lundump.c in Sources */,
+				55807D7F18F7784400FC774F /* httpfetch.cpp in Sources */,
 				55F209E3181202D200AE835B /* pathfinder.cpp in Sources */,
 				D5F8D6D9170D10E600B37424 /* lvm.c in Sources */,
 				D5F8D6DB170D10E600B37424 /* lzio.c in Sources */,
@@ -2045,6 +2117,7 @@
 					"\"$(SRCROOT)/Mac Frameworks/Vorbis.framework/Headers\"",
 					"\"$(SRCROOT)/../../src/lua/src\"",
 					"\"$(SRCROOT)/../../src/jthread\"",
+					"\"$(DERIVED_FILE_DIR)\"",
 				);
 				INFOPLIST_FILE = "Minetest/Minetest-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2072,6 +2145,7 @@
 					"\"$(SRCROOT)/Mac Frameworks/Vorbis.framework/Headers\"",
 					"\"$(SRCROOT)/../../src/lua/src\"",
 					"\"$(SRCROOT)/../../src/jthread\"",
+					"\"$(DERIVED_FILE_DIR)\"",
 				);
 				INFOPLIST_FILE = "Minetest/Minetest-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";

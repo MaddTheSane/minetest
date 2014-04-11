@@ -366,8 +366,8 @@ public:
             // Henry: xcode debug mode, just ignore.
             if(argname.compare("-NSDocumentRevisionsDebugMode") == 0)
             {
-                //i++;
-                //continue;
+                i++;
+                continue;
             }
             
 			if(argname.substr(0, 2) != "--")

@@ -30,6 +30,11 @@
 #define USE_SOUND 1
 #define USE_FREETYPE 1
 #define USE_CURL 1
+
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 4
+#define VERSION_PATCH_ORIG 9
+
 #endif
 
 #ifndef USE_LUAJIT

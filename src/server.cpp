@@ -158,21 +158,6 @@ v3f ServerSoundParams::getPos(ServerEnvironment *env, bool *pos_exists) const
 }
 
 
-	for(std::map<v3s16, MapBlock*>::iterator
-			i = blocks.begin();
-			i != blocks.end(); ++i)
-	{
-		v3s16 p = i->first;
-        
-        if(!m_blocks_sending.empty())
-            if(m_blocks_sending.find(p) != m_blocks_sending.end())
-                m_blocks_sending.erase(p);
-        
-        if(!m_blocks_sent.empty())
-            if(m_blocks_sent.find(p) != m_blocks_sent.end())
-                m_blocks_sent.erase(p);
-	}
-}
 
 /*
 	Server
@@ -4889,48 +4874,42 @@ v3f findSpawnPos(ServerMap &map)
 	//return v3f(50,50,50)*BS;
 
 	v3s16 nodepos;
-	
+
 #if 0
 	nodepos = v2s16(0,0);
 	groundheight = 20;
 #endif
 
 #if 1
+	s16 water_level = map.getWaterLevel();
+
 	// Try to find a good place a few times
 	for(s32 i=0; i<1000; i++)
 	{
 		s32 range = 1 + i;
 		// We're going to try to throw the player to this position
-		v2s16 nodepos2d = v2s16(-range + (myrand()%(range*2)),
-				-range + (myrand()%(range*2)));
-		//v2s16 sectorpos = getNodeSectorPos(nodepos2d);
-		// Get ground height at point (fallbacks to heightmap function)
+		v2s16 nodepos2d = v2s16(
+				-range + (myrand() % (range * 2)),
+				-range + (myrand() % (range * 2)));
+
+		// Get ground height at point
 		s16 groundheight = map.findGroundLevel(nodepos2d);
-		// Don't go underwater
-		if(groundheight < WATER_LEVEL)
-		{
-			//infostream<<"-> Underwater"<<std::endl;
+		if (groundheight <= water_level) // Don't go underwater
 			continue;
-		}
-		// Don't go to high places
-		if(groundheight > WATER_LEVEL + 4)
-		{
-			//infostream<<"-> Underwater"<<std::endl;
+		if (groundheight > water_level + 6) // Don't go to high places
 			continue;
-		}
-		
-		nodepos = v3s16(nodepos2d.X, groundheight-2, nodepos2d.Y);
+
+		nodepos = v3s16(nodepos2d.X, groundheight, nodepos2d.Y);
 		bool is_good = false;
 		s32 air_count = 0;
-		for(s32 i=0; i<10; i++){
+		for (s32 i = 0; i < 10; i++) {
 			v3s16 blockpos = getNodeBlockPos(nodepos);
 			map.emergeBlock(blockpos, true);
-			MapNode n = map.getNodeNoEx(nodepos);
-			if(n.getContent() == CONTENT_AIR){
+			content_t c = map.getNodeNoEx(nodepos).getContent();
+			if (c == CONTENT_AIR || c == CONTENT_IGNORE) {
 				air_count++;
-				if(air_count >= 2){
+				if (air_count >= 2){
 					is_good = true;
-					nodepos.Y -= 1;
 					break;
 				}
 			}
@@ -5016,7 +4995,7 @@ PlayerSAO* Server::emergePlayer(const char *name, u16 peer_id)
 void dedicated_server_loop(Server &server, bool &kill)
 {
 	DSTACK(__FUNCTION_NAME);
-	
+
 	verbosestream<<"dedicated_server_loop()"<<std::endl;
 
 	IntervalLimiter m_profiler_interval;
