@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		55807D7918F7685700FC774F /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 55807D7818F7685700FC774F /* Images.xcassets */; };
 		55F2090A1811F2DF00AE835B /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209091811F2DF00AE835B /* libz.dylib */; };
 		55F2090D1811F58300AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
 		55F2090E1811F58400AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
@@ -210,10 +211,6 @@
 		D5D6DDF917091EBF001EB852 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D5D6DDF717091EBF001EB852 /* InfoPlist.strings */; };
 		D5D6DDFF17091EBF001EB852 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = D5D6DDFD17091EBF001EB852 /* Credits.rtf */; };
 		D5D6DE0517091EBF001EB852 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = D5D6DE0317091EBF001EB852 /* MainMenu.xib */; };
-		D5D6DE0D17091EC0001EB852 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D6DE0C17091EC0001EB852 /* SenTestingKit.framework */; };
-		D5D6DE0E17091EC0001EB852 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D6DDEE17091EBF001EB852 /* Cocoa.framework */; };
-		D5D6DE1617091EC0001EB852 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D5D6DE1417091EC0001EB852 /* InfoPlist.strings */; };
-		D5D6DE1917091EC0001EB852 /* MinetestTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE1817091EC0001EB852 /* MinetestTests.m */; };
 		D5D6DF8617091F91001EB852 /* ban.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE2317091F91001EB852 /* ban.cpp */; };
 		D5D6DF8717091F91001EB852 /* base64.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE2517091F91001EB852 /* base64.cpp */; };
 		D5D6DF8817091F91001EB852 /* biome.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE2717091F91001EB852 /* biome.cpp */; };
@@ -316,10 +313,6 @@
 		D5D6E03E170920A9001EB852 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = D5D6E03C170920A9001EB852 /* Credits.rtf */; };
 		D5D6E041170920A9001EB852 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D5D6E040170920A9001EB852 /* AppDelegate.m */; };
 		D5D6E044170920AA001EB852 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = D5D6E042170920AA001EB852 /* MainMenu.xib */; };
-		D5D6E04B170920AA001EB852 /* SenTestingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D6DE0C17091EC0001EB852 /* SenTestingKit.framework */; };
-		D5D6E04C170920AA001EB852 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D5D6DDEE17091EBF001EB852 /* Cocoa.framework */; };
-		D5D6E054170920AA001EB852 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D5D6E052170920AA001EB852 /* InfoPlist.strings */; };
-		D5D6E057170920AA001EB852 /* MineTestServerTests.m in Sources */ = {isa = PBXBuildFile; fileRef = D5D6E056170920AA001EB852 /* MineTestServerTests.m */; };
 		D5F8D69F170D10E600B37424 /* lapi.c in Sources */ = {isa = PBXBuildFile; fileRef = D5F8D668170D10E600B37424 /* lapi.c */; };
 		D5F8D6A0170D10E600B37424 /* lapi.c in Sources */ = {isa = PBXBuildFile; fileRef = D5F8D668170D10E600B37424 /* lapi.c */; };
 		D5F8D6A1170D10E600B37424 /* lauxlib.c in Sources */ = {isa = PBXBuildFile; fileRef = D5F8D66A170D10E600B37424 /* lauxlib.c */; };
@@ -382,23 +375,6 @@
 		D5F8D6DE170D10E600B37424 /* print.c in Sources */ = {isa = PBXBuildFile; fileRef = D5F8D69E170D10E600B37424 /* print.c */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		D5D6DE0F17091EC0001EB852 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D5D6DC7417091BDC001EB852 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D5D6DDE917091EBF001EB852;
-			remoteInfo = Minetest;
-		};
-		D5D6E04D170920AA001EB852 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D5D6DC7417091BDC001EB852 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D5D6E02F170920A9001EB852;
-			remoteInfo = MineTestServer;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		55F209161811F6F200AE835B /* Copy Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -447,6 +423,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		55807D7818F7685700FC774F /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		55F209091811F2DF00AE835B /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		55F2090C1811F58300AE835B /* IrrFramework.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = IrrFramework.framework; sourceTree = "<group>"; };
 		55F2090F1811F63800AE835B /* freetype.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = freetype.framework; sourceTree = "<group>"; };
@@ -574,12 +551,7 @@
 		D5D6DE0017091EBF001EB852 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		D5D6DE0117091EBF001EB852 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		D5D6DE0417091EBF001EB852 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		D5D6DE0B17091EC0001EB852 /* MinetestTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MinetestTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5D6DE0C17091EC0001EB852 /* SenTestingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SenTestingKit.framework; path = Library/Frameworks/SenTestingKit.framework; sourceTree = DEVELOPER_DIR; };
-		D5D6DE1317091EC0001EB852 /* MinetestTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MinetestTests-Info.plist"; sourceTree = "<group>"; };
-		D5D6DE1517091EC0001EB852 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		D5D6DE1717091EC0001EB852 /* MinetestTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MinetestTests.h; sourceTree = "<group>"; };
-		D5D6DE1817091EC0001EB852 /* MinetestTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MinetestTests.m; sourceTree = "<group>"; };
 		D5D6DE2217091F91001EB852 /* activeobject.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = activeobject.h; sourceTree = "<group>"; };
 		D5D6DE2317091F91001EB852 /* ban.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ban.cpp; sourceTree = "<group>"; };
 		D5D6DE2417091F91001EB852 /* ban.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ban.h; sourceTree = "<group>"; };
@@ -824,11 +796,6 @@
 		D5D6E03F170920A9001EB852 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		D5D6E040170920A9001EB852 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		D5D6E043170920AA001EB852 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/MainMenu.xib; sourceTree = "<group>"; };
-		D5D6E04A170920AA001EB852 /* MinetestServerTests.octest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MinetestServerTests.octest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D5D6E051170920AA001EB852 /* MineTestServerTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "MineTestServerTests-Info.plist"; sourceTree = "<group>"; };
-		D5D6E053170920AA001EB852 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		D5D6E055170920AA001EB852 /* MineTestServerTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MineTestServerTests.h; sourceTree = "<group>"; };
-		D5D6E056170920AA001EB852 /* MineTestServerTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MineTestServerTests.m; sourceTree = "<group>"; };
 		D5F8D668170D10E600B37424 /* lapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lapi.c; path = lua/src/lapi.c; sourceTree = "<group>"; };
 		D5F8D669170D10E600B37424 /* lapi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lapi.h; path = lua/src/lapi.h; sourceTree = "<group>"; };
 		D5F8D66A170D10E600B37424 /* lauxlib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lauxlib.c; path = lua/src/lauxlib.c; sourceTree = "<group>"; };
@@ -904,15 +871,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D5D6DE0717091EC0001EB852 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D5D6DE0D17091EC0001EB852 /* SenTestingKit.framework in Frameworks */,
-				D5D6DE0E17091EC0001EB852 /* Cocoa.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D5D6E02D170920A9001EB852 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -925,15 +883,6 @@
 				55F20AA51812149500AE835B /* libz.dylib in Frameworks */,
 				D5D6E032170920A9001EB852 /* Cocoa.framework in Frameworks */,
 				55F209111811F63800AE835B /* freetype.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D5D6E046170920AA001EB852 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D5D6E04B170920AA001EB852 /* SenTestingKit.framework in Frameworks */,
-				D5D6E04C170920AA001EB852 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1071,9 +1020,7 @@
 			children = (
 				D5D6DE2117091F91001EB852 /* src */,
 				D5D6DDF417091EBF001EB852 /* Minetest */,
-				D5D6DE1117091EC0001EB852 /* MinetestTests */,
 				D5D6E033170920A9001EB852 /* MinetestServer */,
-				D5D6E04F170920AA001EB852 /* MinetestServerTests */,
 				D5D6DDED17091EBF001EB852 /* Frameworks */,
 				55F2092B1811FF9E00AE835B /* Minetest resources */,
 				D5D6DDEB17091EBF001EB852 /* Products */,
@@ -1084,9 +1031,7 @@
 			isa = PBXGroup;
 			children = (
 				D5D6DDEA17091EBF001EB852 /* Minetest.app */,
-				D5D6DE0B17091EC0001EB852 /* MinetestTests.octest */,
 				D5D6E030170920A9001EB852 /* MinetestServer.app */,
-				D5D6E04A170920AA001EB852 /* MinetestServerTests.octest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1125,6 +1070,7 @@
 				D5D6DE0017091EBF001EB852 /* AppDelegate.h */,
 				D5D6DE0117091EBF001EB852 /* AppDelegate.m */,
 				D5D6DE0317091EBF001EB852 /* MainMenu.xib */,
+				55807D7818F7685700FC774F /* Images.xcassets */,
 				D5D6DDF517091EBF001EB852 /* Supporting Files */,
 			);
 			path = Minetest;
@@ -1138,25 +1084,6 @@
 				D5D6DDF717091EBF001EB852 /* InfoPlist.strings */,
 				D5D6DDFC17091EBF001EB852 /* Minetest-Prefix.pch */,
 				D5D6DDFD17091EBF001EB852 /* Credits.rtf */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		D5D6DE1117091EC0001EB852 /* MinetestTests */ = {
-			isa = PBXGroup;
-			children = (
-				D5D6DE1717091EC0001EB852 /* MinetestTests.h */,
-				D5D6DE1817091EC0001EB852 /* MinetestTests.m */,
-				D5D6DE1217091EC0001EB852 /* Supporting Files */,
-			);
-			path = MinetestTests;
-			sourceTree = "<group>";
-		};
-		D5D6DE1217091EC0001EB852 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				D5D6DE1317091EC0001EB852 /* MinetestTests-Info.plist */,
-				D5D6DE1417091EC0001EB852 /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -1505,26 +1432,6 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		D5D6E04F170920AA001EB852 /* MinetestServerTests */ = {
-			isa = PBXGroup;
-			children = (
-				D5D6E055170920AA001EB852 /* MineTestServerTests.h */,
-				D5D6E056170920AA001EB852 /* MineTestServerTests.m */,
-				D5D6E050170920AA001EB852 /* Supporting Files */,
-			);
-			name = MinetestServerTests;
-			path = MineTestServerTests;
-			sourceTree = "<group>";
-		};
-		D5D6E050170920AA001EB852 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				D5D6E051170920AA001EB852 /* MineTestServerTests-Info.plist */,
-				D5D6E052170920AA001EB852 /* InfoPlist.strings */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
 		D5F8D667170D10CC00B37424 /* lua */ = {
 			isa = PBXGroup;
 			children = (
@@ -1607,25 +1514,6 @@
 			productReference = D5D6DDEA17091EBF001EB852 /* Minetest.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D5D6DE0A17091EC0001EB852 /* MinetestTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D5D6DE1D17091EC0001EB852 /* Build configuration list for PBXNativeTarget "MinetestTests" */;
-			buildPhases = (
-				D5D6DE0617091EC0001EB852 /* Sources */,
-				D5D6DE0717091EC0001EB852 /* Frameworks */,
-				D5D6DE0817091EC0001EB852 /* Resources */,
-				D5D6DE0917091EC0001EB852 /* ShellScript */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				D5D6DE1017091EC0001EB852 /* PBXTargetDependency */,
-			);
-			name = MinetestTests;
-			productName = MinetestTests;
-			productReference = D5D6DE0B17091EC0001EB852 /* MinetestTests.octest */;
-			productType = "com.apple.product-type.bundle";
-		};
 		D5D6E02F170920A9001EB852 /* MinetestServer */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D5D6E058170920AA001EB852 /* Build configuration list for PBXNativeTarget "MinetestServer" */;
@@ -1644,37 +1532,14 @@
 			productReference = D5D6E030170920A9001EB852 /* MinetestServer.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D5D6E049170920AA001EB852 /* MinetestServerTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D5D6E05B170920AA001EB852 /* Build configuration list for PBXNativeTarget "MinetestServerTests" */;
-			buildPhases = (
-				D5D6E045170920AA001EB852 /* Sources */,
-				D5D6E046170920AA001EB852 /* Frameworks */,
-				D5D6E047170920AA001EB852 /* Resources */,
-				D5D6E048170920AA001EB852 /* ShellScript */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				D5D6E04E170920AA001EB852 /* PBXTargetDependency */,
-			);
-			name = MinetestServerTests;
-			productName = MineTestServerTests;
-			productReference = D5D6E04A170920AA001EB852 /* MinetestServerTests.octest */;
-			productType = "com.apple.product-type.bundle";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		D5D6DC7417091BDC001EB852 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastTestingUpgradeCheck = 0510;
 				LastUpgradeCheck = 0450;
-				TargetAttributes = {
-					D5D6E049170920AA001EB852 = {
-						TestTargetID = D5D6E02F170920A9001EB852;
-					};
-				};
 			};
 			buildConfigurationList = D5D6DC7717091BDC001EB852 /* Build configuration list for PBXProject "Minetest" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -1689,9 +1554,7 @@
 			projectRoot = "";
 			targets = (
 				D5D6DDE917091EBF001EB852 /* Minetest */,
-				D5D6DE0A17091EC0001EB852 /* MinetestTests */,
 				D5D6E02F170920A9001EB852 /* MinetestServer */,
-				D5D6E049170920AA001EB852 /* MinetestServerTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1702,20 +1565,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				55F209151811F6C900AE835B /* minetest.conf in Resources */,
+				55807D7918F7685700FC774F /* Images.xcassets in Resources */,
 				D5D6DDF917091EBF001EB852 /* InfoPlist.strings in Resources */,
 				D5D6DDFF17091EBF001EB852 /* Credits.rtf in Resources */,
 				D5D6DE0517091EBF001EB852 /* MainMenu.xib in Resources */,
 				D5ABDBC21709653D0037071C /* builtin in Resources */,
 				D5ABDBC7170971930037071C /* client in Resources */,
 				D5ABDBCF17097EB10037071C /* minetest-icon.icns in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D5D6DE0817091EC0001EB852 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D5D6DE1617091EC0001EB852 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1735,44 +1591,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D5D6E047170920AA001EB852 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D5D6E054170920AA001EB852 /* InfoPlist.strings in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXShellScriptBuildPhase section */
-		D5D6DE0917091EC0001EB852 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
-		};
-		D5D6E048170920AA001EB852 /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# Run the unit tests in this test bundle.\n\"${SYSTEM_DEVELOPER_DIR}/Tools/RunUnitTests\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		D5D6DDE617091EBF001EB852 /* Sources */ = {
@@ -1955,14 +1774,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D5D6DE0617091EC0001EB852 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D5D6DE1917091EC0001EB852 /* MinetestTests.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D5D6E02C170920A9001EB852 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2111,28 +1922,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D5D6E045170920AA001EB852 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D5D6E057170920AA001EB852 /* MineTestServerTests.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		D5D6DE1017091EC0001EB852 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D5D6DDE917091EBF001EB852 /* Minetest */;
-			targetProxy = D5D6DE0F17091EC0001EB852 /* PBXContainerItemProxy */;
-		};
-		D5D6E04E170920AA001EB852 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D5D6E02F170920A9001EB852 /* MinetestServer */;
-			targetProxy = D5D6E04D170920AA001EB852 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		D5D6DDF717091EBF001EB852 /* InfoPlist.strings */ = {
@@ -2159,14 +1949,6 @@
 			name = MainMenu.xib;
 			sourceTree = "<group>";
 		};
-		D5D6DE1417091EC0001EB852 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				D5D6DE1517091EC0001EB852 /* en */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
 		D5D6E036170920A9001EB852 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -2189,14 +1971,6 @@
 				D5D6E043170920AA001EB852 /* en */,
 			);
 			name = MainMenu.xib;
-			sourceTree = "<group>";
-		};
-		D5D6E052170920AA001EB852 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				D5D6E053170920AA001EB852 /* en */,
-			);
-			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -2266,6 +2040,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -2293,6 +2068,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_WARN_EMPTY_BODY = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -2312,55 +2088,6 @@
 				INFOPLIST_FILE = "Minetest/Minetest-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
-			};
-			name = Release;
-		};
-		D5D6DE1E17091EC0001EB852 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Minetest.app/Contents/MacOS/Minetest";
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = "MinetestTests/MinetestTests-Info.plist";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = octest;
-			};
-			name = Debug;
-		};
-		D5D6DE1F17091EC0001EB852 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Minetest.app/Contents/MacOS/Minetest";
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "Minetest/Minetest-Prefix.pch";
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = "MinetestTests/MinetestTests-Info.plist";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = octest;
 			};
 			name = Release;
 		};
@@ -2411,55 +2138,6 @@
 			};
 			name = Release;
 		};
-		D5D6E05C170920AA001EB852 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/MinetestServer.app/Contents/MacOS/MinetestServer";
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = "MineTestServerTests/MineTestServerTests-Info.plist";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = octest;
-			};
-			name = Debug;
-		};
-		D5D6E05D170920AA001EB852 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/MinetestServer.app/Contents/MacOS/MinetestServer";
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				FRAMEWORK_SEARCH_PATHS = "\"$(DEVELOPER_LIBRARY_DIR)/Frameworks\"";
-				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "MineTestServer/MineTestServer-Prefix.pch";
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_FILE = "MineTestServerTests/MineTestServerTests-Info.plist";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
-				WRAPPER_EXTENSION = octest;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -2481,29 +2159,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D5D6DE1D17091EC0001EB852 /* Build configuration list for PBXNativeTarget "MinetestTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D5D6DE1E17091EC0001EB852 /* Debug */,
-				D5D6DE1F17091EC0001EB852 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		D5D6E058170920AA001EB852 /* Build configuration list for PBXNativeTarget "MinetestServer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D5D6E059170920AA001EB852 /* Debug */,
 				D5D6E05A170920AA001EB852 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D5D6E05B170920AA001EB852 /* Build configuration list for PBXNativeTarget "MinetestServerTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D5D6E05C170920AA001EB852 /* Debug */,
-				D5D6E05D170920AA001EB852 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
