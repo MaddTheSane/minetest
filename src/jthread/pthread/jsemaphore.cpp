@@ -21,7 +21,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <sys/time.h>
 #include "jthread/jsemaphore.h"
 
-// TODO: port to pthreads!
+#ifdef __APPLE__
+#include "sem_timedwait.h"
+#endif
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 

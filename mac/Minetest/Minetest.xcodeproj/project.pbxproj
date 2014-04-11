@@ -17,6 +17,7 @@
 		55807D8E18F77AEA00FC774F /* clientmedia.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D8D18F77AEA00FC774F /* clientmedia.cpp */; };
 		55807D9118F77B0600FC774F /* guiTable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D9018F77B0600FC774F /* guiTable.cpp */; };
 		55807D9418F77B2600FC774F /* gettext.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55807D9318F77B2600FC774F /* gettext.cpp */; };
+		55807D9618F780CD00FC774F /* sem_timedwait.c in Sources */ = {isa = PBXBuildFile; fileRef = 55807D9518F780CD00FC774F /* sem_timedwait.c */; };
 		55F2090A1811F2DF00AE835B /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209091811F2DF00AE835B /* libz.dylib */; };
 		55F2090D1811F58300AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
 		55F2090E1811F58400AE835B /* IrrFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
@@ -448,6 +449,8 @@
 		55807D9018F77B0600FC774F /* guiTable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiTable.cpp; sourceTree = "<group>"; };
 		55807D9218F77B2600FC774F /* gettext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gettext.h; sourceTree = "<group>"; };
 		55807D9318F77B2600FC774F /* gettext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gettext.cpp; sourceTree = "<group>"; };
+		55807D9518F780CD00FC774F /* sem_timedwait.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sem_timedwait.c; sourceTree = "<group>"; };
+		55807D9718F7811700FC774F /* sem_timedwait.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = sem_timedwait.h; sourceTree = "<group>"; };
 		55F209091811F2DF00AE835B /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
 		55F2090C1811F58300AE835B /* IrrFramework.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = IrrFramework.framework; sourceTree = "<group>"; };
 		55F2090F1811F63800AE835B /* freetype.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = freetype.framework; sourceTree = "<group>"; };
@@ -1402,6 +1405,8 @@
 		D5D6DEA817091F91001EB852 /* pthread */ = {
 			isa = PBXGroup;
 			children = (
+				55807D9718F7811700FC774F /* sem_timedwait.h */,
+				55807D9518F780CD00FC774F /* sem_timedwait.c */,
 				55807D7B18F7781B00FC774F /* jevent.cpp */,
 				D5D6DEA917091F91001EB852 /* jmutex.cpp */,
 				55807D8518F778E600FC774F /* jsemaphore.cpp */,
@@ -1766,6 +1771,7 @@
 				55F209CF181201F500AE835B /* l_rollback.cpp in Sources */,
 				D5D6E01817091F91001EB852 /* sky.cpp in Sources */,
 				55F209D7181201F500AE835B /* l_vmanip.cpp in Sources */,
+				55807D9618F780CD00FC774F /* sem_timedwait.c in Sources */,
 				D5D6E01917091F91001EB852 /* socket.cpp in Sources */,
 				D5D6E01A17091F91001EB852 /* sound.cpp in Sources */,
 				D5D6E01B17091F91001EB852 /* sound_openal.cpp in Sources */,
