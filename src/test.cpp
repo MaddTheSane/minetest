@@ -171,6 +171,10 @@ struct TestUtilities: public TestBase
 		UASSERT(removeStringEnd("bc", ends) == "b");
 		UASSERT(removeStringEnd("12c", ends) == "12");
 		UASSERT(removeStringEnd("foo", ends) == "");
+		UASSERT(urlencode("\"Aardvarks lurk, OK?\"")
+				== "%22Aardvarks%20lurk%2C%20OK%3F%22");
+		UASSERT(urldecode("%22Aardvarks%20lurk%2C%20OK%3F%22")
+				== "\"Aardvarks lurk, OK?\"");
 	}
 };
 
@@ -1502,11 +1506,13 @@ struct TestSocket: public TestBase
 	void Run()
 	{
 		const int port = 30003;
+		Address address(0,0,0,0, port);
+		Address address6((IPv6AddressBytes*) NULL, port);
 
 		// IPv6 socket test
 		{
 			UDPSocket socket6(true);
-			socket6.Bind(port);
+			socket6.Bind(address6);
 
 			const char sendbuffer[] = "hello world!";
 			IPv6AddressBytes bytes;
@@ -1532,7 +1538,7 @@ struct TestSocket: public TestBase
 		// IPv4 socket test
 		{
 			UDPSocket socket(false);
-			socket.Bind(port);
+			socket.Bind(address);
 
 			const char sendbuffer[] = "hello world!";
 			socket.Send(Address(127,0,0,1,port), sendbuffer, sizeof(sendbuffer));
@@ -1652,7 +1658,8 @@ struct TestConnection: public TestBase
 		
 		infostream<<"** Creating server Connection"<<std::endl;
 		con::Connection server(proto_id, 512, 5.0, false, &hand_server);
-		server.Serve(30001);
+		Address address(0,0,0,0, 30001);
+		server.Serve(address);
 		
 		infostream<<"** Creating client Connection"<<std::endl;
 		con::Connection client(proto_id, 512, 5.0, false, &hand_client);

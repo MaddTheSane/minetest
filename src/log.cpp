@@ -29,6 +29,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 std::list<ILogOutput*> log_outputs[LMT_NUM_VALUES];
 std::map<threadid_t, std::string> log_threadnames;
+JMutex                            log_threadnamemutex;
 
 void log_add_output(ILogOutput *out, enum LogMessageLevel lev)
 {
@@ -60,13 +61,17 @@ void log_remove_output(ILogOutput *out)
 void log_register_thread(const std::string &name)
 {
 	threadid_t id = get_current_thread_id();
+	log_threadnamemutex.Lock();
 	log_threadnames[id] = name;
+	log_threadnamemutex.Unlock();
 }
 
 void log_deregister_thread()
 {
 	threadid_t id = get_current_thread_id();
+	log_threadnamemutex.Lock();
 	log_threadnames.erase(id);
+	log_threadnamemutex.Unlock();
 }
 
 static std::string get_lev_string(enum LogMessageLevel lev)
@@ -88,6 +93,7 @@ static std::string get_lev_string(enum LogMessageLevel lev)
 
 void log_printline(enum LogMessageLevel lev, const std::string &text)
 {
+	log_threadnamemutex.Lock();
 	std::string threadname = "(unknown thread)";
 	std::map<threadid_t, std::string>::const_iterator i;
 	i = log_threadnames.find(get_current_thread_id());
@@ -103,6 +109,7 @@ void log_printline(enum LogMessageLevel lev, const std::string &text)
 		out->printLog(os.str(), lev);
 		out->printLog(lev, text);
 	}
+	log_threadnamemutex.Unlock();
 }
 
 class Logbuf : public std::streambuf
@@ -144,7 +151,7 @@ public:
 		}
 		m_buf += c;
 	}
-	
+
 private:
 	enum LogMessageLevel m_lev;
 	std::string m_buf;

@@ -75,8 +75,6 @@ Map::Map(std::ostream &dout, IGameDef *gamedef):
 	m_gamedef(gamedef),
 	m_sector_cache(NULL)
 {
-	/*m_sector_mutex.Init();
-	assert(m_sector_mutex.IsInitialized());*/
 }
 
 Map::~Map()
@@ -931,7 +929,8 @@ void Map::updateLighting(std::map<v3s16, MapBlock*> & a_blocks,
 /*
 */
 void Map::addNodeAndUpdate(v3s16 p, MapNode n,
-		std::map<v3s16, MapBlock*> &modified_blocks)
+		std::map<v3s16, MapBlock*> &modified_blocks,
+		bool remove_metadata)
 {
 	INodeDefManager *ndef = m_gamedef->ndef();
 
@@ -1018,8 +1017,9 @@ void Map::addNodeAndUpdate(v3s16 p, MapNode n,
 	/*
 		Remove node metadata
 	*/
-
-	removeNodeMetadata(p);
+	if (remove_metadata) {
+		removeNodeMetadata(p);
+	}
 
 	/*
 		Set the node on the map
@@ -1319,17 +1319,17 @@ void Map::removeNodeAndUpdate(v3s16 p,
 	}
 }
 
-bool Map::addNodeWithEvent(v3s16 p, MapNode n)
+bool Map::addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata)
 {
 	MapEditEvent event;
-	event.type = MEET_ADDNODE;
+	event.type = remove_metadata ? MEET_ADDNODE : MEET_SWAPNODE;
 	event.p = p;
 	event.n = n;
 
 	bool succeeded = true;
 	try{
 		std::map<v3s16, MapBlock*> modified_blocks;
-		addNodeAndUpdate(p, n, modified_blocks);
+		addNodeAndUpdate(p, n, modified_blocks, remove_metadata);
 
 		// Copy modified_blocks to event
 		for(std::map<v3s16, MapBlock*>::iterator
@@ -1679,7 +1679,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		v3s16 p0 = m_transforming_liquid.pop_front();
 		u16 total_level = 0;
 		// surrounding flowing liquid nodes
-		NodeNeighbor neighbors[7]; 
+		NodeNeighbor neighbors[7];
 		// current level of every block
 		s8 liquid_levels[7] = {-1, -1, -1, -1, -1, -1, -1};
 		 // target levels
@@ -1780,8 +1780,8 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			liquid_levels[D_BOTTOM] == LIQUID_LEVEL_SOURCE &&
 			total_level >= LIQUID_LEVEL_SOURCE * can_liquid_same_level-
 			(can_liquid_same_level - relax) &&
-			can_liquid_same_level >= relax + 1) { 
-			total_level = LIQUID_LEVEL_SOURCE * can_liquid_same_level; 
+			can_liquid_same_level >= relax + 1) {
+			total_level = LIQUID_LEVEL_SOURCE * can_liquid_same_level;
 		}
 
 		// prevent lakes in air above unloaded blocks
@@ -1790,9 +1790,9 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 		}
 
 		// calculate self level 5 blocks
-		u8 want_level = 
+		u8 want_level =
 			  total_level >= LIQUID_LEVEL_SOURCE * can_liquid_same_level
-			? LIQUID_LEVEL_SOURCE 
+			? LIQUID_LEVEL_SOURCE
 			: total_level / can_liquid_same_level;
 		total_level -= want_level * can_liquid_same_level;
 
@@ -1850,7 +1850,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 
 		/*
 		if (total_level > 0) //|| flowed != volume)
-			infostream <<" AFTER level=" << (int)total_level 
+			infostream <<" AFTER level=" << (int)total_level
 			//<< " flowed="<<flowed<< " volume=" << volume
 			<< " wantsame="<<(int)want_level<< " top="
 			<< (int)liquid_levels_want[D_TOP]<< " topwas="
@@ -1860,7 +1860,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 
 		//u8 changed = 0;
 		for (u16 i = 0; i < 7; i++) {
-			if (liquid_levels_want[i] < 0 || !neighbors[i].l) 
+			if (liquid_levels_want[i] < 0 || !neighbors[i].l)
 				continue;
 			MapNode & n0 = neighbors[i].n;
 			p0 = neighbors[i].p;
@@ -1907,7 +1907,7 @@ void Map::transformLiquidsFinite(std::map<v3s16, MapBlock*> & modified_blocks)
 			 */
 			/*
 			if (
-				 new_node_content == n0.getContent() 
+				 new_node_content == n0.getContent()
 				&& (nodemgr->get(n0.getContent()).liquid_type != LIQUID_FLOWING ||
 				 (n0.getLevel(nodemgr) == (u8)new_node_level
 				 //&& ((n0.param2 & LIQUID_FLOW_DOWN_MASK) ==
@@ -2136,6 +2136,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 		content_t new_node_content;
 		s8 new_node_level = -1;
 		s8 max_node_level = -1;
+		u8 range = rangelim(nodemgr->get(liquid_kind).liquid_range, 0, LIQUID_LEVEL_MAX+1);
 		if ((num_sources >= 2 && nodemgr->get(liquid_kind).liquid_renewable) || liquid_type == LIQUID_SOURCE) {
 			// liquid_kind will be set to either the flowing alternative of the node (if it's a liquid)
 			// or the flowing alternative of the first of the surrounding sources (if it's air), so
@@ -2145,6 +2146,8 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 			// liquid_kind is set properly, see above
 			new_node_content = liquid_kind;
 			max_node_level = new_node_level = LIQUID_LEVEL_MAX;
+			if (new_node_level < (LIQUID_LEVEL_MAX+1-range))
+				new_node_content = CONTENT_AIR;
 		} else {
 			// no surrounding sources, so get the maximum level that can flow into this node
 			for (u16 i = 0; i < num_flows; i++) {
@@ -2185,8 +2188,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 			} else
 				new_node_level = max_node_level;
 
-			u8 range = rangelim(nodemgr->get(liquid_kind).liquid_range, 0, LIQUID_LEVEL_MAX+1);
-			if (new_node_level >= (LIQUID_LEVEL_MAX+1-range))
+			if (max_node_level >= (LIQUID_LEVEL_MAX+1-range))
 				new_node_content = liquid_kind;
 			else
 				new_node_content = CONTENT_AIR;
@@ -2277,7 +2279,7 @@ void Map::transformLiquids(std::map<v3s16, MapBlock*> & modified_blocks)
 	updateLighting(lighting_modified_blocks, modified_blocks);
 }
 
-NodeMetadata* Map::getNodeMetadata(v3s16 p)
+NodeMetadata *Map::getNodeMetadata(v3s16 p)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
@@ -2287,8 +2289,7 @@ NodeMetadata* Map::getNodeMetadata(v3s16 p)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::getNodeMetadata(): Block not found"
 				<<std::endl;
 		return NULL;
@@ -2297,7 +2298,7 @@ NodeMetadata* Map::getNodeMetadata(v3s16 p)
 	return meta;
 }
 
-void Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
+bool Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
 {
 	v3s16 blockpos = getNodeBlockPos(p);
 	v3s16 p_rel = p - blockpos*MAP_BLOCKSIZE;
@@ -2307,13 +2308,13 @@ void Map::setNodeMetadata(v3s16 p, NodeMetadata *meta)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::setNodeMetadata(): Block not found"
 				<<std::endl;
-		return;
+		return false;
 	}
 	block->m_node_metadata.set(p_rel, meta);
+	return true;
 }
 
 void Map::removeNodeMetadata(v3s16 p)
@@ -2340,8 +2341,7 @@ NodeTimer Map::getNodeTimer(v3s16 p)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::getNodeTimer(): Block not found"
 				<<std::endl;
 		return NodeTimer();
@@ -2360,8 +2360,7 @@ void Map::setNodeTimer(v3s16 p, NodeTimer t)
 				<<PP(blockpos)<<std::endl;
 		block = emergeBlock(blockpos, false);
 	}
-	if(!block)
-	{
+	if(!block){
 		infostream<<"WARNING: Map::setNodeTimer(): Block not found"
 				<<std::endl;
 		return;
@@ -2408,33 +2407,10 @@ s16 Map::getHumidity(v3s16 p)
 */
 ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emerge):
 	Map(dout_server, gamedef),
-	m_seed(0),
+	m_emerge(emerge),
 	m_map_metadata_changed(true)
 {
 	verbosestream<<__FUNCTION_NAME<<std::endl;
-
-	m_emerge = emerge;
-	m_mgparams = m_emerge->getParamsFromSettings(g_settings);
-	if (!m_mgparams)
-		m_mgparams = new MapgenV6Params();
-
-	m_seed = m_mgparams->seed;
-
-	if (g_settings->get("fixed_map_seed").empty())
-	{
-		m_seed = (((u64)(myrand() & 0xffff) << 0)
-				| ((u64)(myrand() & 0xffff) << 16)
-				| ((u64)(myrand() & 0xffff) << 32)
-				| ((u64)(myrand() & 0xffff) << 48));
-		m_mgparams->seed = m_seed;
-	}
-
-	/*
-		Experimental and debug stuff
-	*/
-
-	{
-	}
 
 	/*
 		Try to load map; if not found, create a new one.
@@ -2497,7 +2473,7 @@ ServerMap::ServerMap(std::string savedir, IGameDef *gamedef, EmergeManager *emer
 				infostream<<"ServerMap: Successfully loaded map "
 						<<"metadata from "<<savedir
 						<<", assuming valid save directory."
-						<<" seed="<<m_seed<<"."
+						<<" seed="<< m_emerge->params.seed <<"."
 						<<std::endl;
 
 				m_map_saving_enabled = true;
@@ -2553,7 +2529,7 @@ ServerMap::~ServerMap()
 	/*
 		Close database if it was opened
 	*/
-	delete(dbase);
+	delete dbase;
 
 #if 0
 	/*
@@ -2566,8 +2542,16 @@ ServerMap::~ServerMap()
 		delete chunk;
 	}
 #endif
+}
 
-	delete m_mgparams;
+u64 ServerMap::getSeed()
+{
+	return m_emerge->params.seed;
+}
+
+s16 ServerMap::getWaterLevel()
+{
+	return m_emerge->params.water_level;
 }
 
 bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
@@ -2575,7 +2559,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 	bool enable_mapgen_debug_info = m_emerge->mapgen_debug_info;
 	EMERGE_DBG_OUT("initBlockMake(): " PP(blockpos) " - " PP(blockpos));
 
-	s16 chunksize = m_mgparams->chunksize;
+	s16 chunksize = m_emerge->params.chunksize;
 	s16 coffset = -chunksize / 2;
 	v3s16 chunk_offset(coffset, coffset, coffset);
 	v3s16 blockpos_div = getContainerPos(blockpos - chunk_offset, chunksize);
@@ -2591,7 +2575,7 @@ bool ServerMap::initBlockMake(BlockMakeData *data, v3s16 blockpos)
 		blockpos_over_limit(blockpos_max + extra_borders))
 		return false;
 
-	data->seed = m_seed;
+	data->seed = m_emerge->params.seed;
 	data->blockpos_min = blockpos_min;
 	data->blockpos_max = blockpos_max;
 	data->blockpos_requested = blockpos;
@@ -2830,30 +2814,23 @@ MapBlock* ServerMap::finishBlockMake(BlockMakeData *data,
 		Update weather data in blocks
 	*/
 	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
-	if (senv->m_use_weather) {
-		for(s16 x=blockpos_min.X-extra_borders.X;
-			x<=blockpos_max.X+extra_borders.X; x++)
-		for(s16 z=blockpos_min.Z-extra_borders.Z;
-			z<=blockpos_max.Z+extra_borders.Z; z++)
-		for(s16 y=blockpos_min.Y-extra_borders.Y;
-			y<=blockpos_max.Y+extra_borders.Y; y++)
-		{
-			v3s16 p(x, y, z);
-			updateBlockHeat(senv, p * MAP_BLOCKSIZE, NULL);
-			updateBlockHumidity(senv, p * MAP_BLOCKSIZE, NULL);
-		}
-	} else {
-		for(s16 x=blockpos_min.X-extra_borders.X;
-			x<=blockpos_max.X+extra_borders.X; x++)
-		for(s16 z=blockpos_min.Z-extra_borders.Z;
-			z<=blockpos_max.Z+extra_borders.Z; z++)
-		for(s16 y=blockpos_min.Y-extra_borders.Y;
-			y<=blockpos_max.Y+extra_borders.Y; y++)
-		{
-			MapBlock *block = getBlockNoCreateNoEx(v3s16(x, y, z));
+	for(s16 x=blockpos_min.X-extra_borders.X;
+		x<=blockpos_max.X+extra_borders.X; x++)
+	for(s16 z=blockpos_min.Z-extra_borders.Z;
+		z<=blockpos_max.Z+extra_borders.Z; z++)
+	for(s16 y=blockpos_min.Y-extra_borders.Y;
+		y<=blockpos_max.Y+extra_borders.Y; y++)
+	{
+		v3s16 p(x, y, z);
+		MapBlock *block = getBlockNoCreateNoEx(p);
+		block->heat_last_update     = 0;
+		block->humidity_last_update = 0;
+		if (senv->m_use_weather) {
+			updateBlockHeat(senv, p * MAP_BLOCKSIZE, block);
+			updateBlockHumidity(senv, p * MAP_BLOCKSIZE, block);
+		} else {
 			block->heat     = HEAT_UNDEFINED;
 			block->humidity = HUMIDITY_UNDEFINED;
-			block->weather_update_time = 0;
 		}
 	}
 	
@@ -3149,7 +3126,9 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 		return block;
 	}
-	/*if(allow_generate)
+
+#if 0
+	if(allow_generate)
 	{
 		std::map<v3s16, MapBlock*> modified_blocks;
 		MapBlock *block = generateBlock(p, modified_blocks);
@@ -3172,9 +3151,35 @@ MapBlock * ServerMap::emergeBlock(v3s16 p, bool create_blank)
 
 			return block;
 		}
-	}*/
+	}
+#endif
 
 	return NULL;
+}
+
+MapBlock *ServerMap::getBlockOrEmerge(v3s16 p3d)
+{
+	MapBlock *block = getBlockNoCreateNoEx(p3d);
+	if (block == NULL)
+		m_emerge->enqueueBlockEmerge(PEER_ID_INEXISTENT, p3d, false);
+
+	return block;
+}
+
+void ServerMap::prepareBlock(MapBlock *block) {
+	ServerEnvironment *senv = &((Server *)m_gamedef)->getEnv();
+
+	// Calculate weather conditions
+	block->heat_last_update     = 0;
+	block->humidity_last_update = 0;
+	if (senv->m_use_weather) {
+		v3s16 p = block->getPos() *  MAP_BLOCKSIZE;
+		updateBlockHeat(senv, p, block);
+		updateBlockHumidity(senv, p, block);
+	} else {
+		block->heat     = HEAT_UNDEFINED;
+		block->humidity = HUMIDITY_UNDEFINED;
+	}
 }
 
 s16 ServerMap::findGroundLevel(v2s16 p2d)
@@ -3443,7 +3448,7 @@ void ServerMap::saveMapMeta()
 
 	Settings params;
 
-	m_emerge->setParamsToSettings(&params);
+	m_emerge->saveParamsToSettings(&params);
 	params.writeLines(ss);
 
 	ss<<"[end_of_params]\n";
@@ -3489,28 +3494,10 @@ void ServerMap::loadMapMeta()
 		params.parseConfigLine(line);
 	}
 	
-	MapgenParams *mgparams;
-	try {
-		mgparams = m_emerge->getParamsFromSettings(&params);
-	} catch (SettingNotFoundException &e) {
-		infostream << "Couldn't get a setting from map_meta.txt: "
-				   << e.what() << std::endl;
-		mgparams = NULL;
-	}
-	
-	if (mgparams) {
-		if (m_mgparams)
-			delete m_mgparams;
-		m_mgparams = mgparams;
-		m_seed = mgparams->seed;
-	} else {
-		if (params.exists("seed")) {
-			m_seed = params.getU64("seed");
-			m_mgparams->seed = m_seed;
-		}
-	}
+	m_emerge->loadParamsFromSettings(&params);
 
-	verbosestream<<"ServerMap::loadMapMeta(): "<<"seed="<<m_seed<<std::endl;
+	verbosestream<<"ServerMap::loadMapMeta(): seed="
+		<< m_emerge->params.seed<<std::endl;
 }
 
 void ServerMap::saveSectorMeta(ServerMapSector *sector)
@@ -3926,18 +3913,18 @@ s16 ServerMap::updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block)
 	u32 gametime = env->getGameTime();
 	
 	if (block) {
-		if (gametime - block->weather_update_time < 10)
+		if (gametime - block->heat_last_update < 10)
 			return block->heat;
 	} else {
 		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	}
 
-	f32 heat = m_emerge->biomedef->calcBlockHeat(p, m_seed,
+	f32 heat = m_emerge->biomedef->calcBlockHeat(p, getSeed(),
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed());
 
 	if(block) {
 		block->heat = heat;
-		block->weather_update_time = gametime;
+		block->heat_last_update = gametime;
 	}
 	return heat;
 }
@@ -3947,18 +3934,18 @@ s16 ServerMap::updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *bl
 	u32 gametime = env->getGameTime();
 	
 	if (block) {
-		if (gametime - block->weather_update_time < 10)
+		if (gametime - block->humidity_last_update < 10)
 			return block->humidity;
 	} else {
 		block = getBlockNoCreateNoEx(getNodeBlockPos(p));
 	}
 
-	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, m_seed,
+	f32 humidity = m_emerge->biomedef->calcBlockHumidity(p, getSeed(),
 			env->getTimeOfDayF(), gametime * env->getTimeOfDaySpeed());
 			
 	if(block) {
 		block->humidity = humidity;
-		block->weather_update_time = gametime;
+		block->humidity_last_update = gametime;
 	}
 	return humidity;
 }

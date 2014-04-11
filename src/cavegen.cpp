@@ -24,8 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "mapgen_v7.h"
 #include "cavegen.h"
 
-NoiseParams nparams_caveliquids =
-	{0, 1, v3f(150.0, 150.0, 150.0), 776, 3, 0.6};
+NoiseParams nparams_caveliquids(0, 1, v3f(150.0, 150.0, 150.0), 776, 3, 0.6);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -110,9 +109,21 @@ void CaveV6::makeCave(v3s16 nmin, v3s16 nmax, int max_stone_height) {
 		(float)(ps->next() % ar.Z) + 0.5
 	);
 
+	int notifytype = large_cave ? GENNOTIFY_LARGECAVE_BEGIN : GENNOTIFY_CAVE_BEGIN;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
+
 	// Generate some tunnel starting from orp
 	for (u16 j = 0; j < tunnel_routepoints; j++)
 		makeTunnel(j % dswitchint == 0);
+
+	notifytype = large_cave ? GENNOTIFY_LARGECAVE_END : GENNOTIFY_CAVE_END;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
 }
 
 
@@ -236,6 +247,9 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 					continue;
 
 				u32 i = vm->m_area.index(p);
+				content_t c = vm->m_data[i].getContent();
+				if (!ndef->get(c).is_ground_content)
+					continue;
 
 				if (large_cave) {
 					int full_ymin = node_min.Y - MAP_BLOCKSIZE;
@@ -250,7 +264,6 @@ void CaveV6::carveRoute(v3f vec, float f, bool randomize_xz) {
 					}
 				} else {
 					// Don't replace air or water or lava or ignore
-					content_t c = vm->m_data[i].getContent();
 					if (c == CONTENT_IGNORE || c == CONTENT_AIR ||
 						c == c_water_source || c == c_lava_source)
 						continue;
@@ -345,9 +358,21 @@ void CaveV7::makeCave(v3s16 nmin, v3s16 nmax, int max_stone_height) {
 		(float)(ps->next() % ar.Z) + 0.5
 	);
 
+	int notifytype = large_cave ? GENNOTIFY_LARGECAVE_BEGIN : GENNOTIFY_CAVE_BEGIN;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
+
 	// Generate some tunnel starting from orp
 	for (u16 j = 0; j < tunnel_routepoints; j++)
 		makeTunnel(j % dswitchint == 0);
+
+	notifytype = large_cave ? GENNOTIFY_LARGECAVE_END : GENNOTIFY_CAVE_END;
+	if (mg->gennotify & (1 << notifytype)) {
+		std::vector <v3s16> *nvec = mg->gen_notifications[notifytype];
+		nvec->push_back(v3s16(of.X + orp.X, of.Y + orp.Y, of.Z + orp.Z));
+	}
 }
 
 
@@ -516,7 +541,8 @@ void CaveV7::carveRoute(v3f vec, float f, bool randomize_xz, bool is_ravine) {
 				v3s16 p(cp.X + x0, cp.Y + y0, cp.Z + z0);
 				p += of;
 				
-				if (!is_ravine && mg->heightmap && should_make_cave_hole) {
+				if (!is_ravine && mg->heightmap && should_make_cave_hole &&
+					p.X <= node_max.X && p.Z <= node_max.Z) {
 					int maplen = node_max.X - node_min.X + 1;
 					int idx = (p.Z - node_min.Z) * maplen + (p.X - node_min.X);
 					if (p.Y >= mg->heightmap[idx] - 2)
@@ -530,8 +556,8 @@ void CaveV7::carveRoute(v3f vec, float f, bool randomize_xz, bool is_ravine) {
 				
 				// Don't replace air, water, lava, or ice
 				content_t c = vm->m_data[i].getContent();
-				if (c == CONTENT_AIR   || c == c_water_source ||
-					c == c_lava_source || c == c_ice)
+				if (!ndef->get(c).is_ground_content || c == CONTENT_AIR ||
+					c == c_water_source || c == c_lava_source || c == c_ice)
 					continue;
 					
 				if (large_cave) {

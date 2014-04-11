@@ -562,7 +562,7 @@ InventoryList & InventoryList::operator = (const InventoryList &other)
 	return *this;
 }
 
-bool InventoryList::operator == (const InventoryList &other)
+bool InventoryList::operator == (const InventoryList &other) const
 {
 	if(m_size != other.m_size)
 		return false;
@@ -875,14 +875,14 @@ Inventory & Inventory::operator = (const Inventory &other)
 	return *this;
 }
 
-bool Inventory::operator == (const Inventory &other)
+bool Inventory::operator == (const Inventory &other) const
 {
 	if(m_lists.size() != other.m_lists.size())
 		return false;
 
 	for(u32 i=0; i<m_lists.size(); i++)
 	{
-		if(m_lists[i] != other.m_lists[i])
+		if(*m_lists[i] != *other.m_lists[i])
 			return false;
 	}
 	return true;
@@ -957,6 +957,9 @@ InventoryList * Inventory::addList(const std::string &name, u32 size)
 	}
 	else
 	{
+		//don't create list with invalid name
+		if (name.find(" ") != std::string::npos) return NULL;
+
 		InventoryList *list = new InventoryList(name, size, m_itemdef);
 		m_lists.push_back(list);
 		return list;

@@ -57,6 +57,7 @@ Particle::Particle(
 	float expirationtime,
 	float size,
 	bool collisiondetection,
+	bool vertical,
 	video::ITexture *texture,
 	v2f texpos,
 	v2f texsize
@@ -65,6 +66,7 @@ Particle::Particle(
 {
 	// Misc
 	m_gamedef = gamedef;
+	m_env = &env;
 
 	// Texture
 	m_material.setFlag(video::EMF_LIGHTING, false);
@@ -86,6 +88,7 @@ Particle::Particle(
 	m_player = player;
 	m_size = size;
 	m_collisiondetection = collisiondetection;
+	m_vertical = vertical;
 
 	// Irrlicht stuff
 	m_collisionbox = core::aabbox3d<f32>
@@ -93,7 +96,7 @@ Particle::Particle(
 	this->setAutomaticCulling(scene::EAC_OFF);
 
 	// Init lighting
-	updateLight(env);
+	updateLight();
 
 	// Init model
 	updateVertices();
@@ -132,7 +135,7 @@ void Particle::render()
 			scene::EPT_TRIANGLES, video::EIT_16BIT);
 }
 
-void Particle::step(float dtime, ClientEnvironment &env)
+void Particle::step(float dtime)
 {
 	m_time += dtime;
 	if (m_collisiondetection)
@@ -141,7 +144,7 @@ void Particle::step(float dtime, ClientEnvironment &env)
 		v3f p_pos = m_pos*BS;
 		v3f p_velocity = m_velocity*BS;
 		v3f p_acceleration = m_acceleration*BS;
-		collisionMoveSimple(&env, m_gamedef,
+		collisionMoveSimple(m_env, m_gamedef,
 			BS*0.5, box,
 			0, dtime,
 			p_pos, p_velocity, p_acceleration);
@@ -156,13 +159,13 @@ void Particle::step(float dtime, ClientEnvironment &env)
 	}
 
 	// Update lighting
-	updateLight(env);
+	updateLight();
 
 	// Update model
 	updateVertices();
 }
 
-void Particle::updateLight(ClientEnvironment &env)
+void Particle::updateLight()
 {
 	u8 light = 0;
 	try{
@@ -171,11 +174,11 @@ void Particle::updateLight(ClientEnvironment &env)
 			floor(m_pos.Y+0.5),
 			floor(m_pos.Z+0.5)
 		);
-		MapNode n = env.getClientMap().getNode(p);
-		light = n.getLightBlend(env.getDayNightRatio(), m_gamedef->ndef());
+		MapNode n = m_env->getClientMap().getNode(p);
+		light = n.getLightBlend(m_env->getDayNightRatio(), m_gamedef->ndef());
 	}
 	catch(InvalidPositionException &e){
-		light = blend_light(env.getDayNightRatio(), LIGHT_SUN, 0);
+		light = blend_light(m_env->getDayNightRatio(), LIGHT_SUN, 0);
 	}
 	m_light = decode_light(light);
 }
@@ -197,22 +200,27 @@ void Particle::updateVertices()
 	m_vertices[3] = video::S3DVertex(-m_size/2,m_size/2,0, 0,0,0,
 			c, tx0, ty0);
 
+	v3s16 camera_offset = m_env->getCameraOffset();
 	for(u16 i=0; i<4; i++)
 	{
-		m_vertices[i].Pos.rotateYZBy(m_player->getPitch());
-		m_vertices[i].Pos.rotateXZBy(m_player->getYaw());
+		if (m_vertical) {
+			v3f ppos = m_player->getPosition()/BS;
+			m_vertices[i].Pos.rotateXZBy(atan2(ppos.Z-m_pos.Z, ppos.X-m_pos.X)/core::DEGTORAD+90);
+		} else {
+			m_vertices[i].Pos.rotateYZBy(m_player->getPitch());
+			m_vertices[i].Pos.rotateXZBy(m_player->getYaw());
+		}
 		m_box.addInternalPoint(m_vertices[i].Pos);
-		m_vertices[i].Pos += m_pos*BS;
+		m_vertices[i].Pos += m_pos*BS - intToFloat(camera_offset, BS);
 	}
 }
-
 
 /*
 	Helpers
 */
 
 
-void allparticles_step (float dtime, ClientEnvironment &env)
+void allparticles_step (float dtime)
 {
 	for(std::vector<Particle*>::iterator i = all_particles.begin();
 			i != all_particles.end();)
@@ -221,11 +229,11 @@ void allparticles_step (float dtime, ClientEnvironment &env)
 		{
 			(*i)->remove();
 			delete *i;
-			all_particles.erase(i);
+			i = all_particles.erase(i);
 		}
 		else
 		{
-			(*i)->step(dtime, env);
+			(*i)->step(dtime);
 			i++;
 		}
 	}
@@ -293,6 +301,7 @@ void addNodeParticle(IGameDef* gamedef, scene::ISceneManager* smgr,
 		rand()%100/100., // expiration time
 		visual_size,
 		true,
+		false,
 		texture,
 		texpos,
 		texsize);
@@ -306,7 +315,7 @@ ParticleSpawner::ParticleSpawner(IGameDef* gamedef, scene::ISceneManager *smgr, 
 	u16 amount, float time,
 	v3f minpos, v3f maxpos, v3f minvel, v3f maxvel, v3f minacc, v3f maxacc,
 	float minexptime, float maxexptime, float minsize, float maxsize,
-	bool collisiondetection, video::ITexture *texture, u32 id)
+	bool collisiondetection, bool vertical, video::ITexture *texture, u32 id)
 {
 	m_gamedef = gamedef;
 	m_smgr = smgr;
@@ -324,6 +333,7 @@ ParticleSpawner::ParticleSpawner(IGameDef* gamedef, scene::ISceneManager *smgr, 
 	m_minsize = minsize;
 	m_maxsize = maxsize;
 	m_collisiondetection = collisiondetection;
+	m_vertical = vertical;
 	m_texture = texture;
 	m_time = 0;
 
@@ -372,10 +382,11 @@ void ParticleSpawner::step(float dtime, ClientEnvironment &env)
 					exptime,
 					size,
 					m_collisiondetection,
+					m_vertical,
 					m_texture,
 					v2f(0.0, 0.0),
 					v2f(1.0, 1.0));
-				m_spawntimes.erase(i);
+				i = m_spawntimes.erase(i);
 			}
 			else
 			{
@@ -410,6 +421,7 @@ void ParticleSpawner::step(float dtime, ClientEnvironment &env)
 					exptime,
 					size,
 					m_collisiondetection,
+					m_vertical,
 					m_texture,
 					v2f(0.0, 0.0),
 					v2f(1.0, 1.0));
@@ -462,6 +474,6 @@ void clear_particles ()
 	{
 		(*i)->remove();
 		delete *i;
-		all_particles.erase(i);
-	}	
+		i = all_particles.erase(i);
+	}
 }

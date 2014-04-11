@@ -44,7 +44,6 @@ class ActiveBlockModifier;
 class ServerActiveObject;
 class ITextureSource;
 class IGameDef;
-class IBackgroundBlockEmerger;
 class Map;
 class ServerMap;
 class ClientMap;
@@ -78,7 +77,7 @@ public:
 	std::list<Player*> getPlayers(bool ignore_disconnected);
 	
 	u32 getDayNightRatio();
-	
+
 	// 0-23999
 	virtual void setTimeOfDay(u32 time)
 	{
@@ -100,6 +99,15 @@ public:
 	float getTimeOfDaySpeed()
 	{ return m_time_of_day_speed; }
 
+	void setDayNightRatioOverride(bool enable, u32 value)
+	{
+		m_enable_day_night_ratio_override = enable;
+		m_day_night_ratio_override = value;
+	}
+
+	// counter used internally when triggering ABMs
+	u32 m_added_objects;
+
 protected:
 	// peer_ids in here should be unique, except that there may be many 0s
 	std::list<Player*> m_players;
@@ -110,6 +118,10 @@ protected:
 	float m_time_of_day_speed;
 	// Used to buffer dtime for adding to m_time_of_day
 	float m_time_counter;
+	// Overriding the day-night ratio is useful for custom sky visuals
+	bool m_enable_day_night_ratio_override;
+	u32 m_day_night_ratio_override;
+
 };
 
 /*
@@ -170,6 +182,7 @@ public:
 	}
 
 	std::set<v3s16> m_list;
+	std::set<v3s16> m_forceloaded_list;
 
 private:
 };
@@ -184,8 +197,7 @@ class ServerEnvironment : public Environment
 {
 public:
 	ServerEnvironment(ServerMap *map, GameScripting *scriptIface,
-			IGameDef *gamedef,
-			IBackgroundBlockEmerger *emerger);
+			IGameDef *gamedef);
 	~ServerEnvironment();
 
 	Map & getMap();
@@ -283,6 +295,7 @@ public:
 	// Script-aware node setters
 	bool setNode(v3s16 p, const MapNode &n);
 	bool removeNode(v3s16 p);
+	bool swapNode(v3s16 p, const MapNode &n);
 	
 	// Find all active objects inside a radius around a point
 	std::set<u16> getObjectsInsideRadius(v3f pos, float radius);
@@ -294,7 +307,7 @@ public:
 	void step(f32 dtime);
 	
 	//check if there's a line of sight between two positions
-	bool line_of_sight(v3f pos1, v3f pos2, float stepsize=1.0);
+	bool line_of_sight(v3f pos1, v3f pos2, float stepsize=1.0, v3s16 *p=NULL);
 
 	u32 getGameTime() { return m_game_time; }
 
@@ -303,6 +316,8 @@ public:
 	
 	// is weather active in this environment?
 	bool m_use_weather;
+	
+	std::set<v3s16>* getForceloadedBlocks() { return &m_active_blocks.m_forceloaded_list; };
 	
 private:
 
@@ -354,8 +369,6 @@ private:
 	GameScripting* m_script;
 	// Game definition
 	IGameDef *m_gamedef;
-	// Background block emerger (the EmergeManager, in practice)
-	IBackgroundBlockEmerger *m_emerger;
 	// Active object list
 	std::map<u16, ServerActiveObject*> m_active_objects;
 	// Outgoing network message buffer for active objects
@@ -491,6 +504,10 @@ public:
 	{ m_player_names.push_back(name); }
 	void removePlayerName(std::string name)
 	{ m_player_names.remove(name); }
+	void updateCameraOffset(v3s16 camera_offset)
+	{ m_camera_offset = camera_offset; }
+	v3s16 getCameraOffset()
+	{ return m_camera_offset; }
 	
 private:
 	ClientMap *m_map;
@@ -506,6 +523,7 @@ private:
 	IntervalLimiter m_drowning_interval;
 	IntervalLimiter m_breathing_interval;
 	std::list<std::string> m_player_names;
+	v3s16 m_camera_offset;
 };
 
 #endif

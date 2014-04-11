@@ -22,6 +22,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "lua_api/l_base.h"
 
+class AsyncEngine;
+
 /** Implementation of lua api support for mainmenu */
 class ModApiMainMenu : public ModApiBase {
 
@@ -95,6 +97,8 @@ private:
 
 	static int l_get_textlist_index(lua_State *L);
 
+	static int l_get_table_index(lua_State *L);
+
 	static int l_set_background(lua_State *L);
 
 	static int l_update_formspec(lua_State *L);
@@ -108,6 +112,8 @@ private:
 	static int l_get_gamepath(lua_State *L);
 	
 	static int l_get_texturepath(lua_State *L);
+
+	static int l_get_texturepath_share(lua_State *L);
 
 	static int l_get_dirlist(lua_State *L);
 
@@ -125,6 +131,8 @@ private:
 
 	static int l_download_file(lua_State *L);
 
+	// async
+	static int l_do_async_callback(lua_State *L);
 
 public:
 	/**
@@ -133,6 +141,8 @@ public:
 	 * @param top index (in lua stack) of global API table
 	 */
 	static void Initialize(lua_State *L, int top);
+
+	static void InitializeAsync(AsyncEngine& engine);
 
 };
 

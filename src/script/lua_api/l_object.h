@@ -101,7 +101,8 @@ private:
 	// set_armor_groups(self, groups)
 	static int l_set_armor_groups(lua_State *L);
 
-	// set_physics_override(self, physics_override_speed, physics_override_jump, physics_override_gravity)
+	// set_physics_override(self, physics_override_speed, physics_override_jump,
+	//                      physics_override_gravity, sneak, sneak_glitch)
 	static int l_set_physics_override(lua_State *L);
 
 	// set_animation(self, frame_range, frame_speed, frame_blend)
@@ -157,6 +158,9 @@ private:
 
 	// is_player(self)
 	static int l_is_player(lua_State *L);
+
+	// is_player_connected(self)
+	static int l_is_player_connected(lua_State *L);
 
 	// get_player_name(self)
 	static int l_get_player_name(lua_State *L);
@@ -220,6 +224,12 @@ private:
 
 	// hud_set_hotbar_selected_image(self, name)
 	static int l_hud_set_hotbar_selected_image(lua_State *L);
+
+	// set_sky(self, type, list)
+	static int l_set_sky(lua_State *L);
+
+	// override_day_night_ratio(self, type, list)
+	static int l_override_day_night_ratio(lua_State *L);
 
 public:
 	ObjectRef(ServerActiveObject *object);

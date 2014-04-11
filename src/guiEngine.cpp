@@ -30,6 +30,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "sound.h"
 #include "sound_openal.h"
 #include "clouds.h"
+#include "httpfetch.h"
 
 #include <IGUIStaticText.h>
 #include <ICameraSceneNode.h>
@@ -156,7 +157,7 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 		m_sound_manager = &dummySoundManager;
 
 	//create topleft header
-	core::rect<s32> rect(0, 0, 500, 40);
+	core::rect<s32> rect(0, 0, 500, 20);
 	rect += v2s32(4, 0);
 	std::string t = std::string("Minetest ") + minetest_version_hash;
 
@@ -286,6 +287,8 @@ void GUIEngine::run()
 			cloudPostProcess();
 		else
 			sleep_ms(25);
+
+		m_script->Step();
 	}
 }
 
@@ -390,7 +393,7 @@ void GUIEngine::drawBackground(video::IVideoDriver* driver)
 	}
 
 	/* Draw background texture */
-	v2u32 sourcesize = texture->getSize();
+	v2u32 sourcesize = texture->getOriginalSize();
 	driver->draw2DImage(texture,
 		core::rect<s32>(0, 0, screensize.X, screensize.Y),
 		core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
@@ -409,7 +412,7 @@ void GUIEngine::drawOverlay(video::IVideoDriver* driver)
 		return;
 
 	/* Draw background texture */
-	v2u32 sourcesize = texture->getSize();
+	v2u32 sourcesize = texture->getOriginalSize();
 	driver->draw2DImage(texture,
 		core::rect<s32>(0, 0, screensize.X, screensize.Y),
 		core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
@@ -427,7 +430,7 @@ void GUIEngine::drawHeader(video::IVideoDriver* driver)
 	if(!texture)
 		return;
 
-	f32 mult = (((f32)screensize.Width / 2)) /
+	f32 mult = (((f32)screensize.Width / 2.0)) /
 			((f32)texture->getOriginalSize().Width);
 
 	v2s32 splashsize(((f32)texture->getOriginalSize().Width) * mult,
@@ -445,7 +448,7 @@ void GUIEngine::drawHeader(video::IVideoDriver* driver)
 
 	driver->draw2DImage(texture, splashrect,
 		core::rect<s32>(core::position2d<s32>(0,0),
-		core::dimension2di(texture->getSize())),
+		core::dimension2di(texture->getOriginalSize())),
 		NULL, NULL, true);
 	}
 }
@@ -477,7 +480,7 @@ void GUIEngine::drawFooter(video::IVideoDriver* driver)
 
 		driver->draw2DImage(texture, rect,
 			core::rect<s32>(core::position2d<s32>(0,0),
-			core::dimension2di(texture->getSize())),
+			core::dimension2di(texture->getOriginalSize())),
 			NULL, NULL, true);
 	}
 }
@@ -505,51 +508,37 @@ bool GUIEngine::setTexture(texture_layer layer,std::string texturepath) {
 }
 
 /******************************************************************************/
-#if USE_CURL
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
-{
-	FILE* targetfile = (FILE*) userp;
-	fwrite(contents,size,nmemb,targetfile);
-	return size * nmemb;
-}
-#endif
 bool GUIEngine::downloadFile(std::string url,std::string target) {
 #if USE_CURL
-	//download file via curl
-	CURL *curl;
+	bool retval = true;
 
-	curl = curl_easy_init();
+	FILE* targetfile = fopen(target.c_str(),"wb");
 
-	if (curl)
-	{
-		CURLcode res;
-		bool retval = true;
+	if (targetfile) {
+		HTTPFetchRequest fetchrequest;
+		HTTPFetchResult fetchresult;
+		fetchrequest.url = url;
+		fetchrequest.caller = HTTPFETCH_SYNC;
+		httpfetch_sync(fetchrequest,fetchresult);
 
-		FILE* targetfile = fopen(target.c_str(),"wb");
-
-		if (targetfile) {
-			curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-			curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-			curl_easy_setopt(curl, CURLOPT_WRITEDATA, targetfile);
-
-			res = curl_easy_perform(curl);
-			if (res != CURLE_OK) {
-				errorstream << "File at url \"" << url
-					<<"\" not found (" << curl_easy_strerror(res) << ")" <<std::endl;
+		if (fetchresult.succeeded) {
+			if (fwrite(fetchresult.data.c_str(),1,fetchresult.data.size(),targetfile) != fetchresult.data.size()) {
 				retval = false;
 			}
-			fclose(targetfile);
 		}
 		else {
 			retval = false;
 		}
-
-		curl_easy_cleanup(curl);
-		return retval;
+		fclose(targetfile);
 	}
-#endif
+	else {
+		retval = false;
+	}
+
+	return retval;
+#else
 	return false;
+#endif
 }
 
 /******************************************************************************/
@@ -575,4 +564,10 @@ s32 GUIEngine::playSound(SimpleSoundSpec spec, bool looped)
 void GUIEngine::stopSound(s32 handle)
 {
 	m_sound_manager->stopSound(handle);
+}
+
+/******************************************************************************/
+unsigned int GUIEngine::DoAsync(std::string serialized_fct,
+		std::string serialized_params) {
+	return m_script->DoAsync(serialized_fct,serialized_params);
 }

@@ -37,61 +37,47 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "treegen.h"
 #include "mapgen_v6.h"
 
-/////////////////// Mapgen V6 perlin noise default values
-NoiseParams nparams_v6_def_terrain_base =
-	{-AVERAGE_MUD_AMOUNT, 20.0, v3f(250.0, 250.0, 250.0), 82341, 5, 0.6};
-NoiseParams nparams_v6_def_terrain_higher =
-	{20.0, 16.0, v3f(500.0, 500.0, 500.0), 85039, 5, 0.6};
-NoiseParams nparams_v6_def_steepness =
-	{0.85, 0.5, v3f(125.0, 125.0, 125.0), -932, 5, 0.7};
-NoiseParams nparams_v6_def_height_select =
-	{0.5, 1.0, v3f(250.0, 250.0, 250.0), 4213, 5, 0.69};
-NoiseParams nparams_v6_def_mud =
-	{AVERAGE_MUD_AMOUNT, 2.0, v3f(200.0, 200.0, 200.0), 91013, 3, 0.55};
-NoiseParams nparams_v6_def_beach =
-	{0.0, 1.0, v3f(250.0, 250.0, 250.0), 59420, 3, 0.50};
-NoiseParams nparams_v6_def_biome =
-	{0.0, 1.0, v3f(250.0, 250.0, 250.0), 9130, 3, 0.50};
-NoiseParams nparams_v6_def_cave =
-	{6.0, 6.0, v3f(250.0, 250.0, 250.0), 34329, 3, 0.50};
-NoiseParams nparams_v6_def_humidity =
-	{0.5, 0.5, v3f(500.0, 500.0, 500.0), 72384, 4, 0.66};
-NoiseParams nparams_v6_def_trees =
-	{0.0, 1.0, v3f(125.0, 125.0, 125.0), 2, 4, 0.66};
-NoiseParams nparams_v6_def_apple_trees =
-	{0.0, 1.0, v3f(100.0, 100.0, 100.0), 342902, 3, 0.45};
-
+FlagDesc flagdesc_mapgen_v6[] = {
+	{"jungles",    MGV6_JUNGLES},
+	{"biomeblend", MGV6_BIOMEBLEND},
+	{"mudflow",    MGV6_MUDFLOW},
+	{NULL,         0}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
 
-MapgenV6::MapgenV6(int mapgenid, MapgenV6Params *params, EmergeManager *emerge) {
+MapgenV6::MapgenV6(int mapgenid, MapgenParams *params, EmergeManager *emerge) {
 	this->generating  = false;
 	this->id       = mapgenid;
 	this->emerge   = emerge;
 
-	this->seed     = (int)params->seed;
+	this->seed        = (int)params->seed;
 	this->water_level = params->water_level;
-	this->flags   = params->flags;
-	this->csize   = v3s16(1, 1, 1) * params->chunksize * MAP_BLOCKSIZE;
-
-	this->freq_desert = params->freq_desert;
-	this->freq_beach  = params->freq_beach;
+	this->flags       = params->flags;
+	this->csize       = v3s16(1, 1, 1) * params->chunksize * MAP_BLOCKSIZE;
+	this->gennotify   = emerge->gennotify;
 
 	this->ystride = csize.X; //////fix this
 	
-	np_cave        = &params->np_cave;
-	np_humidity    = &params->np_humidity;
-	np_trees       = &params->np_trees;
-	np_apple_trees = &params->np_apple_trees;
+	MapgenV6Params *sp = (MapgenV6Params *)params->sparams;
 
-	noise_terrain_base   = new Noise(&params->np_terrain_base,   seed, csize.X, csize.Y);
-	noise_terrain_higher = new Noise(&params->np_terrain_higher, seed, csize.X, csize.Y);
-	noise_steepness      = new Noise(&params->np_steepness,      seed, csize.X, csize.Y);
-	noise_height_select  = new Noise(&params->np_height_select,  seed, csize.X, csize.Y);
-	noise_mud            = new Noise(&params->np_mud,            seed, csize.X, csize.Y);
-	noise_beach          = new Noise(&params->np_beach,          seed, csize.X, csize.Y);
-	noise_biome          = new Noise(&params->np_biome,          seed, csize.X, csize.Y);
+	this->spflags     = sp->spflags;
+	this->freq_desert = sp->freq_desert;
+	this->freq_beach  = sp->freq_beach;
+
+	np_cave        = &sp->np_cave;
+	np_humidity    = &sp->np_humidity;
+	np_trees       = &sp->np_trees;
+	np_apple_trees = &sp->np_apple_trees;
+
+	noise_terrain_base   = new Noise(&sp->np_terrain_base,   seed, csize.X, csize.Y);
+	noise_terrain_higher = new Noise(&sp->np_terrain_higher, seed, csize.X, csize.Y);
+	noise_steepness      = new Noise(&sp->np_steepness,      seed, csize.X, csize.Y);
+	noise_height_select  = new Noise(&sp->np_height_select,  seed, csize.X, csize.Y);
+	noise_mud            = new Noise(&sp->np_mud,            seed, csize.X, csize.Y);
+	noise_beach          = new Noise(&sp->np_beach,          seed, csize.X, csize.Y);
+	noise_biome          = new Noise(&sp->np_biome,          seed, csize.X, csize.Y);
 }
 
 
@@ -103,6 +89,63 @@ MapgenV6::~MapgenV6() {
 	delete noise_mud;
 	delete noise_beach;
 	delete noise_biome;
+}
+
+
+MapgenV6Params::MapgenV6Params() {
+	spflags     = MGV6_BIOMEBLEND | MGV6_MUDFLOW;
+	freq_desert = 0.45;
+	freq_beach  = 0.15;
+
+	np_terrain_base   = NoiseParams(-4,  20.0, v3f(250.0, 250.0, 250.0), 82341,  5, 0.6);
+	np_terrain_higher = NoiseParams(20,  16.0, v3f(500.0, 500.0, 500.0), 85039,  5, 0.6);
+	np_steepness      = NoiseParams(0.85,0.5,  v3f(125.0, 125.0, 125.0), -932,   5, 0.7);
+	np_height_select  = NoiseParams(0.5, 1.0,  v3f(250.0, 250.0, 250.0), 4213,   5, 0.69);
+	np_mud            = NoiseParams(4,   2.0,  v3f(200.0, 200.0, 200.0), 91013,  3, 0.55);
+	np_beach          = NoiseParams(0,   1.0,  v3f(250.0, 250.0, 250.0), 59420,  3, 0.50);
+	np_biome          = NoiseParams(0,   1.0,  v3f(250.0, 250.0, 250.0), 9130,   3, 0.50);
+	np_cave           = NoiseParams(6,   6.0,  v3f(250.0, 250.0, 250.0), 34329,  3, 0.50);
+	np_humidity       = NoiseParams(0.5, 0.5,  v3f(500.0, 500.0, 500.0), 72384,  4, 0.66);
+	np_trees          = NoiseParams(0,   1.0,  v3f(125.0, 125.0, 125.0), 2,      4, 0.66);
+	np_apple_trees    = NoiseParams(0,   1.0,  v3f(100.0, 100.0, 100.0), 342902, 3, 0.45);
+}
+
+
+void MapgenV6Params::readParams(Settings *settings) {
+	settings->getFlagStrNoEx("mgv6_spflags", spflags, flagdesc_mapgen_v6);
+	settings->getFloatNoEx("mgv6_freq_desert", freq_desert);
+	settings->getFloatNoEx("mgv6_freq_beach",  freq_beach);
+
+	settings->getNoiseParams("mgv6_np_terrain_base",   np_terrain_base);
+	settings->getNoiseParams("mgv6_np_terrain_higher", np_terrain_higher);
+	settings->getNoiseParams("mgv6_np_steepness",      np_steepness);
+	settings->getNoiseParams("mgv6_np_height_select",  np_height_select);
+	settings->getNoiseParams("mgv6_np_mud",            np_mud);
+	settings->getNoiseParams("mgv6_np_beach",          np_beach);
+	settings->getNoiseParams("mgv6_np_biome",          np_biome);
+	settings->getNoiseParams("mgv6_np_cave",           np_cave);
+	settings->getNoiseParams("mgv6_np_humidity",       np_humidity);
+	settings->getNoiseParams("mgv6_np_trees",          np_trees);
+	settings->getNoiseParams("mgv6_np_apple_trees",    np_apple_trees);
+}
+
+
+void MapgenV6Params::writeParams(Settings *settings) {
+	settings->setFlagStr("mgv6_spflags", spflags, flagdesc_mapgen_v6, (u32)-1);
+	settings->setFloat("mgv6_freq_desert", freq_desert);
+	settings->setFloat("mgv6_freq_beach",  freq_beach);
+
+	settings->setNoiseParams("mgv6_np_terrain_base",   np_terrain_base);
+	settings->setNoiseParams("mgv6_np_terrain_higher", np_terrain_higher);
+	settings->setNoiseParams("mgv6_np_steepness",      np_steepness);
+	settings->setNoiseParams("mgv6_np_height_select",  np_height_select);
+	settings->setNoiseParams("mgv6_np_mud",            np_mud);
+	settings->setNoiseParams("mgv6_np_beach",          np_beach);
+	settings->setNoiseParams("mgv6_np_biome",          np_biome);
+	settings->setNoiseParams("mgv6_np_cave",           np_cave);
+	settings->setNoiseParams("mgv6_np_humidity",       np_humidity);
+	settings->setNoiseParams("mgv6_np_trees",          np_trees);
+	settings->setNoiseParams("mgv6_np_apple_trees",    np_apple_trees);
 }
 
 
@@ -149,8 +192,8 @@ bool MapgenV6::block_is_underground(u64 seed, v3s16 blockpos)
 
 float MapgenV6::baseTerrainLevel(float terrain_base, float terrain_higher,
 									float steepness, float height_select) {	
-	float base   = water_level + terrain_base;
-	float higher = water_level + terrain_higher;
+	float base   = 1 + terrain_base;
+	float higher = 1 + terrain_higher;
 
 	// Limit higher ground level to at least base
 	if(higher < base)
@@ -322,7 +365,7 @@ BiomeType MapgenV6::getBiome(int index, v2s16 p)
 	if (d > freq_desert)
 		return BT_DESERT;
 		
-	if ((flags & MGV6_BIOME_BLEND) &&
+	if ((spflags & MGV6_BIOMEBLEND) &&
 		(d > freq_desert - 0.10) &&
 		((noise2d(p.X, p.Y, seed) + 1.0) > (freq_desert - d) * 20.0))
 		return BT_DESERT;
@@ -393,10 +436,22 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 	c_cobble          = ndef->getId("mapgen_cobble");
 	c_desert_sand     = ndef->getId("mapgen_desert_sand");
 	c_desert_stone    = ndef->getId("mapgen_desert_stone");
+	c_mossycobble     = ndef->getId("mapgen_mossycobble");
+	c_sandbrick       = ndef->getId("mapgen_sandstonebrick");
+	c_stair_cobble    = ndef->getId("mapgen_stair_cobble");
+	c_stair_sandstone = ndef->getId("mapgen_stair_sandstone");
 	if (c_desert_sand == CONTENT_IGNORE)
 		c_desert_sand = c_sand;
 	if (c_desert_stone == CONTENT_IGNORE)
 		c_desert_stone = c_stone;
+	if (c_mossycobble == CONTENT_IGNORE)
+		c_mossycobble = c_cobble;
+	if (c_sandbrick == CONTENT_IGNORE)
+		c_sandbrick = c_desert_stone;
+	if (c_stair_cobble == CONTENT_IGNORE)
+		c_stair_cobble = c_cobble;
+	if (c_stair_sandstone == CONTENT_IGNORE)
+		c_stair_sandstone = c_sandbrick;
 
 	// Maximum height of the stone surface and obstacles.
 	// This is used to guide the cave generation
@@ -426,14 +481,43 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 		addDirtGravelBlobs();
 
 		// Flow mud away from steep edges
-		flowMud(mudflow_minpos, mudflow_maxpos);
+		if (spflags & MGV6_MUDFLOW)
+			flowMud(mudflow_minpos, mudflow_maxpos);
 
 	}
 	
 	// Add dungeons
 	if (flags & MG_DUNGEONS) {
-		DungeonGen dgen(ndef, data->seed, water_level);
-		dgen.generate(vm, blockseed, full_node_min, full_node_max);
+		DungeonParams dp;
+
+		dp.np_rarity  = nparams_dungeon_rarity;
+		dp.np_density = nparams_dungeon_density;
+		dp.np_wetness = nparams_dungeon_wetness;
+		dp.c_water = c_water_source;
+		if (getBiome(0, v2s16(node_min.X, node_min.Z)) == BT_NORMAL) {
+			dp.c_cobble  = c_cobble;
+			dp.c_moss    = c_mossycobble;
+			dp.c_stair   = c_stair_cobble;
+
+			dp.diagonal_dirs = false;
+			dp.mossratio  = 3.0;
+			dp.holesize   = v3s16(1, 2, 1);
+			dp.roomsize   = v3s16(0, 0, 0);
+			dp.notifytype = GENNOTIFY_DUNGEON;
+		} else {
+			dp.c_cobble  = c_sandbrick;
+			dp.c_moss    = c_sandbrick; // should make this 'cracked sandstone' later
+			dp.c_stair   = c_stair_sandstone;
+
+			dp.diagonal_dirs = true;
+			dp.mossratio  = 0.0;
+			dp.holesize   = v3s16(2, 3, 2);
+			dp.roomsize   = v3s16(2, 5, 2);
+			dp.notifytype = GENNOTIFY_TEMPLE;
+		}
+
+		DungeonGen dgen(this, &dp);
+		dgen.generate(blockseed, full_node_min, full_node_max);
 	}
 	
 	// Add top and bottom side of water to transforming_liquid queue
@@ -459,7 +543,7 @@ void MapgenV6::makeChunk(BlockMakeData *data) {
 	}
 
 	// Calculate lighting
-	if (!(flags & MG_NOLIGHT))
+	if (flags & MG_LIGHT)
 		calcLighting(node_min - v3s16(1, 1, 1) * MAP_BLOCKSIZE,
 					 node_max + v3s16(1, 0, 1) * MAP_BLOCKSIZE);
 	
@@ -824,7 +908,7 @@ void MapgenV6::placeTreesAndJungleGrass() {
 		
 		float humidity;
 		bool is_jungle = false;
-		if (flags & MGV6_JUNGLES) {
+		if (spflags & MGV6_JUNGLES) {
 			humidity = getHumidity(p2d_center);
 			if (humidity > 0.75) {
 				is_jungle = true;

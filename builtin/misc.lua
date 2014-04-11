@@ -53,13 +53,25 @@ end)
 function minetest.get_connected_players()
 	local temp_table = {}
 	for index, value in pairs(player_list) do
-		table.insert(temp_table, value)
+		if value:is_player_connected() then
+			table.insert(temp_table, value)
+		end
 	end
 	return temp_table
 end
 
 function minetest.hash_node_position(pos)
 	return (pos.z+32768)*65536*65536 + (pos.y+32768)*65536 + pos.x+32768
+end
+
+function minetest.get_position_from_hash(hash)
+	local pos = {}
+	pos.x = (hash%65536) - 32768
+	hash = math.floor(hash/65536)
+	pos.y = (hash%65536) - 32768
+	hash = math.floor(hash/65536)
+	pos.z = (hash%65536) - 32768
+	return pos
 end
 
 function minetest.get_item_group(name, group)
@@ -104,5 +116,16 @@ function minetest.setting_get_pos(name)
 		return nil
 	end
 	return minetest.string_to_pos(value)
+end
+
+-- To be overriden by protection mods
+function minetest.is_protected(pos, name)
+	return false
+end
+
+function minetest.record_protection_violation(pos, name)
+	for _, func in pairs(minetest.registered_on_protection_violation) do
+		func(pos, name)
+	end
 end
 

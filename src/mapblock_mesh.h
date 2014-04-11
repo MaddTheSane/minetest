@@ -81,7 +81,7 @@ class MapBlockMesh
 {
 public:
 	// Builds the mesh given
-	MapBlockMesh(MeshMakeData *data);
+	MapBlockMesh(MeshMakeData *data, v3s16 camera_offset);
 	~MapBlockMesh();
 
 	// Main animation function, parameters:
@@ -107,6 +107,8 @@ public:
 		if(m_animation_force_timer > 0)
 			m_animation_force_timer--;
 	}
+	
+	void updateCameraOffset(v3s16 camera_offset);
 
 private:
 	scene::SMesh *m_mesh;
@@ -133,6 +135,9 @@ private:
 	u32 m_last_daynight_ratio;
 	// For each meshbuffer, maps vertex indices to (day,night) pairs
 	std::map<u32, std::map<u32, std::pair<u8, u8> > > m_daynight_diffs;
+	
+	// Camera offset info -> do we have to translate the mesh?
+	v3s16 m_camera_offset;
 };
 
 
@@ -167,8 +172,8 @@ inline video::SColor MapBlock_LightColor(u8 alpha, u16 light, u8 light_source=0)
 }
 
 // Compute light at node
-u16 getInteriorLight(MapNode n, s32 increment, MeshMakeData *data);
-u16 getFaceLight(MapNode n, MapNode n2, v3s16 face_dir, MeshMakeData *data);
+u16 getInteriorLight(MapNode n, s32 increment, INodeDefManager *ndef);
+u16 getFaceLight(MapNode n, MapNode n2, v3s16 face_dir, INodeDefManager *ndef);
 u16 getSmoothLight(v3s16 p, v3s16 corner, MeshMakeData *data);
 
 // Retrieves the TileSpec of a face of a node

@@ -61,6 +61,8 @@ enum MapEditEventType{
 	MEET_ADDNODE,
 	// Node removed (changed to air)
 	MEET_REMOVENODE,
+	// Node swapped (changed without metadata change)
+	MEET_SWAPNODE,
 	// Node metadata of block changed (not knowing which node exactly)
 	// p stores block coordinate
 	MEET_BLOCK_NODE_METADATA_CHANGED,
@@ -98,6 +100,8 @@ struct MapEditEvent
 		case MEET_ADDNODE:
 			return VoxelArea(p);
 		case MEET_REMOVENODE:
+			return VoxelArea(p);
+		case MEET_SWAPNODE:
 			return VoxelArea(p);
 		case MEET_BLOCK_NODE_METADATA_CHANGED:
 		{
@@ -236,7 +240,8 @@ public:
 		These handle lighting but not faces.
 	*/
 	void addNodeAndUpdate(v3s16 p, MapNode n,
-			std::map<v3s16, MapBlock*> &modified_blocks);
+			std::map<v3s16, MapBlock*> &modified_blocks,
+			bool remove_metadata = true);
 	void removeNodeAndUpdate(v3s16 p,
 			std::map<v3s16, MapBlock*> &modified_blocks);
 
@@ -245,7 +250,7 @@ public:
 		These emit events.
 		Return true if succeeded, false if not.
 	*/
-	bool addNodeWithEvent(v3s16 p, MapNode n);
+	bool addNodeWithEvent(v3s16 p, MapNode n, bool remove_metadata = true);
 	bool removeNodeWithEvent(v3s16 p);
 
 	/*
@@ -307,7 +312,22 @@ public:
 	*/
 
 	NodeMetadata* getNodeMetadata(v3s16 p);
-	void setNodeMetadata(v3s16 p, NodeMetadata *meta);
+
+	/**
+	 * Sets metadata for a node.
+	 * This method sets the metadata for a given node.
+	 * On success, it returns @c true and the object pointed to
+	 * by @p meta is then managed by the system and should
+	 * not be deleted by the caller.
+	 *
+	 * In case of failure, the method returns @c false and the
+	 * caller is still responsible for deleting the object!
+	 *
+	 * @param p node coordinates
+	 * @param meta pointer to @c NodeMetadata object
+	 * @return @c true on success, false on failure
+	 */
+	bool setNodeMetadata(v3s16 p, NodeMetadata *meta);
 	void removeNodeMetadata(v3s16 p);
 
 	/*
@@ -403,6 +423,17 @@ public:
 
 	*/
 	MapBlock * emergeBlock(v3s16 p, bool create_blank=true);
+	
+	/*
+		Try to get a block.
+		If it does not exist in memory, add it to the emerge queue.
+		- Memory
+		- Emerge Queue (deferred disk or generate)
+	*/
+	MapBlock *getBlockOrEmerge(v3s16 p3d);
+
+	// Carries out any initialization necessary before block is sent
+	void prepareBlock(MapBlock *block);
 
 	// Helper for placing objects on ground level
 	s16 findGroundLevel(v2s16 p2d);
@@ -470,20 +501,13 @@ public:
 
 	bool isSavingEnabled(){ return m_map_saving_enabled; }
 
-	u64 getSeed(){ return m_seed; }
-
-	MapgenParams *getMapgenParams(){ return m_mgparams; }
-
-	// Parameters fed to the Mapgen
-	MapgenParams *m_mgparams;
+	u64 getSeed();
+	s16 getWaterLevel();
 
 	virtual s16 updateBlockHeat(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL);
 	virtual s16 updateBlockHumidity(ServerEnvironment *env, v3s16 p, MapBlock *block = NULL);
 
 private:
-	// Seed used for all kinds of randomness in generation
-	u64 m_seed;
-	
 	// Emerge manager
 	EmergeManager *m_emerge;
 

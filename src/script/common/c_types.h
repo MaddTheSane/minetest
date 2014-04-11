@@ -26,6 +26,8 @@ extern "C" {
 
 #include <iostream>
 
+#include "exceptions.h"
+
 struct EnumString
 {
 	int num;
@@ -50,18 +52,10 @@ public:
 	}
 };
 
-class LuaError : public std::exception
+class LuaError : public ServerError
 {
 public:
-	LuaError(lua_State *L, const std::string &s);
-
-	virtual ~LuaError() throw()
-	{}
-	virtual const char * what() const throw()
-	{
-		return m_s.c_str();
-	}
-	std::string m_s;
+	LuaError(const std::string &s) : ServerError(s) {}
 };
 
 
