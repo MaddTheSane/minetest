@@ -1226,7 +1226,7 @@ void * ConnectionSendThread::Thread()
 
 	PROFILE(std::stringstream ThreadIdentifier);
 	PROFILE(ThreadIdentifier << "ConnectionSend: [" << m_connection->getDesc() << "]");
-
+	
 	porting::setThreadName("ConnectionSend");
 
 	/* if stop is requested don't stop immediately but try to send all        */

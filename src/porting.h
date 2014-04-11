@@ -295,6 +295,10 @@ inline void setThreadName(const char* name) {
 #elif defined(_WIN32)
 // threadnames are not supported on windows
 #define setThreadName(a)
+#elif defined(__APPLE__)
+inline void setThreadName(const char* name) {
+	pthread_setname_np(name);
+}
 #else
 #warning "Unknown platform for setThreadName support, you wont have threadname support."
 #define setThreadName(a)

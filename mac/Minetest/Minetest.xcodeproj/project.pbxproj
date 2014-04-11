@@ -244,9 +244,7 @@
 		D5D6DFAD17091F91001EB852 /* guiDeathScreen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE7B17091F91001EB852 /* guiDeathScreen.cpp */; };
 		D5D6DFAE17091F91001EB852 /* guiFormSpecMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE7D17091F91001EB852 /* guiFormSpecMenu.cpp */; };
 		D5D6DFAF17091F91001EB852 /* guiKeyChangeMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE7F17091F91001EB852 /* guiKeyChangeMenu.cpp */; };
-		D5D6DFB117091F91001EB852 /* guiMessageMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE8317091F91001EB852 /* guiMessageMenu.cpp */; };
 		D5D6DFB217091F91001EB852 /* guiPasswordChange.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE8517091F91001EB852 /* guiPasswordChange.cpp */; };
-		D5D6DFB317091F91001EB852 /* guiPauseMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE8717091F91001EB852 /* guiPauseMenu.cpp */; };
 		D5D6DFB417091F91001EB852 /* guiTextInputMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE8917091F91001EB852 /* guiTextInputMenu.cpp */; };
 		D5D6DFB517091F91001EB852 /* guiVolumeChange.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE8B17091F91001EB852 /* guiVolumeChange.cpp */; };
 		D5D6DFB617091F91001EB852 /* intlGUIEditBox.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE8E17091F91001EB852 /* intlGUIEditBox.cpp */; };
@@ -634,12 +632,8 @@
 		D5D6DE7F17091F91001EB852 /* guiKeyChangeMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiKeyChangeMenu.cpp; sourceTree = "<group>"; };
 		D5D6DE8017091F91001EB852 /* guiKeyChangeMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiKeyChangeMenu.h; sourceTree = "<group>"; };
 		D5D6DE8217091F91001EB852 /* guiMainMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiMainMenu.h; sourceTree = "<group>"; };
-		D5D6DE8317091F91001EB852 /* guiMessageMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiMessageMenu.cpp; sourceTree = "<group>"; };
-		D5D6DE8417091F91001EB852 /* guiMessageMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiMessageMenu.h; sourceTree = "<group>"; };
 		D5D6DE8517091F91001EB852 /* guiPasswordChange.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiPasswordChange.cpp; sourceTree = "<group>"; };
 		D5D6DE8617091F91001EB852 /* guiPasswordChange.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiPasswordChange.h; sourceTree = "<group>"; };
-		D5D6DE8717091F91001EB852 /* guiPauseMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiPauseMenu.cpp; sourceTree = "<group>"; };
-		D5D6DE8817091F91001EB852 /* guiPauseMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiPauseMenu.h; sourceTree = "<group>"; };
 		D5D6DE8917091F91001EB852 /* guiTextInputMenu.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiTextInputMenu.cpp; sourceTree = "<group>"; };
 		D5D6DE8A17091F91001EB852 /* guiTextInputMenu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = guiTextInputMenu.h; sourceTree = "<group>"; };
 		D5D6DE8B17091F91001EB852 /* guiVolumeChange.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = guiVolumeChange.cpp; sourceTree = "<group>"; };
@@ -1198,12 +1192,8 @@
 				D5D6DE7F17091F91001EB852 /* guiKeyChangeMenu.cpp */,
 				D5D6DE8017091F91001EB852 /* guiKeyChangeMenu.h */,
 				D5D6DE8217091F91001EB852 /* guiMainMenu.h */,
-				D5D6DE8317091F91001EB852 /* guiMessageMenu.cpp */,
-				D5D6DE8417091F91001EB852 /* guiMessageMenu.h */,
 				D5D6DE8517091F91001EB852 /* guiPasswordChange.cpp */,
 				D5D6DE8617091F91001EB852 /* guiPasswordChange.h */,
-				D5D6DE8717091F91001EB852 /* guiPauseMenu.cpp */,
-				D5D6DE8817091F91001EB852 /* guiPauseMenu.h */,
 				D5D6DE8917091F91001EB852 /* guiTextInputMenu.cpp */,
 				D5D6DE8A17091F91001EB852 /* guiTextInputMenu.h */,
 				D5D6DE8B17091F91001EB852 /* guiVolumeChange.cpp */,
@@ -1647,9 +1637,7 @@
 				D5D6DFAE17091F91001EB852 /* guiFormSpecMenu.cpp in Sources */,
 				55F209F31812039000AE835B /* version.cpp in Sources */,
 				D5D6DFAF17091F91001EB852 /* guiKeyChangeMenu.cpp in Sources */,
-				D5D6DFB117091F91001EB852 /* guiMessageMenu.cpp in Sources */,
 				D5D6DFB217091F91001EB852 /* guiPasswordChange.cpp in Sources */,
-				D5D6DFB317091F91001EB852 /* guiPauseMenu.cpp in Sources */,
 				D5D6DFB417091F91001EB852 /* guiTextInputMenu.cpp in Sources */,
 				D5D6DFB517091F91001EB852 /* guiVolumeChange.cpp in Sources */,
 				55F20997181201F500AE835B /* c_converter.cpp in Sources */,
