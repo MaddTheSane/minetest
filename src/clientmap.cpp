@@ -50,9 +50,6 @@ ClientMap::ClientMap(
 	m_camera_direction(0,0,1),
 	m_camera_fov(M_PI)
 {
-	m_camera_mutex.Init();
-	assert(m_camera_mutex.IsInitialized());
-	
 	m_box = core::aabbox3d<f32>(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
 }
@@ -178,6 +175,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 	v3f camera_position = m_camera_position;
 	v3f camera_direction = m_camera_direction;
 	f32 camera_fov = m_camera_fov;
+	v3s16 camera_offset = m_camera_offset;
 	m_camera_mutex.Unlock();
 
 	// Use a higher fov to accomodate faster camera movements.
@@ -252,6 +250,9 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 				Compare block position to camera position, skip
 				if not seen on display
 			*/
+			
+			if (block->mesh != NULL)
+				block->mesh->updateCameraOffset(m_camera_offset);
 			
 			float range = 100000 * BS;
 			if(m_control.range_all == false)

@@ -165,7 +165,7 @@ inline s32 mystoi(const std::string &s, s32 min, s32 max)
 
 inline s64 stoi64(const std::string &s) {
 	std::stringstream tmp(s);
-	long long t;
+	s64 t;
 	tmp >> t;
 	return t;
 }
@@ -317,10 +317,13 @@ inline std::string unescape_string(std::string &s)
 }
 
 std::string translatePassword(std::string playername, std::wstring password);
-size_t curl_write_data(char *ptr, size_t size, size_t nmemb, void *userdata);
-u32 readFlagString(std::string str, FlagDesc *flagdesc);
-std::string writeFlagString(u32 flags, FlagDesc *flagdesc);
+std::string urlencode(std::string str);
+std::string urldecode(std::string str);
+u32 readFlagString(std::string str, FlagDesc *flagdesc, u32 *flagmask);
+std::string writeFlagString(u32 flags, FlagDesc *flagdesc, u32 flagmask);
+size_t mystrlcpy(char *dst, const char *src, size_t size);
 char *mystrtok_r(char *s, const char *sep, char **lasts);
+u64 read_seed(const char *str);
 
 #endif
 

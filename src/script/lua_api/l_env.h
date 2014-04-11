@@ -34,6 +34,10 @@ private:
 	// minetest.remove_node(pos)
 	// pos = {x=num, y=num, z=num}
 	static int l_remove_node(lua_State *L);
+	
+	// minetest.swap_node(pos, node)
+	// pos = {x=num, y=num, z=num}
+	static int l_swap_node(lua_State *L);
 
 	// minetest.get_node(pos)
 	// pos = {x=num, y=num, z=num}
@@ -146,6 +150,14 @@ private:
 
 	static int l_get_heat(lua_State *L);
 	static int l_get_humidity(lua_State *L);
+	
+	// minetest.forceload_block(blockpos)
+	// forceloads a block
+	static int l_forceload_block(lua_State *L);
+	
+	// minetest.forceload_free_block(blockpos)
+	// stops forceloading a position
+	static int l_forceload_free_block(lua_State *L);
 	
 public:
 	static void Initialize(lua_State *L, int top);

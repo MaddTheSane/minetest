@@ -150,9 +150,8 @@ void MeshMakeData::setSmoothLighting(bool smooth_lighting)
 	Single light bank.
 */
 static u8 getInteriorLight(enum LightBank bank, MapNode n, s32 increment,
-		MeshMakeData *data)
+		INodeDefManager *ndef)
 {
-	INodeDefManager *ndef = data->m_gamedef->ndef();
 	u8 light = n.getLight(bank, ndef);
 
 	while(increment > 0)
@@ -173,10 +172,10 @@ static u8 getInteriorLight(enum LightBank bank, MapNode n, s32 increment,
 	Calculate non-smooth lighting at interior of node.
 	Both light banks.
 */
-u16 getInteriorLight(MapNode n, s32 increment, MeshMakeData *data)
+u16 getInteriorLight(MapNode n, s32 increment, INodeDefManager *ndef)
 {
-	u16 day = getInteriorLight(LIGHTBANK_DAY, n, increment, data);
-	u16 night = getInteriorLight(LIGHTBANK_NIGHT, n, increment, data);
+	u16 day = getInteriorLight(LIGHTBANK_DAY, n, increment, ndef);
+	u16 night = getInteriorLight(LIGHTBANK_NIGHT, n, increment, ndef);
 	return day | (night << 8);
 }
 
@@ -185,10 +184,8 @@ u16 getInteriorLight(MapNode n, s32 increment, MeshMakeData *data)
 	Single light bank.
 */
 static u8 getFaceLight(enum LightBank bank, MapNode n, MapNode n2,
-		v3s16 face_dir, MeshMakeData *data)
+		v3s16 face_dir, INodeDefManager *ndef)
 {
-	INodeDefManager *ndef = data->m_gamedef->ndef();
-
 	u8 light;
 	u8 l1 = n.getLight(bank, ndef);
 	u8 l2 = n2.getLight(bank, ndef);
@@ -227,10 +224,10 @@ static u8 getFaceLight(enum LightBank bank, MapNode n, MapNode n2,
 	Calculate non-smooth lighting at face of node.
 	Both light banks.
 */
-u16 getFaceLight(MapNode n, MapNode n2, v3s16 face_dir, MeshMakeData *data)
+u16 getFaceLight(MapNode n, MapNode n2, v3s16 face_dir, INodeDefManager *ndef)
 {
-	u16 day = getFaceLight(LIGHTBANK_DAY, n, n2, face_dir, data);
-	u16 night = getFaceLight(LIGHTBANK_NIGHT, n, n2, face_dir, data);
+	u16 day = getFaceLight(LIGHTBANK_DAY, n, n2, face_dir, ndef);
+	u16 night = getFaceLight(LIGHTBANK_NIGHT, n, n2, face_dir, ndef);
 	return day | (night << 8);
 }
 
@@ -812,7 +809,7 @@ static void getTileInfo(
 	if(data->m_smooth_lighting == false)
 	{
 		lights[0] = lights[1] = lights[2] = lights[3] =
-				getFaceLight(n0, n1, face_dir, data);
+				getFaceLight(n0, n1, face_dir, ndef);
 	}
 	else
 	{
@@ -1030,7 +1027,7 @@ static void updateAllFastFaceRows(MeshMakeData *data,
 	MapBlockMesh
 */
 
-MapBlockMesh::MapBlockMesh(MeshMakeData *data):
+MapBlockMesh::MapBlockMesh(MeshMakeData *data, v3s16 camera_offset):
 	m_mesh(new scene::SMesh()),
 	m_gamedef(data->m_gamedef),
 	m_animation_force_timer(0), // force initial animation
@@ -1109,18 +1106,23 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 	/*
 		Convert MeshCollector to SMesh
 	*/
+	bool enable_shaders     = g_settings->getBool("enable_shaders");
 	bool enable_bumpmapping = g_settings->getBool("enable_bumpmapping");
-	bool enable_shaders = g_settings->getBool("enable_shaders");
-	video::E_MATERIAL_TYPE shadermat1 = m_gamedef->getShaderSource()->
-			getShader("test_shader_1").material;
-	video::E_MATERIAL_TYPE shadermat2 = m_gamedef->getShaderSource()->
-			getShader("test_shader_2").material;
-	video::E_MATERIAL_TYPE shadermat3 = m_gamedef->getShaderSource()->
-			getShader("test_shader_3").material;
-	video::E_MATERIAL_TYPE bumpmaps1 = m_gamedef->getShaderSource()->
-			getShader("bumpmaps_solids").material;
-	video::E_MATERIAL_TYPE bumpmaps2 = m_gamedef->getShaderSource()->
-			getShader("bumpmaps_liquids").material;
+	bool enable_parallax_occlusion = g_settings->getBool("enable_parallax_occlusion");
+
+	video::E_MATERIAL_TYPE  shadermat1, shadermat2, shadermat3,
+							shadermat4, shadermat5;
+	shadermat1 = shadermat2 = shadermat3 = shadermat4 = shadermat5 = 
+		video::EMT_SOLID;
+
+	if (enable_shaders) {
+		IShaderSource *shdrsrc = m_gamedef->getShaderSource();
+		shadermat1 = shdrsrc->getShader("solids_shader").material;
+		shadermat2 = shdrsrc->getShader("liquids_shader").material;
+		shadermat3 = shdrsrc->getShader("alpha_shader").material;
+		shadermat4 = shdrsrc->getShader("leaves_shader").material;
+		shadermat5 = shdrsrc->getShader("plants_shader").material;
+	}
 
 	for(u32 i = 0; i < collector.prebuffers.size(); i++)
 	{
@@ -1200,42 +1202,39 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 		material.setFlag(video::EMF_FOG_ENABLE, true);
 		//material.setFlag(video::EMF_ANTI_ALIASING, video::EAAM_OFF);
 		//material.setFlag(video::EMF_ANTI_ALIASING, video::EAAM_SIMPLE);
-		material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
+		//material.MaterialType = video::EMT_TRANSPARENT_ALPHA_CHANNEL_REF;
 		material.setTexture(0, p.tile.texture);
-	
-		if (enable_shaders) {
-			video::E_MATERIAL_TYPE smat1 = shadermat1;
-			video::E_MATERIAL_TYPE smat2 = shadermat2;
-			video::E_MATERIAL_TYPE smat3 = shadermat3;
-			
-			if (enable_bumpmapping) {
-				ITextureSource *tsrc = data->m_gamedef->tsrc();
-				std::string fname_base = tsrc->getTextureName(p.tile.texture_id);
 
-				std::string normal_ext = "_normal.png";
-				size_t pos = fname_base.find(".");
-				std::string fname_normal = fname_base.substr(0, pos) + normal_ext;
-				
-				if (tsrc->isKnownSourceImage(fname_normal)) {
-					// look for image extension and replace it 
-					size_t i = 0;
-					while ((i = fname_base.find(".", i)) != std::string::npos) {
-						fname_base.replace(i, 4, normal_ext);
-						i += normal_ext.length();
+		if (enable_shaders) {
+			ITextureSource *tsrc = data->m_gamedef->tsrc();
+			material.setTexture(2, tsrc->getTexture("disable_img.png"));
+			if (enable_bumpmapping || enable_parallax_occlusion) {
+				if (tsrc->isKnownSourceImage("override_normal.png")){
+					material.setTexture(1, tsrc->getTexture("override_normal.png"));
+					material.setTexture(2, tsrc->getTexture("enable_img.png"));
+				} else {
+					std::string fname_base = tsrc->getTextureName(p.tile.texture_id);
+					std::string normal_ext = "_normal.png";
+					size_t pos = fname_base.find(".");
+					std::string fname_normal = fname_base.substr(0, pos) + normal_ext;
+
+					if (tsrc->isKnownSourceImage(fname_normal)) {
+						// look for image extension and replace it 
+						size_t i = 0;
+						while ((i = fname_base.find(".", i)) != std::string::npos) {
+							fname_base.replace(i, 4, normal_ext);
+							i += normal_ext.length();
+						}
+						material.setTexture(1, tsrc->getTexture(fname_base));
+						material.setTexture(2, tsrc->getTexture("enable_img.png"));
 					}
-					
-					material.setTexture(1, tsrc->getTexture(fname_base));
-					
-					smat1 = bumpmaps1;
-					smat2 = bumpmaps2;
 				}
 			}
-			
-			p.tile.applyMaterialOptionsWithShaders(material, smat1, smat2, smat3);
+			p.tile.applyMaterialOptionsWithShaders(material,
+				shadermat1, shadermat2, shadermat3, shadermat4, shadermat5);
 		} else {
 			p.tile.applyMaterialOptions(material);
 		}
-
 		// Create meshbuffer
 
 		// This is a "Standard MeshBuffer",
@@ -1251,11 +1250,13 @@ MapBlockMesh::MapBlockMesh(MeshMakeData *data):
 				&p.indices[0], p.indices.size());
 	}
 
+	m_camera_offset = camera_offset;
+	
 	/*
 		Do some stuff to the mesh
 	*/
 
-	translateMesh(m_mesh, intToFloat(data->m_blockpos * MAP_BLOCKSIZE, BS));
+	translateMesh(m_mesh, intToFloat(data->m_blockpos * MAP_BLOCKSIZE - camera_offset, BS));
 
 	if(m_mesh)
 	{
@@ -1296,7 +1297,8 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 {
 	bool enable_shaders = g_settings->getBool("enable_shaders");
 	bool enable_bumpmapping = g_settings->getBool("enable_bumpmapping");
-	
+	bool enable_parallax_occlusion = g_settings->getBool("enable_parallax_occlusion");
+
 	if(!m_has_animation)
 	{
 		m_animation_force_timer = 100000;
@@ -1365,18 +1367,26 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 		os<<"^[verticalframe:"<<(int)tile.animation_frame_count<<":"<<frame;
 		// Set the texture
 		buf->getMaterial().setTexture(0, tsrc->getTexture(os.str()));
-		if (enable_shaders && enable_bumpmapping)
+		buf->getMaterial().setTexture(2, tsrc->getTexture("disable_img.png"));
+		if (enable_shaders && (enable_bumpmapping || enable_parallax_occlusion))
 			{
-				std::string basename,normal;
-				basename = tsrc->getTextureName(tile.texture_id);
-				unsigned pos;
-				pos = basename.find(".");
-				normal = basename.substr (0, pos);
-				normal += "_normal.png";
-				os.str("");
-				os<<normal<<"^[verticalframe:"<<(int)tile.animation_frame_count<<":"<<frame;
-				if (tsrc->isKnownSourceImage(normal))
-					buf->getMaterial().setTexture(1, tsrc->getTexture(os.str()));
+				if (tsrc->isKnownSourceImage("override_normal.png")){
+					buf->getMaterial().setTexture(1, tsrc->getTexture("override_normal.png"));
+					buf->getMaterial().setTexture(2, tsrc->getTexture("enable_img.png"));
+				} else {
+					std::string fname_base,fname_normal;
+					fname_base = tsrc->getTextureName(tile.texture_id);
+					unsigned pos;
+					pos = fname_base.find(".");
+					fname_normal = fname_base.substr (0, pos);
+					fname_normal += "_normal.png";
+					if (tsrc->isKnownSourceImage(fname_normal)){
+						os.str("");
+						os<<fname_normal<<"^[verticalframe:"<<(int)tile.animation_frame_count<<":"<<frame;
+						buf->getMaterial().setTexture(1, tsrc->getTexture(os.str()));
+						buf->getMaterial().setTexture(2, tsrc->getTexture("enable_img.png"));
+					}
+				}
 			}
 	}
 
@@ -1412,6 +1422,14 @@ bool MapBlockMesh::animate(bool faraway, float time, int crack, u32 daynight_rat
 	}
 
 	return true;
+}
+
+void MapBlockMesh::updateCameraOffset(v3s16 camera_offset)
+{
+	if (camera_offset != m_camera_offset) {
+		translateMesh(m_mesh, intToFloat(m_camera_offset-camera_offset, BS));
+		m_camera_offset = camera_offset;
+	}
 }
 
 /*

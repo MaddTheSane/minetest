@@ -87,12 +87,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#define strtoll(x, y, z) _strtoi64(x, y, z)
 	#define strtoull(x, y, z) _strtoui64(x, y, z)
 	#define strcasecmp(x, y) stricmp(x, y)
+	#define strncasecmp(x, y, n) strnicmp(x, y, n)
 #else
 	#define ALIGNOF(x) __alignof__(x)
 #endif
 
 #ifdef __MINGW32__
 	#define strtok_r(x, y, z) mystrtok_r(x, y, z)
+#endif
+
+// strlcpy is missing from glibc.  thanks a lot, drepper.
+// strlcpy is also missing from AIX and HP-UX because they aim to be weird.
+// We can't simply alias strlcpy to MSVC's strcpy_s, since strcpy_s by
+// default raises an assertion error and aborts the program if the buffer is
+// too small.
+#if defined(__FreeBSD__) || defined(__NetBSD__)    || \
+	defined(__OpenBSD__) || defined(__DragonFly__) || \
+	defined(__APPLE__)   ||                           \
+	defined(__sun)       || defined(sun)           || \
+	defined(__QNX__)     || defined(__QNXNTO__)
+	#define HAVE_STRLCPY
+#endif
+
+// So we need to define our own.
+#ifndef HAVE_STRLCPY
+	#define strlcpy(d, s, n) mystrlcpy(d, s, n)
 #endif
 
 #define PADDING(x, y) ((ALIGNOF(y) - ((uintptr_t)(x) & (ALIGNOF(y) - 1))) & (ALIGNOF(y) - 1))
@@ -147,6 +166,12 @@ bool threadBindToProcessor(threadid_t tid, int pnumber);
 	Set a thread's priority.
 */
 bool threadSetPriority(threadid_t tid, int prio);
+
+/*
+	Return system information
+	e.g. "Linux/3.12.7 x86_64"
+*/
+std::string get_sysinfo();
 
 /*
 	Resolution is 10-20ms.
@@ -241,6 +266,26 @@ inline u32 getTime(TimePrecision prec)
 	return 0;
 }
 
+#if (defined(linux) || defined(__linux))
+
+#include <sys/prctl.h>
+
+inline void setThreadName(const char* name) {
+	prctl(PR_SET_NAME,name);
+}
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+/* BSD doesn't seem to support thread names. If you know about a way 
+ * to add this feature please create a pull request.
+ * "setproctitle" doesn't work for threadnames.
+ */
+#define setThreadName(a)
+#elif defined(_WIN32)
+// threadnames are not supported on windows
+#define setThreadName(a)
+#else
+#warning "Unknown platform for setThreadName support, you wont have threadname support."
+#define setThreadName(a)
+#endif
 
 } // namespace porting
 

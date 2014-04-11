@@ -38,7 +38,6 @@ class Profiler
 public:
 	Profiler()
 	{
-		m_mutex.Init();
 	}
 
 	void add(const std::string &name, float value)
@@ -163,6 +162,13 @@ public:
 		JMutexAutoLock lock(m_mutex);
 		result = m_graphvalues;
 		m_graphvalues.clear();
+	}
+
+	void remove(const std::string& name)
+	{
+		JMutexAutoLock lock(m_mutex);
+		m_avgcounts.erase(name);
+		m_data.erase(name);
 	}
 
 private:

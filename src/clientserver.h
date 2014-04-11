@@ -100,9 +100,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		version, heat and humidity transfer in MapBock
 		automatic_face_movement_dir and automatic_face_movement_dir_offset
 			added to object properties
+	PROTOCOL_VERSION 22:
+		add swap_node
+	PROTOCOL_VERSION 23:
+		TOSERVER_CLIENT_READY
 */
 
-#define LATEST_PROTOCOL_VERSION 21
+#define LATEST_PROTOCOL_VERSION 23
 
 // Server's supported network protocol range
 #define SERVER_PROTOCOL_VERSION_MIN 13
@@ -118,7 +122,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PASSWORD_SIZE 28       // Maximum password length. Allows for
                                // base64-encoded SHA-1 (27+\0).
 
-#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_."
+#define TEXTURENAME_ALLOWED_CHARS "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
 
 enum ToClientCommand
 {
@@ -129,7 +133,7 @@ enum ToClientCommand
 
 		[0] u16 TOSERVER_INIT
 		[2] u8 deployed version
-		[3] v3s16 player's position + v3f(0,BS/2,0) floatToInt'd 
+		[3] v3s16 player's position + v3f(0,BS/2,0) floatToInt'd
 		[12] u64 map seed (new as of 2011-02-27)
 		[20] f1000 recommended send interval (in seconds) (new as of 14)
 
@@ -139,6 +143,12 @@ enum ToClientCommand
 
 	TOCLIENT_BLOCKDATA = 0x20, //TODO: Multiple blocks
 	TOCLIENT_ADDNODE = 0x21,
+	/*
+		u16 command
+		v3s16 position
+		serialized mapnode
+		u8 keep_metadata // Added in protocol version 22
+	*/
 	TOCLIENT_REMOVENODE = 0x22,
 	
 	TOCLIENT_PLAYERPOS = 0x23, // Obsolete
@@ -413,6 +423,7 @@ enum ToClientCommand
 		f1000 expirationtime
 		f1000 size
 		u8 bool collisiondetection
+		u8 bool vertical
 		u32 len
 		u8[len] texture
 	*/
@@ -433,6 +444,7 @@ enum ToClientCommand
 		f1000 minsize
 		f1000 maxsize
 		u8 bool collisiondetection
+		u8 bool vertical
 		u32 len
 		u8[len] texture
 		u32 id
@@ -498,6 +510,25 @@ enum ToClientCommand
 	/*
 		u16 command
 		u16 breath
+	*/
+
+	TOCLIENT_SET_SKY = 0x4f,
+	/*
+		u16 command
+		u8[4] color (ARGB)
+		u8 len
+		u8[len] type
+		u16 count
+		foreach count:
+			u8 len
+			u8[len] param
+	*/
+
+	TOCLIENT_OVERRIDE_DAY_NIGHT_RATIO = 0x50,
+	/*
+		u16 command
+		u8 do_override (boolean)
+		u16 day-night ratio 0...65535
 	*/
 };
 
@@ -727,6 +758,16 @@ enum ToServerCommand
 	/*
 		u16 command
 		u16 breath
+	*/
+
+	TOSERVER_CLIENT_READY = 0x43,
+	/*
+		u8 major
+		u8 minor
+		u8 patch
+		u8 reserved
+		u16 len
+		u8[len] full_version_string
 	*/
 };
 

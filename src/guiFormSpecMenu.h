@@ -27,6 +27,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "inventory.h"
 #include "inventorymanager.h"
 #include "modalMenu.h"
+#include "guiTable.h"
 
 class IGameDef;
 class InventoryManager;
@@ -34,12 +35,18 @@ class ISimpleTextureSource;
 
 typedef enum {
 	f_Button,
-	f_ListBox,
+	f_Table,
 	f_TabHeader,
 	f_CheckBox,
 	f_DropDown,
 	f_Unknown
 } FormspecFieldType;
+
+typedef enum {
+	quit_mode_no,
+	quit_mode_accept,
+	quit_mode_cancel
+} FormspecQuitMode;
 
 struct TextDest
 {
@@ -47,6 +54,10 @@ struct TextDest
 	// This is deprecated I guess? -celeron55
 	virtual void gotText(std::wstring text){}
 	virtual void gotText(std::map<std::string, std::string> fields) = 0;
+	virtual void setFormName(std::string formname)
+	{ m_formname = formname;};
+
+	std::string m_formname;
 };
 
 class IFormSource
@@ -138,7 +149,8 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FieldSpec()
 		{
 		}
-		FieldSpec(const std::wstring name, const std::wstring label, const std::wstring fdeflt, int id):
+		FieldSpec(const std::wstring &name, const std::wstring &label,
+		          const std::wstring &fdeflt, int id) :
 			fname(name),
 			flabel(label),
 			fdefault(fdeflt),
@@ -227,11 +239,16 @@ public:
 	void updateSelectedItem();
 	ItemStack verifySelectedItem();
 
-	void acceptInput();
+	void acceptInput(FormspecQuitMode quitmode);
 	bool preprocessEvent(const SEvent& event);
 	bool OnEvent(const SEvent& event);
+	bool doPause;
+	bool pausesGame() { return doPause; }
 
-	int getListboxIndex(std::string listboxname);
+	GUITable* getTable(std::wstring tablename);
+
+	static bool parseColor(const std::string &value,
+			video::SColor &color, bool quiet);
 
 protected:
 	v2s32 getBasePos() const
@@ -260,7 +277,7 @@ protected:
 	std::vector<ImageDrawSpec> m_itemimages;
 	std::vector<BoxDrawSpec> m_boxes;
 	std::vector<FieldSpec> m_fields;
-	std::vector<std::pair<FieldSpec,gui::IGUIListBox*> > m_listboxes;
+	std::vector<std::pair<FieldSpec,GUITable*> > m_tables;
 	std::vector<std::pair<FieldSpec,gui::IGUICheckBox*> > m_checkboxes;
 
 	ItemSpec *m_selected_item;
@@ -273,18 +290,20 @@ protected:
 	ItemStack m_selected_content_guess;
 	InventoryLocation m_selected_content_guess_inventory;
 
-	// WARNING: BLACK IRRLICHT MAGIC, see checkListboxClick()
-	std::wstring m_listbox_click_fname;
-	int m_listbox_click_index;
-	u32 m_listbox_click_time;
-	bool m_listbox_doubleclick;
-
 	v2s32 m_pointer;
 	gui::IGUIStaticText *m_tooltip_element;
 
 	bool m_allowclose;
 	bool m_lock;
 	v2u32 m_lockscreensize;
+
+	bool m_bgfullscreen;
+	bool m_slotborder;
+	bool m_clipbackground;
+	video::SColor m_bgcolor;
+	video::SColor m_slotbg_n;
+	video::SColor m_slotbg_h;
+	video::SColor m_slotbordercolor;
 private:
 	typedef struct {
 		v2s32 size;
@@ -294,8 +313,10 @@ private:
 		int bp_set;
 		v2u32 screensize;
 		std::wstring focused_fieldname;
-		std::map<std::wstring,int> listbox_selections;
-		std::map<std::wstring,int> listbox_scroll;
+		GUITable::TableOptions table_options;
+		GUITable::TableColumns table_columns;
+		// used to restore table selection/scroll/treeview state
+		std::map<std::wstring,GUITable::DynamicData> table_dyndata;
 	} parserData;
 
 	typedef struct {
@@ -307,12 +328,6 @@ private:
 
 	fs_key_pendig current_keys_pending;
 
-	// Determine whether listbox click was double click
-	// (Using some black Irrlicht magic)
-	bool checkListboxClick(std::wstring wlistboxname, int eventtype);
-
-	gui::IGUIScrollBar* getListboxScrollbar(gui::IGUIListBox *listbox);
-
 	void parseElement(parserData* data,std::string element);
 
 	void parseSize(parserData* data,std::string element);
@@ -322,20 +337,24 @@ private:
 	void parseItemImage(parserData* data,std::string element);
 	void parseButton(parserData* data,std::string element,std::string typ);
 	void parseBackground(parserData* data,std::string element);
+	void parseTableOptions(parserData* data,std::string element);
+	void parseTableColumns(parserData* data,std::string element);
+	void parseTable(parserData* data,std::string element);
 	void parseTextList(parserData* data,std::string element);
 	void parseDropDown(parserData* data,std::string element);
 	void parsePwdField(parserData* data,std::string element);
 	void parseField(parserData* data,std::string element,std::string type);
 	void parseSimpleField(parserData* data,std::vector<std::string> &parts);
-	void parseTextArea(parserData* data,std::vector<std::string>& parts,std::string type);
+	void parseTextArea(parserData* data,std::vector<std::string>& parts,
+			std::string type);
 	void parseLabel(parserData* data,std::string element);
 	void parseVertLabel(parserData* data,std::string element);
 	void parseImageButton(parserData* data,std::string element,std::string type);
 	void parseItemImageButton(parserData* data,std::string element);
 	void parseTabHeader(parserData* data,std::string element);
 	void parseBox(parserData* data,std::string element);
-
-	bool parseColor(std::string color, irr::video::SColor& outcolor); 
+	void parseBackgroundColor(parserData* data,std::string element);
+	void parseListColors(parserData* data,std::string element);
 };
 
 class FormspecFormSource: public IFormSource

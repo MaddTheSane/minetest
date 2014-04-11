@@ -25,8 +25,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 #include "debug.h" // assert
 #include "modalMenu.h"
-#include "guiPauseMenu.h" //For IGameCallback
 #include <list>
+
+class IGameCallback
+{
+public:
+	virtual void exitToOS() = 0;
+	virtual void disconnect() = 0;
+	virtual void changePassword() = 0;
+	virtual void changeVolume() = 0;
+};
 
 extern gui::IGUIEnvironment* guienv;
 extern gui::IGUIStaticText *guiroot;
@@ -89,6 +97,17 @@ public:
 	u32 menuCount()
 	{
 		return m_stack.size();
+	}
+
+	bool pausesGame()
+	{
+		for(std::list<GUIModalMenu*>::iterator
+				i = m_stack.begin(); i != m_stack.end(); ++i)
+		{
+			if((*i)->pausesGame())
+				return true;
+		}
+		return false;
 	}
 
 	std::list<GUIModalMenu*> m_stack;

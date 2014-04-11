@@ -1,6 +1,6 @@
 /*
 Minetest
-Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
+Copyright (C) 2013 sapier, < sapier AT gmx DOT net >
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -17,44 +17,36 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef GUIMESSAGEMENU_HEADER
-#define GUIMESSAGEMENU_HEADER
+#ifndef JSEMAPHORE_H_
+#define JSEMAPHORE_H_
 
-#include "irrlichttypes_extrabloated.h"
-#include "modalMenu.h"
-#include <string>
-
-class GUIMessageMenu : public GUIModalMenu
-{
-public:
-	GUIMessageMenu(gui::IGUIEnvironment* env,
-			gui::IGUIElement* parent, s32 id,
-			IMenuManager *menumgr,
-			std::wstring message_text);
-	~GUIMessageMenu();
-	
-	void removeChildren();
-	/*
-		Remove and re-add (or reposition) stuff
-	*/
-	void regenerateGui(v2u32 screensize);
-
-	void drawMenu();
-
-	bool OnEvent(const SEvent& event);
-
-	/*
-		true = ok'd
-	*/
-	bool getStatus()
-	{
-		return m_status;
-	}
-	
-private:
-	std::wstring m_message_text;
-	bool m_status;
-};
-
+#if defined(WIN32)
+#include <windows.h>
+#include <assert.h>
+#define MAX_SEMAPHORE_COUNT 1024
+#else
+#include <pthread.h>
+#include <semaphore.h>
 #endif
 
+class JSemaphore {
+public:
+	JSemaphore();
+	~JSemaphore();
+	JSemaphore(int initval);
+
+	void Post();
+	void Wait();
+	bool Wait(unsigned int time_ms);
+
+	int GetValue();
+
+private:
+#if defined(WIN32)
+	HANDLE m_hSemaphore;
+#else
+	sem_t m_semaphore;
+#endif
+};
+
+#endif /* JSEMAPHORE_H_ */

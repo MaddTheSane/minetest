@@ -119,9 +119,17 @@ int                getenumfield              (lua_State *L,
                                               const EnumString *spec,
                                               int default_);
 
-u32                getflagsfield             (lua_State *L, int table,
+bool               getflagsfield             (lua_State *L, int table,
                                               const char *fieldname,
-                                              FlagDesc *flagdesc);
+                                              FlagDesc *flagdesc,
+                                              u32 *flags, u32 *flagmask);
+
+bool               read_flags                (lua_State *L, int index,
+                                              FlagDesc *flagdesc,
+                                              u32 *flags, u32 *flagmask);
+
+u32                read_flags_table          (lua_State *L, int table,
+                                              FlagDesc *flagdesc, u32 *flagmask);
 
 void               push_items                (lua_State *L,
                                               const std::vector<ItemStack> &items);
@@ -141,6 +149,9 @@ bool               string_to_enum            (const EnumString *spec,
 
 NoiseParams*       read_noiseparams          (lua_State *L, int index);
 
+bool               read_noiseparams_nc       (lua_State *L, int index,
+                                              NoiseParams *np);
+
 bool               read_schematic            (lua_State *L, int index,
                                               DecoSchematic *dschem,
                                               Server *server);
@@ -150,6 +161,10 @@ void               luaentity_get             (lua_State *L,u16 id);
 bool               push_json_value           (lua_State *L,
                                               const Json::Value &value,
                                               int nullindex);
+void               read_json_value           (lua_State *L,
+                                              Json::Value &root,
+                                              int index,
+                                              u8 recursion = 0);
 
 extern struct EnumString es_TileAnimationType[];
 

@@ -1,5 +1,14 @@
 -- Minetest: builtin/item.lua
 
+local function copy_pointed_thing(pointed_thing)
+	return {
+		type  = pointed_thing.type,
+		above = vector.new(pointed_thing.above),
+		under = vector.new(pointed_thing.under),
+		ref   = pointed_thing.ref,
+	}
+end
+
 --
 -- Item definition helpers
 --
@@ -98,7 +107,7 @@ function minetest.facedir_to_dir(facedir)
 
 					--indexed into by a table of correlating facedirs
 					[({[0]=1, 2, 3, 4, 
-						5, 4, 6, 2,
+						5, 2, 6, 4,
 						6, 2, 5, 4,
 						1, 5, 3, 6,
 						1, 6, 3, 5,
@@ -218,6 +227,15 @@ function minetest.item_place_node(itemstack, placer, pointed_thing, param2)
 		place_to = {x = under.x, y = under.y, z = under.z}
 	end
 
+	if minetest.is_protected(place_to, placer:get_player_name()) then
+		minetest.log("action", placer:get_player_name()
+				.. " tried to place " .. def.name
+				.. " at protected position "
+				.. minetest.pos_to_string(place_to))
+		minetest.record_protection_violation(place_to, placer:get_player_name())
+		return itemstack
+	end
+
 	minetest.log("action", placer:get_player_name() .. " places node "
 		.. def.name .. " at " .. minetest.pos_to_string(place_to))
 	
@@ -261,9 +279,11 @@ function minetest.item_place_node(itemstack, placer, pointed_thing, param2)
 
 	-- Run callback
 	if def.after_place_node then
-		-- Copy place_to because callback can modify it
+		-- Deepcopy place_to and pointed_thing because callback can modify it
 		local place_to_copy = {x=place_to.x, y=place_to.y, z=place_to.z}
-		if def.after_place_node(place_to_copy, placer, itemstack) then
+		local pointed_thing_copy = copy_pointed_thing(pointed_thing)
+		if def.after_place_node(place_to_copy, placer, itemstack,
+				pointed_thing_copy) then
 			take_item = false
 		end
 	end
@@ -271,11 +291,12 @@ function minetest.item_place_node(itemstack, placer, pointed_thing, param2)
 	-- Run script hook
 	local _, callback
 	for _, callback in ipairs(minetest.registered_on_placenodes) do
-		-- Copy pos and node because callback can modify them
+		-- Deepcopy pos, node and pointed_thing because callback can modify them
 		local place_to_copy = {x=place_to.x, y=place_to.y, z=place_to.z}
 		local newnode_copy = {name=newnode.name, param1=newnode.param1, param2=newnode.param2}
 		local oldnode_copy = {name=oldnode.name, param1=oldnode.param1, param2=oldnode.param2}
-		if callback(place_to_copy, newnode_copy, placer, oldnode_copy, itemstack) then
+		local pointed_thing_copy = copy_pointed_thing(pointed_thing)
+		if callback(place_to_copy, newnode_copy, placer, oldnode_copy, itemstack, pointed_thing_copy) then
 			take_item = false
 		end
 	end
@@ -302,7 +323,8 @@ function minetest.item_place(itemstack, placer, pointed_thing, param2)
 		local n = minetest.get_node(pointed_thing.under)
 		local nn = n.name
 		if minetest.registered_nodes[nn] and minetest.registered_nodes[nn].on_rightclick then
-			return minetest.registered_nodes[nn].on_rightclick(pointed_thing.under, n, placer, itemstack) or itemstack, false
+			return minetest.registered_nodes[nn].on_rightclick(pointed_thing.under, n,
+					placer, itemstack, pointed_thing) or itemstack, false
 		end
 	end
 
@@ -339,14 +361,14 @@ function minetest.item_eat(hp_change, replace_with_item)
 	end
 end
 
-function minetest.node_punch(pos, node, puncher)
+function minetest.node_punch(pos, node, puncher, pointed_thing)
 	-- Run script hook
-	local _, callback
 	for _, callback in ipairs(minetest.registered_on_punchnodes) do
 		-- Copy pos and node because callback can modify them
-		local pos_copy = {x=pos.x, y=pos.y, z=pos.z}
+		local pos_copy = vector.new(pos)
 		local node_copy = {name=node.name, param1=node.param1, param2=node.param2}
-		callback(pos_copy, node_copy, puncher)
+		local pointed_thing_copy = pointed_thing and copy_pointed_thing(pointed_thing) or nil
+		callback(pos_copy, node_copy, puncher, pointed_thing_copy)
 	end
 end
 
@@ -370,11 +392,19 @@ end
 
 function minetest.node_dig(pos, node, digger)
 	local def = ItemStack({name=node.name}):get_definition()
-	-- Check if def ~= 0 because we always want to be able to remove unknown nodes
-	if #def ~= 0 and not def.diggable or (def.can_dig and not def.can_dig(pos,digger)) then
+	if not def.diggable or (def.can_dig and not def.can_dig(pos,digger)) then
 		minetest.log("info", digger:get_player_name() .. " tried to dig "
 			.. node.name .. " which is not diggable "
 			.. minetest.pos_to_string(pos))
+		return
+	end
+
+	if minetest.is_protected(pos, digger:get_player_name()) then
+		minetest.log("action", digger:get_player_name()
+				.. " tried to dig " .. node.name
+				.. " at protected position "
+				.. minetest.pos_to_string(pos))
+		minetest.record_protection_violation(pos, digger:get_player_name())
 		return
 	end
 
@@ -484,7 +514,7 @@ minetest.nodedef_default = {
 	post_effect_color = {a=0, r=0, g=0, b=0},
 	paramtype = "none",
 	paramtype2 = "none",
-	is_ground_content = false,
+	is_ground_content = true,
 	sunlight_propagates = false,
 	walkable = true,
 	pointable = true,

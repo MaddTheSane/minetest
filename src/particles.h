@@ -42,6 +42,7 @@ class Particle : public scene::ISceneNode
 		float expirationtime,
 		float size,
 		bool collisiondetection,
+		bool vertical,
 		video::ITexture *texture,
 		v2f texpos,
 		v2f texsize
@@ -66,19 +67,20 @@ class Particle : public scene::ISceneNode
 	virtual void OnRegisterSceneNode();
 	virtual void render();
 
-	void step(float dtime, ClientEnvironment &env);
+	void step(float dtime);
 
 	bool get_expired ()
 	{ return m_expiration < m_time; }
 
 private:
-	void updateLight(ClientEnvironment &env);
+	void updateLight();
 	void updateVertices();
 
 	video::S3DVertex m_vertices[4];
 	float m_time;
 	float m_expiration;
 
+	ClientEnvironment *m_env;
 	IGameDef *m_gamedef;
 	core::aabbox3d<f32> m_box;
 	core::aabbox3d<f32> m_collisionbox;
@@ -92,6 +94,8 @@ private:
 	float m_size;
 	u8 m_light;
 	bool m_collisiondetection;
+	bool m_vertical;
+	v3s16 m_camera_offset;
 };
 
 class ParticleSpawner
@@ -108,6 +112,7 @@ class ParticleSpawner
 		float minexptime, float maxexptime,
 		float minsize, float maxsize,
 		bool collisiondetection,
+		bool vertical,
 		video::ITexture *texture,
 		u32 id);
 
@@ -138,9 +143,10 @@ class ParticleSpawner
 	video::ITexture *m_texture;
 	std::vector<float> m_spawntimes;
 	bool m_collisiondetection;
+	bool m_vertical;
 };
 
-void allparticles_step (float dtime, ClientEnvironment &env);
+void allparticles_step (float dtime);
 void allparticlespawners_step (float dtime, ClientEnvironment &env);
 
 void delete_particlespawner (u32 id);
