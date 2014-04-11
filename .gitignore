@@ -64,3 +64,4 @@ locale/
 *.layout
 *.o
 
+**/.DS_Store
