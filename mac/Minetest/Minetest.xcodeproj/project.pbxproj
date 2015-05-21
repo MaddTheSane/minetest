@@ -26,9 +26,9 @@
 		55F209131811F65500AE835B /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; };
 		55F209141811F65500AE835B /* Vorbis.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; };
 		55F209151811F6C900AE835B /* minetest.conf in Resources */ = {isa = PBXBuildFile; fileRef = D5ABD958170953E30037071C /* minetest.conf */; };
-		55F209171811F70500AE835B /* Vorbis.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; };
-		55F209181811F70800AE835B /* freetype.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090F1811F63800AE835B /* freetype.framework */; };
-		55F209191811F70A00AE835B /* IrrFramework.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
+		55F209171811F70500AE835B /* Vorbis.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		55F209181811F70800AE835B /* freetype.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090F1811F63800AE835B /* freetype.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		55F209191811F70A00AE835B /* IrrFramework.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		55F2091E1811F9E100AE835B /* Ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2091D1811F9E100AE835B /* Ogg.framework */; };
 		55F2091F1811F9E100AE835B /* Ogg.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2091D1811F9E100AE835B /* Ogg.framework */; };
 		55F2092A1811FDEF00AE835B /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209291811FDEF00AE835B /* libsqlite3.dylib */; };
@@ -153,11 +153,11 @@
 		55F20A8B1812100600AE835B /* inventory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DE9017091F91001EB852 /* inventory.cpp */; };
 		55F20A8C1812101100AE835B /* socket.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DF5917091F91001EB852 /* socket.cpp */; };
 		55F20A8E1812106500AE835B /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 55F20A8D1812106500AE835B /* libcurl.dylib */; };
-		55F20A8F1812107C00AE835B /* Ogg.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2091D1811F9E100AE835B /* Ogg.framework */; };
-		55F20A91181210B100AE835B /* Ogg.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2091D1811F9E100AE835B /* Ogg.framework */; };
-		55F20A92181210B100AE835B /* Vorbis.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; };
-		55F20A93181210B100AE835B /* freetype.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090F1811F63800AE835B /* freetype.framework */; };
-		55F20A94181210B100AE835B /* IrrFramework.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; };
+		55F20A8F1812107C00AE835B /* Ogg.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2091D1811F9E100AE835B /* Ogg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		55F20A91181210B100AE835B /* Ogg.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2091D1811F9E100AE835B /* Ogg.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		55F20A92181210B100AE835B /* Vorbis.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F209121811F65500AE835B /* Vorbis.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		55F20A93181210B100AE835B /* freetype.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090F1811F63800AE835B /* freetype.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		55F20A94181210B100AE835B /* IrrFramework.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 55F2090C1811F58300AE835B /* IrrFramework.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		55F20A951812114100AE835B /* mapblock.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DEF917091F91001EB852 /* mapblock.cpp */; };
 		55F20A961812114E00AE835B /* mapsector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DF0817091F91001EB852 /* mapsector.cpp */; };
 		55F20A971812117300AE835B /* map.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5D6DEF717091F91001EB852 /* map.cpp */; };
@@ -1578,7 +1578,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastTestingUpgradeCheck = 0510;
-				LastUpgradeCheck = 0450;
+				LastUpgradeCheck = 0630;
 			};
 			buildConfigurationList = D5D6DC7717091BDC001EB852 /* Build configuration list for PBXProject "Minetest" */;
 			compatibilityVersion = "Xcode 3.2";
