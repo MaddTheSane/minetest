@@ -139,8 +139,8 @@ bool Camera::successfullyCreated(std::string &error_message)
 // Returns the fractional part of x
 inline f32 my_modf(f32 x)
 {
-	double dummy;
-	return modf(x, &dummy);
+	float dummy;
+	return std::modf(x, &dummy);
 }
 
 void Camera::step(f32 dtime)
@@ -245,6 +245,7 @@ void Camera::step(f32 dtime)
 void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		f32 tool_reload_ratio, ClientEnvironment &c_env)
 {
+	using namespace std;
 	// Get player position
 	// Smooth the movement when walking up stairs
 	v3f old_player_position = m_playernode->getPosition();
