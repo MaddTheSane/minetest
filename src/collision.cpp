@@ -28,7 +28,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <vector>
 #include <set>
 #include "util/timetaker.h"
-#include "main.h" // g_profiler
 #include "profiler.h"
 
 // float error is 10 - 9.96875 = 0.03125
@@ -173,7 +172,7 @@ bool wouldCollideWithCeiling(
 {
 	//TimeTaker tt("wouldCollideWithCeiling");
 
-	assert(y_increase >= 0);
+	assert(y_increase >= 0);	// pre-condition
 
 	for(std::vector<aabb3f>::const_iterator
 			i = staticboxes.begin();
@@ -251,15 +250,19 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	for(s16 z = min_z; z <= max_z; z++)
 	{
 		v3s16 p(x,y,z);
-		try{
+
+		bool is_position_valid;
+		MapNode n = map->getNodeNoEx(p, &is_position_valid);
+
+		if (is_position_valid) {
 			// Object collides into walkable nodes
-			MapNode n = map->getNode(p);
+
 			const ContentFeatures &f = gamedef->getNodeDefManager()->get(n);
 			if(f.walkable == false)
 				continue;
 			int n_bouncy_value = itemgroup_get(f.groups, "bouncy");
 
-			std::vector<aabb3f> nodeboxes = n.getNodeBoxes(gamedef->ndef());
+			std::vector<aabb3f> nodeboxes = n.getCollisionBoxes(gamedef->ndef());
 			for(std::vector<aabb3f>::iterator
 					i = nodeboxes.begin();
 					i != nodeboxes.end(); i++)
@@ -275,8 +278,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 				is_object.push_back(false);
 			}
 		}
-		catch(InvalidPositionException &e)
-		{
+		else {
 			// Collide with unloaded nodes
 			aabb3f box = getNodeBox(p, BS);
 			cboxes.push_back(box);
@@ -297,16 +299,14 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		/* add object boxes to cboxes */
 
 
-		std::list<ActiveObject*> objects;
+		std::vector<ActiveObject*> objects;
 #ifndef SERVER
 		ClientEnvironment *c_env = dynamic_cast<ClientEnvironment*>(env);
-		if (c_env != 0)
-		{
+		if (c_env != 0) {
 			f32 distance = speed_f.getLength();
 			std::vector<DistanceSortedActiveObject> clientobjects;
 			c_env->getActiveObjects(pos_f,distance * 1.5,clientobjects);
-			for (size_t i=0; i < clientobjects.size(); i++)
-			{
+			for (size_t i=0; i < clientobjects.size(); i++) {
 				if ((self == 0) || (self != clientobjects[i].obj)) {
 					objects.push_back((ActiveObject*)clientobjects[i].obj);
 				}
@@ -316,12 +316,11 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 #endif
 		{
 			ServerEnvironment *s_env = dynamic_cast<ServerEnvironment*>(env);
-			if (s_env != 0)
-			{
+			if (s_env != 0) {
 				f32 distance = speed_f.getLength();
-				std::set<u16> s_objects = s_env->getObjectsInsideRadius(pos_f,distance * 1.5);
-				for (std::set<u16>::iterator iter = s_objects.begin(); iter != s_objects.end(); iter++)
-				{
+				std::vector<u16> s_objects;
+				s_env->getObjectsInsideRadius(s_objects, pos_f, distance * 1.5);
+				for (std::vector<u16>::iterator iter = s_objects.begin(); iter != s_objects.end(); iter++) {
 					ServerActiveObject *current = s_env->getActiveObject(*iter);
 					if ((self == 0) || (self != current)) {
 						objects.push_back((ActiveObject*)current);
@@ -330,16 +329,14 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 			}
 		}
 
-		for (std::list<ActiveObject*>::const_iterator iter = objects.begin();iter != objects.end(); ++iter)
-		{
+		for (std::vector<ActiveObject*>::const_iterator iter = objects.begin();
+				iter != objects.end(); ++iter) {
 			ActiveObject *object = *iter;
 
-			if (object != NULL)
-			{
+			if (object != NULL) {
 				aabb3f object_collisionbox;
 				if (object->getCollisionBox(&object_collisionbox) &&
-						object->collideWithObjects())
-				{
+						object->collideWithObjects()) {
 					cboxes.push_back(object_collisionbox);
 					is_unloaded.push_back(false);
 					is_step_up.push_back(false);
@@ -351,11 +348,11 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 		}
 	} //tt3
 
-	assert(cboxes.size() == is_unloaded.size());
-	assert(cboxes.size() == is_step_up.size());
-	assert(cboxes.size() == bouncy_values.size());
-	assert(cboxes.size() == node_positions.size());
-	assert(cboxes.size() == is_object.size());
+	assert(cboxes.size() == is_unloaded.size());    // post-condition
+	assert(cboxes.size() == is_step_up.size());     // post-condition
+	assert(cboxes.size() == bouncy_values.size());  // post-condition
+	assert(cboxes.size() == node_positions.size()); // post-condition
+	assert(cboxes.size() == is_object.size());      // post-condition
 
 	/*
 		Collision detection
@@ -370,7 +367,7 @@ collisionMoveResult collisionMoveSimple(Environment *env, IGameDef *gamedef,
 	//f32 d = 0.15*BS;
 
 	// This should always apply, otherwise there are glitches
-	assert(d > pos_max_d);
+	assert(d > pos_max_d);	// invariant
 
 	int loopcount = 0;
 

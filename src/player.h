@@ -23,6 +23,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "irrlichttypes_bloated.h"
 #include "inventory.h"
 #include "constants.h" // BS
+#include "jthread/jmutex.h"
+#include <list>
 
 #define PLAYERNAME_SIZE 20
 
@@ -88,15 +90,22 @@ class IGameDef;
 struct CollisionInfo;
 class PlayerSAO;
 struct HudElement;
+class Environment;
 
+// IMPORTANT:
+// Do *not* perform an assignment or copy operation on a Player or
+// RemotePlayer object!  This will copy the lock held for HUD synchronization
 class Player
 {
 public:
 
-	Player(IGameDef *gamedef);
+	Player(IGameDef *gamedef, const char *name);
 	virtual ~Player() = 0;
 
-	virtual void move(f32 dtime, Map &map, f32 pos_max_d)
+	virtual void move(f32 dtime, Environment *env, f32 pos_max_d)
+	{}
+	virtual void move(f32 dtime, Environment *env, f32 pos_max_d,
+			std::vector<CollisionInfo> *collision_info)
 	{}
 
 	v3f getSpeed()
@@ -108,7 +117,7 @@ public:
 	{
 		m_speed = speed;
 	}
-	
+
 	void accelerateHorizontal(v3f target_speed, f32 max_increase);
 	void accelerateVertical(v3f target_speed, f32 max_increase);
 
@@ -137,16 +146,22 @@ public:
 
 	virtual void setPosition(const v3f &position)
 	{
+		if (position != m_position)
+			m_dirty = true;
 		m_position = position;
 	}
 
 	void setPitch(f32 pitch)
 	{
+		if (pitch != m_pitch)
+			m_dirty = true;
 		m_pitch = pitch;
 	}
 
 	virtual void setYaw(f32 yaw)
 	{
+		if (yaw != m_yaw)
+			m_dirty = true;
 		m_yaw = yaw;
 	}
 
@@ -167,6 +182,8 @@ public:
 
 	virtual void setBreath(u16 breath)
 	{
+		if (breath != m_breath)
+			m_dirty = true;
 		m_breath = breath;
 	}
 
@@ -180,11 +197,6 @@ public:
 		return (m_yaw + 90.) * core::DEGTORAD;
 	}
 
-	void updateName(const char *name)
-	{
-		snprintf(m_name, PLAYERNAME_SIZE, "%s", name);
-	}
-
 	const char * getName() const
 	{
 		return m_name;
@@ -194,7 +206,7 @@ public:
 		return m_collisionbox;
 	}
 
-	u32 getFreeHudID() const {
+	u32 getFreeHudID() {
 		size_t size = hud.size();
 		for (size_t i = 0; i != size; i++) {
 			if (!hud[i])
@@ -208,7 +220,7 @@ public:
 	virtual PlayerSAO *getPlayerSAO()
 	{ return NULL; }
 	virtual void setPlayerSAO(PlayerSAO *sao)
-	{ assert(0); }
+	{ FATAL_ERROR("FIXME"); }
 
 	/*
 		serialize() writes a bunch of text that can contain
@@ -218,22 +230,20 @@ public:
 	void serialize(std::ostream &os);
 	void deSerialize(std::istream &is, std::string playername);
 
-	bool checkModified()
+	bool checkModified() const
 	{
-		if(m_last_hp != hp || m_last_pitch != m_pitch ||
-				m_last_pos != m_position || m_last_yaw != m_yaw ||
-				!(inventory == m_last_inventory))
-		{
-			m_last_hp = hp;
-			m_last_pitch = m_pitch;
-			m_last_pos = m_position;
-			m_last_yaw = m_yaw;
-			m_last_inventory = inventory;
-			return true;
-		} else {
-			return false;
-		}
+		return m_dirty || inventory.checkModified();
 	}
+
+	void setModified(const bool x)
+	{
+		m_dirty = x;
+		if (x == false)
+			inventory.setModified(x);
+	}
+
+	// Use a function, if isDead can be defined by other conditions
+	bool isDead() { return hp == 0; }
 
 	bool touching_ground;
 	// This oscillates so that the player jumps a bit above the surface
@@ -245,8 +255,6 @@ public:
 	bool is_climbing;
 	bool swimming_vertical;
 	bool camera_barely_in_ceiling;
-	
-	u8 light;
 
 	Inventory inventory;
 
@@ -269,6 +277,9 @@ public:
 	bool physics_override_sneak;
 	bool physics_override_sneak_glitch;
 
+	v2s32 local_animations[4];
+	float local_animation_speed;
+
 	u16 hp;
 
 	float hurt_tilt_timer;
@@ -277,19 +288,26 @@ public:
 	u16 peer_id;
 
 	std::string inventory_formspec;
-	
+
 	PlayerControl control;
 	PlayerControl getPlayerControl()
 	{
 		return control;
 	}
-	
+
 	u32 keyPressed;
-	
-	std::vector<HudElement *> hud;
+
+
+	HudElement* getHud(u32 id);
+	u32         addHud(HudElement* hud);
+	HudElement* removeHud(u32 id);
+	void        clearHud();
+	u32         maxHudId() {
+		return hud.size();
+	}
+
 	u32 hud_flags;
 	s32 hud_hotbar_itemcount;
-
 protected:
 	IGameDef *m_gamedef;
 
@@ -301,11 +319,14 @@ protected:
 	v3f m_position;
 	core::aabbox3d<f32> m_collisionbox;
 
-	f32 m_last_pitch;
-	f32 m_last_yaw;
-	v3f m_last_pos;
-	u16 m_last_hp;
-	Inventory m_last_inventory;
+	bool m_dirty;
+
+	std::vector<HudElement *> hud;
+private:
+	// Protect some critical areas
+	// hud for example can be modified by EmergeThread
+	// and ServerThread
+	JMutex m_mutex;
 };
 
 
@@ -315,15 +336,20 @@ protected:
 class RemotePlayer : public Player
 {
 public:
-	RemotePlayer(IGameDef *gamedef): Player(gamedef), m_sao(0) {}
+	RemotePlayer(IGameDef *gamedef, const char *name):
+		Player(gamedef, name),
+		m_sao(NULL)
+	{}
 	virtual ~RemotePlayer() {}
+
+	void save(std::string savedir);
 
 	PlayerSAO *getPlayerSAO()
 	{ return m_sao; }
 	void setPlayerSAO(PlayerSAO *sao)
 	{ m_sao = sao; }
 	void setPosition(const v3f &position);
-	
+
 private:
 	PlayerSAO *m_sao;
 };

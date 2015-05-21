@@ -26,7 +26,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "log.h"
 #include "tool.h"
 #include "serverobject.h"
-#include "content_object.h"
 #include "content_sao.h"
 #include "server.h"
 #include "hud.h"
@@ -132,6 +131,7 @@ int ObjectRef::l_remove(lua_State *L)
 	ObjectRef *ref = checkobject(L, 1);
 	ServerActiveObject *co = getobject(ref);
 	if(co == NULL) return 0;
+	if(co->getType() == ACTIVEOBJECT_TYPE_PLAYER) return 0;
 	verbosestream<<"ObjectRef::l_remove(): id="<<co->getId()<<std::endl;
 	co->m_removed = true;
 	return 0;
@@ -208,8 +208,26 @@ int ObjectRef::l_punch(lua_State *L)
 		time_from_last_punch = lua_tonumber(L, 3);
 	ToolCapabilities toolcap = read_tool_capabilities(L, 4);
 	dir.normalize();
+
+	s16 src_original_hp = co->getHP();
+	s16 dst_origin_hp = puncher->getHP();
+
 	// Do it
 	co->punch(dir, &toolcap, puncher, time_from_last_punch);
+
+	// If the punched is a player, and its HP changed
+	if (src_original_hp != co->getHP() &&
+			co->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+		getServer(L)->SendPlayerHPOrDie(((PlayerSAO*)co)->getPeerID(),
+				co->getHP() == 0);
+	}
+
+	// If the puncher is a player, and its HP changed
+	if (dst_origin_hp != puncher->getHP() &&
+			puncher->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+		getServer(L)->SendPlayerHPOrDie(((PlayerSAO*)puncher)->getPeerID(),
+				puncher->getHP() == 0);
+	}
 	return 0;
 }
 
@@ -243,6 +261,9 @@ int ObjectRef::l_set_hp(lua_State *L)
 			<<" hp="<<hp<<std::endl;*/
 	// Do it
 	co->setHP(hp);
+	if (co->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+		getServer(L)->SendPlayerHPOrDie(((PlayerSAO*)co)->getPeerID(), co->getHP() == 0);
+	}
 	// Return
 	return 0;
 }
@@ -334,6 +355,9 @@ int ObjectRef::l_set_wielded_item(lua_State *L)
 	// Do it
 	ItemStack item = read_item(L, 2, getServer(L));
 	bool success = co->setWieldedItem(item);
+	if (success && co->getType() == ACTIVEOBJECT_TYPE_PLAYER) {
+		getServer(L)->SendInventory(((PlayerSAO*)co));
+	}
 	lua_pushboolean(L, success);
 	return 1;
 }
@@ -403,6 +427,61 @@ int ObjectRef::l_set_animation(lua_State *L)
 	if(!lua_isnil(L, 4))
 		frame_blend = lua_tonumber(L, 4);
 	co->setAnimation(frames, frame_speed, frame_blend);
+	return 0;
+}
+
+// set_local_animation(self, {stand/idle}, {walk}, {dig}, {walk+dig}, frame_speed)
+int ObjectRef::l_set_local_animation(lua_State *L)
+{
+	//NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	if (player == NULL)
+		return 0;
+	// Do it
+	v2s32 frames[4];
+	for (int i=0;i<4;i++) {
+		if(!lua_isnil(L, 2+1))
+			frames[i] = read_v2s32(L, 2+i);
+	}
+	float frame_speed = 30;
+	if(!lua_isnil(L, 6))
+		frame_speed = lua_tonumber(L, 6);
+
+	if (!getServer(L)->setLocalPlayerAnimations(player, frames, frame_speed))
+		return 0;
+
+	lua_pushboolean(L, true);
+	return 0;
+}
+
+// set_eye_offset(self, v3f first pv, v3f third pv)
+int ObjectRef::l_set_eye_offset(lua_State *L)
+{
+	//NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	if (player == NULL)
+		return 0;
+	// Do it
+	v3f offset_first = v3f(0, 0, 0);
+	v3f offset_third = v3f(0, 0, 0);
+
+	if(!lua_isnil(L, 2))
+		offset_first = read_v3f(L, 2);
+	if(!lua_isnil(L, 3))
+		offset_third = read_v3f(L, 3);
+
+	// Prevent abuse of offset values (keep player always visible)
+	offset_third.X = rangelim(offset_third.X,-10,10);
+	offset_third.Z = rangelim(offset_third.Z,-5,5);
+	/* TODO: if possible: improve the camera colision detetion to allow Y <= -1.5) */
+	offset_third.Y = rangelim(offset_third.Y,-10,15); //1.5*BS
+
+	if (!getServer(L)->setPlayerEyeOffset(player, offset_first, offset_third))
+		return 0;
+
+	lua_pushboolean(L, true);
 	return 0;
 }
 
@@ -476,6 +555,16 @@ int ObjectRef::l_set_properties(lua_State *L)
 	read_object_properties(L, 2, prop);
 	co->notifyObjectPropertiesModified();
 	return 0;
+}
+
+// is_player(self)
+int ObjectRef::l_is_player(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	lua_pushboolean(L, (player != NULL));
+	return 1;
 }
 
 /* LuaEntitySAO-only */
@@ -604,6 +693,7 @@ int ObjectRef::l_get_entity_name(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	ObjectRef *ref = checkobject(L, 1);
 	LuaEntitySAO *co = getluaobject(ref);
+	log_deprecated(L,"Deprecated call to \"get_entity_name");
 	if(co == NULL) return 0;
 	// Do it
 	std::string name = co->getName();
@@ -624,16 +714,6 @@ int ObjectRef::l_get_luaentity(lua_State *L)
 }
 
 /* Player-only */
-
-// is_player(self)
-int ObjectRef::l_is_player(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	ObjectRef *ref = checkobject(L, 1);
-	Player *player = getplayer(ref);
-	lua_pushboolean(L, (player != NULL));
-	return 1;
-}
 
 // is_player_connected(self)
 int ObjectRef::l_is_player_connected(lua_State *L)
@@ -735,7 +815,11 @@ int ObjectRef::l_set_breath(lua_State *L)
 	u16 breath = luaL_checknumber(L, 2);
 	// Do it
 	co->setBreath(breath);
-	co->m_breath_not_sent = true;
+
+	// If the object is a player sent the breath to client
+	if (co->getType() == ACTIVEOBJECT_TYPE_PLAYER)
+			getServer(L)->SendPlayerBreath(((PlayerSAO*)co)->getPeerID());
+
 	return 0;
 }
 
@@ -850,11 +934,19 @@ int ObjectRef::l_hud_add(lua_State *L)
 	elem->scale = lua_istable(L, -1) ? read_v2f(L, -1) : v2f();
 	lua_pop(L, 1);
 
+	lua_getfield(L, 2, "size");
+	elem->size = lua_istable(L, -1) ? read_v2s32(L, -1) : v2s32();
+	lua_pop(L, 1);
+
 	elem->name   = getstringfield_default(L, 2, "name", "");
 	elem->text   = getstringfield_default(L, 2, "text", "");
 	elem->number = getintfield_default(L, 2, "number", 0);
 	elem->item   = getintfield_default(L, 2, "item", 0);
-	elem->dir    = getintfield_default(L, 2, "dir", 0);
+	elem->dir    = getintfield_default(L, 2, "direction", 0);
+
+	// Deprecated, only for compatibility's sake
+	if (elem->dir == 0)
+		elem->dir = getintfield_default(L, 2, "dir", 0);
 
 	lua_getfield(L, 2, "alignment");
 	elem->align = lua_istable(L, -1) ? read_v2f(L, -1) : v2f();
@@ -867,6 +959,11 @@ int ObjectRef::l_hud_add(lua_State *L)
 	lua_getfield(L, 2, "world_pos");
 	elem->world_pos = lua_istable(L, -1) ? read_v3f(L, -1) : v3f();
 	lua_pop(L, 1);
+
+	/* check for known deprecated element usage */
+	if ((elem->type  == HUD_ELEM_STATBAR) && (elem->size == v2s32())) {
+		log_deprecated(L,"Deprecated usage of statbar without size!");
+	}
 
 	u32 id = getServer(L)->hudAdd(player, elem);
 	if (id == (u32)-1) {
@@ -905,12 +1002,14 @@ int ObjectRef::l_hud_change(lua_State *L)
 	if (player == NULL)
 		return 0;
 
-	u32 id = !lua_isnil(L, 2) ? lua_tonumber(L, 2) : -1;
-	if (id >= player->hud.size())
+	u32 id = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : -1;
+
+	HudElement *e = player->getHud(id);
+	if (!e)
 		return 0;
 
 	HudElementStat stat = HUD_STAT_NUMBER;
-	if (!lua_isnil(L, 3)) {
+	if (lua_isstring(L, 3)) {
 		int statint;
 		std::string statstr = lua_tostring(L, 3);
 		stat = string_to_enum(es_HudElementStat, statint, statstr) ?
@@ -918,17 +1017,13 @@ int ObjectRef::l_hud_change(lua_State *L)
 	}
 
 	void *value = NULL;
-	HudElement *e = player->hud[id];
-	if (!e)
-		return 0;
-
 	switch (stat) {
 		case HUD_STAT_POS:
 			e->pos = read_v2f(L, 4);
 			value = &e->pos;
 			break;
 		case HUD_STAT_NAME:
-			e->name = lua_tostring(L, 4);
+			e->name = luaL_checkstring(L, 4);
 			value = &e->name;
 			break;
 		case HUD_STAT_SCALE:
@@ -936,19 +1031,19 @@ int ObjectRef::l_hud_change(lua_State *L)
 			value = &e->scale;
 			break;
 		case HUD_STAT_TEXT:
-			e->text = lua_tostring(L, 4);
+			e->text = luaL_checkstring(L, 4);
 			value = &e->text;
 			break;
 		case HUD_STAT_NUMBER:
-			e->number = lua_tonumber(L, 4);
+			e->number = luaL_checknumber(L, 4);
 			value = &e->number;
 			break;
 		case HUD_STAT_ITEM:
-			e->item = lua_tonumber(L, 4);
+			e->item = luaL_checknumber(L, 4);
 			value = &e->item;
 			break;
 		case HUD_STAT_DIR:
-			e->dir = lua_tonumber(L, 4);
+			e->dir = luaL_checknumber(L, 4);
 			value = &e->dir;
 			break;
 		case HUD_STAT_ALIGN:
@@ -962,6 +1057,10 @@ int ObjectRef::l_hud_change(lua_State *L)
 		case HUD_STAT_WORLD_POS:
 			e->world_pos = read_v3f(L, 4);
 			value = &e->world_pos;
+			break;
+		case HUD_STAT_SIZE:
+			e->size = read_v2s32(L, 4);
+			value = &e->size;
 			break;
 	}
 
@@ -980,10 +1079,8 @@ int ObjectRef::l_hud_get(lua_State *L)
 		return 0;
 
 	u32 id = lua_tonumber(L, -1);
-	if (id >= player->hud.size())
-		return 0;
 
-	HudElement *e = player->hud[id];
+	HudElement *e = player->getHud(id);
 	if (!e)
 		return 0;
 
@@ -1011,6 +1108,10 @@ int ObjectRef::l_hud_get(lua_State *L)
 	lua_setfield(L, -2, "item");
 
 	lua_pushnumber(L, e->dir);
+	lua_setfield(L, -2, "direction");
+
+	// Deprecated, only for compatibility's sake
+	lua_pushnumber(L, e->dir);
 	lua_setfield(L, -2, "dir");
 
 	push_v3f(L, e->world_pos);
@@ -1030,7 +1131,7 @@ int ObjectRef::l_hud_set_flags(lua_State *L)
 	u32 flags = 0;
 	u32 mask  = 0;
 	bool flag;
-	
+
 	const EnumString *esp = es_HudBuiltinElement;
 	for (int i = 0; esp[i].str; i++) {
 		if (getboolfield(L, 2, esp[i].str, flag)) {
@@ -1042,6 +1143,28 @@ int ObjectRef::l_hud_set_flags(lua_State *L)
 		return 0;
 
 	lua_pushboolean(L, true);
+	return 1;
+}
+
+int ObjectRef::l_hud_get_flags(lua_State *L)
+{
+	ObjectRef *ref = checkobject(L, 1);
+	Player *player = getplayer(ref);
+	if (player == NULL)
+		return 0;
+
+	lua_newtable(L);
+	lua_pushboolean(L, player->hud_flags & HUD_FLAG_HOTBAR_VISIBLE);
+	lua_setfield(L, -2, "hotbar");
+	lua_pushboolean(L, player->hud_flags & HUD_FLAG_HEALTHBAR_VISIBLE);
+	lua_setfield(L, -2, "healthbar");
+	lua_pushboolean(L, player->hud_flags & HUD_FLAG_CROSSHAIR_VISIBLE);
+	lua_setfield(L, -2, "crosshair");
+	lua_pushboolean(L, player->hud_flags & HUD_FLAG_WIELDITEM_VISIBLE);
+	lua_setfield(L, -2, "wielditem");
+	lua_pushboolean(L, player->hud_flags & HUD_FLAG_BREATHBAR_VISIBLE);
+	lua_setfield(L, -2, "breathbar");
+
 	return 1;
 }
 
@@ -1099,8 +1222,7 @@ int ObjectRef::l_set_sky(lua_State *L)
 		return 0;
 
 	video::SColor bgcolor(255,255,255,255);
-	if (!lua_isnil(L, 2))
-		bgcolor = readARGB8(L, 2);
+	read_color(L, 2, &bgcolor);
 
 	std::string type = luaL_checkstring(L, 3);
 
@@ -1148,6 +1270,45 @@ int ObjectRef::l_override_day_night_ratio(lua_State *L)
 		return 0;
 
 	lua_pushboolean(L, true);
+	return 1;
+}
+
+// set_nametag_attributes(self, attributes)
+int ObjectRef::l_set_nametag_attributes(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	PlayerSAO *playersao = getplayersao(ref);
+	if (playersao == NULL)
+		return 0;
+
+	lua_getfield(L, 2, "color");
+	if (!lua_isnil(L, -1)) {
+		video::SColor color = playersao->getNametagColor();
+		if (!read_color(L, -1, &color))
+			return 0;
+		playersao->setNametagColor(color);
+	}
+
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+// get_nametag_attributes(self)
+int ObjectRef::l_get_nametag_attributes(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	ObjectRef *ref = checkobject(L, 1);
+	PlayerSAO *playersao = getplayersao(ref);
+	if (playersao == NULL)
+		return 0;
+
+	video::SColor color = playersao->getNametagColor();
+
+	lua_newtable(L);
+	push_ARGB8(L, color);
+	lua_setfield(L, -2, "color");
+
 	return 1;
 }
 
@@ -1265,10 +1426,15 @@ const luaL_reg ObjectRef::methods[] = {
 	luamethod(ObjectRef, hud_change),
 	luamethod(ObjectRef, hud_get),
 	luamethod(ObjectRef, hud_set_flags),
+	luamethod(ObjectRef, hud_get_flags),
 	luamethod(ObjectRef, hud_set_hotbar_itemcount),
 	luamethod(ObjectRef, hud_set_hotbar_image),
 	luamethod(ObjectRef, hud_set_hotbar_selected_image),
 	luamethod(ObjectRef, set_sky),
 	luamethod(ObjectRef, override_day_night_ratio),
+	luamethod(ObjectRef, set_local_animation),
+	luamethod(ObjectRef, set_eye_offset),
+	luamethod(ObjectRef, set_nametag_attributes),
+	luamethod(ObjectRef, get_nametag_attributes),
 	{0,0}
 };

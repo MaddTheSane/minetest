@@ -19,11 +19,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "cpp_api/s_base.h"
 #include "cpp_api/s_internal.h"
+#include "cpp_api/s_security.h"
 #include "lua_api/l_object.h"
 #include "serverobject.h"
 #include "debug.h"
+#include "filesys.h"
 #include "log.h"
 #include "mods.h"
+#include "porting.h"
 #include "util/string.h"
 
 
@@ -43,18 +46,18 @@ class ModNameStorer
 private:
 	lua_State *L;
 public:
-	ModNameStorer(lua_State *L_, const std::string &modname):
+	ModNameStorer(lua_State *L_, const std::string &mod_name):
 		L(L_)
 	{
-		// Store current modname in registry
-		lua_pushstring(L, modname.c_str());
-		lua_setfield(L, LUA_REGISTRYINDEX, "minetest_current_modname");
+		// Store current mod name in registry
+		lua_pushstring(L, mod_name.c_str());
+		lua_setfield(L, LUA_REGISTRYINDEX, SCRIPT_MOD_NAME_FIELD);
 	}
 	~ModNameStorer()
 	{
-		// Clear current modname in registry
+		// Clear current mod name from registry
 		lua_pushnil(L);
-		lua_setfield(L, LUA_REGISTRYINDEX, "minetest_current_modname");
+		lua_setfield(L, LUA_REGISTRYINDEX, SCRIPT_MOD_NAME_FIELD);
 	}
 };
 
@@ -70,7 +73,13 @@ ScriptApiBase::ScriptApiBase()
 	#endif
 
 	m_luastack = luaL_newstate();
-	assert(m_luastack);
+	FATAL_ERROR_IF(!m_luastack, "luaL_newstate() failed");
+
+	luaL_openlibs(m_luastack);
+
+	// Add and save an error handler
+	lua_pushcfunction(m_luastack, script_error_handler);
+	m_errorhandler = lua_gettop(m_luastack);
 
 	// Make the ScriptApiBase* accessible to ModApiBase
 	lua_pushlightuserdata(m_luastack, this);
@@ -84,9 +93,19 @@ ScriptApiBase::ScriptApiBase()
 	lua_pop(m_luastack, 1);
 #endif
 
-	m_server = 0;
-	m_environment = 0;
-	m_guiengine = 0;
+	// Add basic globals
+	lua_newtable(m_luastack);
+	lua_setglobal(m_luastack, "core");
+
+	lua_pushstring(m_luastack, DIR_DELIM);
+	lua_setglobal(m_luastack, "DIR_DELIM");
+
+	lua_pushstring(m_luastack, porting::getPlatformName());
+	lua_setglobal(m_luastack, "PLATFORM");
+
+	m_server = NULL;
+	m_environment = NULL;
+	m_guiengine = NULL;
 }
 
 ScriptApiBase::~ScriptApiBase()
@@ -94,54 +113,38 @@ ScriptApiBase::~ScriptApiBase()
 	lua_close(m_luastack);
 }
 
-bool ScriptApiBase::loadMod(const std::string &scriptpath,
-		const std::string &modname)
+bool ScriptApiBase::loadMod(const std::string &script_path,
+		const std::string &mod_name)
 {
-	ModNameStorer modnamestorer(getStack(), modname);
+	ModNameStorer mod_name_storer(getStack(), mod_name);
 
-	if(!string_allowed(modname, MODNAME_ALLOWED_CHARS)){
-		errorstream<<"Error loading mod \""<<modname
-				<<"\": modname does not follow naming conventions: "
-				<<"Only chararacters [a-z0-9_] are allowed."<<std::endl;
-		return false;
-	}
-
-	bool success = false;
-
-	try{
-		success = loadScript(scriptpath);
-	}
-	catch(LuaError &e){
-		errorstream<<"Error loading mod \""<<modname
-				<<"\": "<<e.what()<<std::endl;
-	}
-
-	return success;
+	return loadScript(script_path);
 }
 
-bool ScriptApiBase::loadScript(const std::string &scriptpath)
+bool ScriptApiBase::loadScript(const std::string &script_path)
 {
-	verbosestream<<"Loading and running script from "<<scriptpath<<std::endl;
+	verbosestream << "Loading and running script from " << script_path << std::endl;
 
 	lua_State *L = getStack();
 
-	lua_pushcfunction(L, script_error_handler);
-	int errorhandler = lua_gettop(L);
-
-	int ret = luaL_loadfile(L, scriptpath.c_str()) || lua_pcall(L, 0, 0, errorhandler);
-	if(ret){
-		errorstream<<"========== ERROR FROM LUA ==========="<<std::endl;
-		errorstream<<"Failed to load and run script from "<<std::endl;
-		errorstream<<scriptpath<<":"<<std::endl;
-		errorstream<<std::endl;
-		errorstream<<lua_tostring(L, -1)<<std::endl;
-		errorstream<<std::endl;
-		errorstream<<"======= END OF ERROR FROM LUA ========"<<std::endl;
+	bool ok;
+	if (m_secure) {
+		ok = ScriptApiSecurity::safeLoadFile(L, script_path.c_str());
+	} else {
+		ok = !luaL_loadfile(L, script_path.c_str());
+	}
+	ok = ok && !lua_pcall(L, 0, 0, m_errorhandler);
+	if (!ok) {
+		errorstream << "========== ERROR FROM LUA ===========" << std::endl;
+		errorstream << "Failed to load and run script from " << std::endl;
+		errorstream << script_path << ":" << std::endl;
+		errorstream << std::endl;
+		errorstream << lua_tostring(L, -1) << std::endl;
+		errorstream << std::endl;
+		errorstream << "======= END OF ERROR FROM LUA ========" << std::endl;
 		lua_pop(L, 1); // Pop error message from stack
-		lua_pop(L, 1); // Pop the error handler from stack
 		return false;
 	}
-	lua_pop(L, 1); // Pop the error handler from stack
 	return true;
 }
 
@@ -202,8 +205,8 @@ void ScriptApiBase::addObjectReference(ServerActiveObject *cobj)
 	ObjectRef::create(L, cobj); // Puts ObjectRef (as userdata) on stack
 	int object = lua_gettop(L);
 
-	// Get minetest.object_refs table
-	lua_getglobal(L, "minetest");
+	// Get core.object_refs table
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "object_refs");
 	luaL_checktype(L, -1, LUA_TTABLE);
 	int objectstable = lua_gettop(L);
@@ -219,8 +222,8 @@ void ScriptApiBase::removeObjectReference(ServerActiveObject *cobj)
 	SCRIPTAPI_PRECHECKHEADER
 	//infostream<<"scriptapi_rm_object_reference: id="<<cobj->getId()<<std::endl;
 
-	// Get minetest.object_refs table
-	lua_getglobal(L, "minetest");
+	// Get core.object_refs table
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "object_refs");
 	luaL_checktype(L, -1, LUA_TTABLE);
 	int objectstable = lua_gettop(L);
@@ -239,28 +242,25 @@ void ScriptApiBase::removeObjectReference(ServerActiveObject *cobj)
 }
 
 // Creates a new anonymous reference if cobj=NULL or id=0
-void ScriptApiBase::objectrefGetOrCreate(
+void ScriptApiBase::objectrefGetOrCreate(lua_State *L,
 		ServerActiveObject *cobj)
 {
-	lua_State *L = getStack();
-
 	if(cobj == NULL || cobj->getId() == 0){
 		ObjectRef::create(L, cobj);
 	} else {
-		objectrefGet(cobj->getId());
+		objectrefGet(L, cobj->getId());
 	}
 }
 
-void ScriptApiBase::objectrefGet(u16 id)
+void ScriptApiBase::objectrefGet(lua_State *L, u16 id)
 {
-	lua_State *L = getStack();
-
-	// Get minetest.object_refs[i]
-	lua_getglobal(L, "minetest");
+	// Get core.object_refs[i]
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "object_refs");
 	luaL_checktype(L, -1, LUA_TTABLE);
 	lua_pushnumber(L, id);
 	lua_gettable(L, -2);
 	lua_remove(L, -2); // object_refs
-	lua_remove(L, -2); // minetest
+	lua_remove(L, -2); // core
 }
+

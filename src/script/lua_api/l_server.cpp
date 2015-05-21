@@ -21,9 +21,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
+#include "cpp_api/s_base.h"
 #include "server.h"
 #include "environment.h"
 #include "player.h"
+#include "log.h"
 
 // request_shutdown()
 int ModApiServer::l_request_shutdown(lua_State *L)
@@ -305,7 +307,7 @@ int ModApiServer::l_kick_player(lua_State *L)
 		lua_pushboolean(L, false); // No such player
 		return 1;
 	}
-	getServer(L)->DenyAccess(player->peer_id, narrow_to_wide(message));
+	getServer(L)->DenyAccess_Legacy(player->peer_id, narrow_to_wide(message));
 	lua_pushboolean(L, true);
 	return 1;
 }
@@ -341,7 +343,7 @@ int ModApiServer::l_show_formspec(lua_State *L)
 int ModApiServer::l_get_current_modname(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	lua_getfield(L, LUA_REGISTRYINDEX, "minetest_current_modname");
+	lua_getfield(L, LUA_REGISTRYINDEX, SCRIPT_MOD_NAME_FIELD);
 	return 1;
 }
 
@@ -350,14 +352,8 @@ int ModApiServer::l_get_modpath(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
 	std::string modname = luaL_checkstring(L, 1);
-	// Do it
-	if(modname == "__builtin"){
-		std::string path = getServer(L)->getBuiltinLuaPath();
-		lua_pushstring(L, path.c_str());
-		return 1;
-	}
 	const ModSpec *mod = getServer(L)->getModSpec(modname);
-	if(!mod){
+	if (!mod) {
 		lua_pushnil(L);
 		return 1;
 	}
@@ -372,33 +368,18 @@ int ModApiServer::l_get_modnames(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 
 	// Get a list of mods
-	std::list<std::string> mods_unsorted, mods_sorted;
-	getServer(L)->getModNames(mods_unsorted);
+	std::vector<std::string> modlist;
+	getServer(L)->getModNames(modlist);
 
 	// Take unsorted items from mods_unsorted and sort them into
 	// mods_sorted; not great performance but the number of mods on a
 	// server will likely be small.
-	for(std::list<std::string>::iterator i = mods_unsorted.begin();
-			i != mods_unsorted.end(); ++i) {
-		bool added = false;
-		for(std::list<std::string>::iterator x = mods_sorted.begin();
-				x != mods_sorted.end(); ++x) {
-			// I doubt anybody using Minetest will be using
-			// anything not ASCII based :)
-			if(i->compare(*x) <= 0) {
-				mods_sorted.insert(x, *i);
-				added = true;
-				break;
-			}
-		}
-		if(!added)
-			mods_sorted.push_back(*i);
-	}
+	std::sort(modlist.begin(), modlist.end());
 
 	// Package them up for Lua
-	lua_createtable(L, mods_sorted.size(), 0);
-	std::list<std::string>::iterator iter = mods_sorted.begin();
-	for (u16 i = 0; iter != mods_sorted.end(); iter++) {
+	lua_createtable(L, modlist.size(), 0);
+	std::vector<std::string>::iterator iter = modlist.begin();
+	for (u16 i = 0; iter != modlist.end(); iter++) {
 		lua_pushstring(L, iter->c_str());
 		lua_rawseti(L, -2, ++i);
 	}
@@ -455,6 +436,36 @@ int ModApiServer::l_notify_authentication_modified(lua_State *L)
 	return 0;
 }
 
+#ifndef NDEBUG
+// cause_error(type_of_error)
+int ModApiServer::l_cause_error(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	std::string type_of_error = "none";
+	if(lua_isstring(L, 1))
+		type_of_error = lua_tostring(L, 1);
+
+	errorstream << "Error handler test called, errortype=" << type_of_error << std::endl;
+
+	if(type_of_error == "segv") {
+		volatile int* some_pointer = 0;
+		errorstream << "Cause a sigsegv now: " << (*some_pointer) << std::endl;
+
+	} else if (type_of_error == "zerodivision") {
+
+		unsigned int some_number = porting::getTimeS();
+		unsigned int zerovalue = 0;
+		unsigned int result = some_number / zerovalue;
+		errorstream << "Well this shouldn't ever be shown: " << result << std::endl;
+
+	} else if (type_of_error == "exception") {
+		throw BaseException("Errorhandler test fct called");
+	}
+
+	return 0;
+}
+#endif
+
 void ModApiServer::Initialize(lua_State *L, int top)
 {
 	API_FCT(request_shutdown);
@@ -481,4 +492,8 @@ void ModApiServer::Initialize(lua_State *L, int top)
 	API_FCT(kick_player);
 	API_FCT(unban_player_or_ip);
 	API_FCT(notify_authentication_modified);
+
+#ifndef NDEBUG
+	API_FCT(cause_error);
+#endif
 }

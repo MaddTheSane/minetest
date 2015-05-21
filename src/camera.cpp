@@ -20,16 +20,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "camera.h"
 #include "debug.h"
 #include "client.h"
-#include "main.h" // for g_settings
 #include "map.h"
-#include "clientmap.h" // MapDrawControl
-#include "mesh.h"
+#include "clientmap.h"     // MapDrawControl
 #include "player.h"
-#include "tile.h"
 #include <cmath>
 #include "settings.h"
-#include "itemdef.h" // For wield visualization
-#include "noise.h" // easeCurve
+#include "wieldmesh.h"
+#include "noise.h"         // easeCurve
 #include "gamedef.h"
 #include "sound.h"
 #include "event.h"
@@ -40,16 +37,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define CAMERA_OFFSET_STEP 200
 
+#include "nodedef.h"
+
 Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 		IGameDef *gamedef):
-	m_smgr(smgr),
 	m_playernode(NULL),
 	m_headnode(NULL),
 	m_cameranode(NULL),
 
 	m_wieldmgr(NULL),
 	m_wieldnode(NULL),
-	m_wieldlight(0),
 
 	m_draw_control(draw_control),
 	m_gamedef(gamedef),
@@ -76,12 +73,11 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 
 	m_digging_anim(0),
 	m_digging_button(-1),
-	m_dummymesh(createCubeMesh(v3f(1,1,1))),
 
 	m_wield_change_timer(0.125),
-	m_wield_mesh_next(NULL),
-	m_previous_playeritem(-1),
-	m_previous_itemname("")
+	m_wield_item_next(),
+
+	m_camera_mode(CAMERA_MODE_FIRST)
 {
 	//dstream<<__FUNCTION_NAME<<std::endl;
 
@@ -96,44 +92,48 @@ Camera::Camera(scene::ISceneManager* smgr, MapDrawControl& draw_control,
 	// all other 3D scene nodes and before the GUI.
 	m_wieldmgr = smgr->createNewSceneManager();
 	m_wieldmgr->addCameraSceneNode();
-	m_wieldnode = m_wieldmgr->addMeshSceneNode(m_dummymesh, NULL);  // need a dummy mesh
+	m_wieldnode = new WieldMeshSceneNode(m_wieldmgr->getRootSceneNode(), m_wieldmgr, -1, true);
+	m_wieldnode->setItem(ItemStack(), m_gamedef);
+	m_wieldnode->drop(); // m_wieldmgr grabbed it
+	m_wieldlightnode = m_wieldmgr->addLightSceneNode(NULL, v3f(0.0, 50.0, 0.0));
+
+	/* TODO: Add a callback function so these can be updated when a setting
+	 *       changes.  At this point in time it doesn't matter (e.g. /set
+	 *       is documented to change server settings only)
+	 *
+	 * TODO: Local caching of settings is not optimal and should at some stage
+	 *       be updated to use a global settings object for getting thse values
+	 *       (as opposed to the this local caching). This can be addressed in
+	 *       a later release.
+	 */
+	m_cache_fall_bobbing_amount = g_settings->getFloat("fall_bobbing_amount");
+	m_cache_view_bobbing_amount = g_settings->getFloat("view_bobbing_amount");
+	m_cache_wanted_fps          = g_settings->getFloat("wanted_fps");
+	m_cache_fov                 = g_settings->getFloat("fov");
+	m_cache_view_bobbing        = g_settings->getBool("view_bobbing");
 }
 
 Camera::~Camera()
 {
 	m_wieldmgr->drop();
-
-	delete m_dummymesh;
 }
 
-bool Camera::successfullyCreated(std::wstring& error_message)
+bool Camera::successfullyCreated(std::string &error_message)
 {
-	if (m_playernode == NULL)
-	{
-		error_message = L"Failed to create the player scene node";
-		return false;
+	if (!m_playernode) {
+		error_message = "Failed to create the player scene node";
+	} else if (!m_headnode) {
+		error_message = "Failed to create the head scene node";
+	} else if (!m_cameranode) {
+		error_message = "Failed to create the camera scene node";
+	} else if (!m_wieldmgr) {
+		error_message = "Failed to create the wielded item scene manager";
+	} else if (!m_wieldnode) {
+		error_message = "Failed to create the wielded item scene node";
+	} else {
+		error_message.clear();
 	}
-	if (m_headnode == NULL)
-	{
-		error_message = L"Failed to create the head scene node";
-		return false;
-	}
-	if (m_cameranode == NULL)
-	{
-		error_message = L"Failed to create the camera scene node";
-		return false;
-	}
-	if (m_wieldmgr == NULL)
-	{
-		error_message = L"Failed to create the wielded item scene manager";
-		return false;
-	}
-	if (m_wieldnode == NULL)
-	{
-		error_message = L"Failed to create the wielded item scene node";
-		return false;
-	}
-	return true;
+	return error_message.empty();
 }
 
 // Returns the fractional part of x
@@ -153,20 +153,10 @@ void Camera::step(f32 dtime)
 	}
 
 	bool was_under_zero = m_wield_change_timer < 0;
-	if(m_wield_change_timer < 0.125)
-		m_wield_change_timer += dtime;
-	if(m_wield_change_timer > 0.125)
-		m_wield_change_timer = 0.125;
+	m_wield_change_timer = MYMIN(m_wield_change_timer + dtime, 0.125);
 
-	if(m_wield_change_timer >= 0 && was_under_zero) {
-		if(m_wield_mesh_next) {
-			m_wieldnode->setMesh(m_wield_mesh_next);
-			m_wieldnode->setVisible(true);
-		} else {
-			m_wieldnode->setVisible(false);
-		}
-		m_wield_mesh_next = NULL;
-	}
+	if (m_wield_change_timer >= 0 && was_under_zero)
+		m_wieldnode->setItem(m_wield_item_next, m_gamedef);
 
 	if (m_view_bobbing_state != 0)
 	{
@@ -188,11 +178,14 @@ void Camera::step(f32 dtime)
 #endif
 #if 1
 			// Animation is getting turned off
-			if(m_view_bobbing_anim < 0.25){
+			if(m_view_bobbing_anim < 0.25)
+			{
 				m_view_bobbing_anim -= offset;
-			} else if(m_view_bobbing_anim > 0.75){
+			} else if(m_view_bobbing_anim > 0.75) {
 				m_view_bobbing_anim += offset;
-			} if(m_view_bobbing_anim < 0.5){
+			}
+			if(m_view_bobbing_anim < 0.5)
+			{
 				m_view_bobbing_anim += offset;
 				if(m_view_bobbing_anim > 0.5)
 					m_view_bobbing_anim = 0.5;
@@ -216,7 +209,8 @@ void Camera::step(f32 dtime)
 			bool step = (was == 0 ||
 					(was < 0.5f && m_view_bobbing_anim >= 0.5f) ||
 					(was > 0.5f && m_view_bobbing_anim <= 0.5f));
-			if(step){
+			if(step)
+			{
 				MtEvent *e = new SimpleTriggerEvent("ViewBobbingStep");
 				m_gamedef->event()->put(e);
 			}
@@ -236,10 +230,11 @@ void Camera::step(f32 dtime)
 		float lim = 0.15;
 		if(m_digging_anim_was < lim && m_digging_anim >= lim)
 		{
-			if(m_digging_button == 0){
+			if(m_digging_button == 0)
+			{
 				MtEvent *e = new SimpleTriggerEvent("CameraPunchLeft");
 				m_gamedef->event()->put(e);
-			} else if(m_digging_button == 1){
+			} else if(m_digging_button == 1) {
 				MtEvent *e = new SimpleTriggerEvent("CameraPunchRight");
 				m_gamedef->event()->put(e);
 			}
@@ -248,7 +243,7 @@ void Camera::step(f32 dtime)
 }
 
 void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
-		v2u32 screensize, f32 tool_reload_ratio)
+		f32 tool_reload_ratio, ClientEnvironment &c_env)
 {
 	// Get player position
 	// Smooth the movement when walking up stairs
@@ -276,7 +271,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 
 	// Fall bobbing animation
 	float fall_bobbing = 0;
-	if(player->camera_impact >= 1)
+	if(player->camera_impact >= 1 && m_camera_mode < CAMERA_MODE_THIRD)
 	{
 		if(m_view_bobbing_fall == -1) // Effect took place and has finished
 			player->camera_impact = m_view_bobbing_fall = 0;
@@ -290,11 +285,18 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		// Amplify according to the intensity of the impact
 		fall_bobbing *= (1 - rangelim(50 / player->camera_impact, 0, 1)) * 5;
 
-		fall_bobbing *= g_settings->getFloat("fall_bobbing_amount");
+		fall_bobbing *= m_cache_fall_bobbing_amount;
 	}
 
+	// Calculate players eye offset for different camera modes
+	v3f PlayerEyeOffset = player->getEyeOffset();
+	if (m_camera_mode == CAMERA_MODE_FIRST)
+		PlayerEyeOffset += player->eye_offset_first;
+	else
+		PlayerEyeOffset += player->eye_offset_third;
+
 	// Set head node transformation
-	m_headnode->setPosition(player->getEyeOffset()+v3f(0,cameratilt*-player->hurt_tilt_strength+fall_bobbing,0));
+	m_headnode->setPosition(PlayerEyeOffset+v3f(0,cameratilt*-player->hurt_tilt_strength+fall_bobbing,0));
 	m_headnode->setRotation(v3f(player->getPitch(), 0, cameratilt*player->hurt_tilt_strength));
 	m_headnode->updateAbsolutePosition();
 
@@ -303,7 +305,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f rel_cam_target = v3f(0,0,1);
 	v3f rel_cam_up = v3f(0,1,0);
 
-	if (m_view_bobbing_anim != 0)
+	if (m_view_bobbing_anim != 0 && m_camera_mode < CAMERA_MODE_THIRD)
 	{
 		f32 bobfrac = my_modf(m_view_bobbing_anim * 2);
 		f32 bobdir = (m_view_bobbing_anim < 0.5) ? 1.0 : -1.0;
@@ -322,7 +324,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		//rel_cam_target += 0.03 * bobvec;
 		//rel_cam_up.rotateXYBy(0.02 * bobdir * bobtmp * M_PI);
 		float f = 1.0;
-		f *= g_settings->getFloat("view_bobbing_amount");
+		f *= m_cache_view_bobbing_amount;
 		rel_cam_pos += bobvec * f;
 		//rel_cam_target += 0.995 * bobvec * f;
 		rel_cam_target += bobvec * f;
@@ -352,27 +354,70 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f abs_cam_up;
 	m_headnode->getAbsoluteTransformation().rotateVect(abs_cam_up, rel_cam_up);
 
+	// Seperate camera position for calculation
+	v3f my_cp = m_camera_position;
+
+	// Reposition the camera for third person view
+	if (m_camera_mode > CAMERA_MODE_FIRST)
+	{
+		if (m_camera_mode == CAMERA_MODE_THIRD_FRONT)
+			m_camera_direction *= -1;
+
+		my_cp.Y += 2;
+
+		// Calculate new position
+		bool abort = false;
+		for (int i = BS; i <= BS*2.75; i++)
+		{
+			my_cp.X = m_camera_position.X + m_camera_direction.X*-i;
+			my_cp.Z = m_camera_position.Z + m_camera_direction.Z*-i;
+			if (i > 12)
+				my_cp.Y = m_camera_position.Y + (m_camera_direction.Y*-i);
+
+			// Prevent camera positioned inside nodes
+			INodeDefManager *nodemgr = m_gamedef->ndef();
+			MapNode n = c_env.getClientMap().getNodeNoEx(floatToInt(my_cp, BS));
+			const ContentFeatures& features = nodemgr->get(n);
+			if(features.walkable)
+			{
+				my_cp.X += m_camera_direction.X*-1*-BS/2;
+				my_cp.Z += m_camera_direction.Z*-1*-BS/2;
+				my_cp.Y += m_camera_direction.Y*-1*-BS/2;
+				abort = true;
+				break;
+			}
+		}
+
+		// If node blocks camera position don't move y to heigh
+		if (abort && my_cp.Y > player_position.Y+BS*2)
+			my_cp.Y = player_position.Y+BS*2;
+	}
+
 	// Update offset if too far away from the center of the map
 	m_camera_offset.X += CAMERA_OFFSET_STEP*
-			(((s16)(m_camera_position.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
+			(((s16)(my_cp.X/BS) - m_camera_offset.X)/CAMERA_OFFSET_STEP);
 	m_camera_offset.Y += CAMERA_OFFSET_STEP*
-			(((s16)(m_camera_position.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
+			(((s16)(my_cp.Y/BS) - m_camera_offset.Y)/CAMERA_OFFSET_STEP);
 	m_camera_offset.Z += CAMERA_OFFSET_STEP*
-			(((s16)(m_camera_position.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
-	
+			(((s16)(my_cp.Z/BS) - m_camera_offset.Z)/CAMERA_OFFSET_STEP);
+
 	// Set camera node transformation
-	m_cameranode->setPosition(m_camera_position-intToFloat(m_camera_offset, BS));
+	m_cameranode->setPosition(my_cp-intToFloat(m_camera_offset, BS));
 	m_cameranode->setUpVector(abs_cam_up);
 	// *100.0 helps in large map coordinates
-	m_cameranode->setTarget(m_camera_position-intToFloat(m_camera_offset, BS) + 100 * m_camera_direction);
+	m_cameranode->setTarget(my_cp-intToFloat(m_camera_offset, BS) + 100 * m_camera_direction);
+
+	// update the camera position in front-view mode to render blocks behind player
+	if (m_camera_mode == CAMERA_MODE_THIRD_FRONT)
+		m_camera_position = my_cp;
 
 	// Get FOV setting
-	f32 fov_degrees = g_settings->getFloat("fov");
+	f32 fov_degrees = m_cache_fov;
 	fov_degrees = MYMAX(fov_degrees, 10.0);
 	fov_degrees = MYMIN(fov_degrees, 170.0);
 
 	// FOV and aspect ratio
-	m_aspect = (f32)screensize.X / (f32) screensize.Y;
+	m_aspect = (f32) porting::getWindowSize().X / (f32) porting::getWindowSize().Y;
 	m_fov_y = fov_degrees * M_PI / 180.0;
 	// Increase vertical FOV on lower aspect ratios (<16:10)
 	m_fov_y *= MYMAX(1.0, MYMIN(1.4, sqrt(16./10. / m_aspect)));
@@ -385,11 +430,9 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 	v3f wield_position = v3f(55, -35, 65);
 	//v3f wield_rotation = v3f(-100, 120, -100);
 	v3f wield_rotation = v3f(-100, 120, -100);
-	if(m_wield_change_timer < 0)
-		wield_position.Y -= 40 + m_wield_change_timer*320;
-	else
-		wield_position.Y -= 40 - m_wield_change_timer*320;
-	if(m_digging_anim < 0.05 || m_digging_anim > 0.5){
+	wield_position.Y += fabs(m_wield_change_timer)*320 - 40;
+	if(m_digging_anim < 0.05 || m_digging_anim > 0.5)
+	{
 		f32 frac = 1.0;
 		if(m_digging_anim > 0.5)
 			frac = 2.0 * (m_digging_anim - 0.5);
@@ -410,7 +453,7 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		wield_position.X -= 50 * sin(pow(digfrac, 0.8f) * M_PI);
 		wield_position.Y += 24 * sin(digfrac * 1.8 * M_PI);
 		wield_position.Z += 25 * 0.5;
-	
+
 		// Euler angles are PURE EVIL, so why not use quaternions?
 		core::quaternion quat_begin(wield_rotation * core::DEGTORAD);
 		core::quaternion quat_end(v3f(80, 30, 100) * core::DEGTORAD);
@@ -418,28 +461,36 @@ void Camera::update(LocalPlayer* player, f32 frametime, f32 busytime,
 		quat_slerp.slerp(quat_begin, quat_end, sin(digfrac * M_PI));
 		quat_slerp.toEuler(wield_rotation);
 		wield_rotation *= core::RADTODEG;
-	}
-	else {
+	} else {
 		f32 bobfrac = my_modf(m_view_bobbing_anim);
 		wield_position.X -= sin(bobfrac*M_PI*2.0) * 3.0;
 		wield_position.Y += sin(my_modf(bobfrac*2.0)*M_PI) * 3.0;
 	}
 	m_wieldnode->setPosition(wield_position);
 	m_wieldnode->setRotation(wield_rotation);
-	m_wieldlight = player->light;
+
+	// Shine light upon the wield mesh
+	video::SColor black(255,0,0,0);
+	m_wieldmgr->setAmbientLight(player->light_color.getInterpolated(black, 0.7));
+	m_wieldlightnode->getLightData().DiffuseColor = player->light_color.getInterpolated(black, 0.3);
+	m_wieldlightnode->setPosition(v3f(30+5*sin(2*player->getYaw()*M_PI/180), -50, 0));
 
 	// Render distance feedback loop
 	updateViewingRange(frametime, busytime);
 
-	// If the player seems to be walking on solid ground,
+	// If the player is walking, swimming, or climbing,
 	// view bobbing is enabled and free_move is off,
 	// start (or continue) the view bobbing animation.
 	v3f speed = player->getSpeed();
-	if ((hypot(speed.X, speed.Z) > BS) &&
-		(player->touching_ground) &&
-		(g_settings->getBool("view_bobbing") == true) &&
-		(g_settings->getBool("free_move") == false ||
-				!m_gamedef->checkLocalPrivilege("fly")))
+	const bool movement_XZ = hypot(speed.X, speed.Z) > BS;
+	const bool movement_Y = abs(speed.Y) > BS;
+
+	const bool walking = movement_XZ && player->touching_ground;
+	const bool swimming = (movement_XZ || player->swimming_vertical) && player->in_liquid;
+	const bool climbing = movement_Y && player->is_climbing;
+	if ((walking || swimming || climbing) &&
+			m_cache_view_bobbing &&
+			(!g_settings->getBool("free_move") || !m_gamedef->checkLocalPrivilege("fly")))
 	{
 		// Start animation
 		m_view_bobbing_state = 1;
@@ -477,12 +528,12 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 			<<std::endl;*/
 
 	// Get current viewing range and FPS settings
-	f32 viewing_range_min = g_settings->getS16("viewing_range_nodes_min");
+	f32 viewing_range_min = g_settings->getFloat("viewing_range_nodes_min");
 	viewing_range_min = MYMAX(15.0, viewing_range_min);
 
-	f32 viewing_range_max = g_settings->getS16("viewing_range_nodes_max");
+	f32 viewing_range_max = g_settings->getFloat("viewing_range_nodes_max");
 	viewing_range_max = MYMAX(viewing_range_min, viewing_range_max);
-	
+
 	// Immediately apply hard limits
 	if(m_draw_control.wanted_range < viewing_range_min)
 		m_draw_control.wanted_range = viewing_range_min;
@@ -497,7 +548,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	else
 		m_cameranode->setFarValue(viewing_range_max * BS * 10);
 
-	f32 wanted_fps = g_settings->getFloat("wanted_fps");
+	f32 wanted_fps = m_cache_wanted_fps;
 	wanted_fps = MYMAX(wanted_fps, 1.0);
 	f32 wanted_frametime = 1.0 / wanted_fps;
 
@@ -579,7 +630,7 @@ void Camera::updateViewingRange(f32 frametime_in, f32 busytime_in)
 	}
 
 	new_range += wanted_range_change;
-	
+
 	//f32 new_range_unclamped = new_range;
 	new_range = MYMAX(new_range, viewing_range_min);
 	new_range = MYMIN(new_range, viewing_range_max);
@@ -598,45 +649,20 @@ void Camera::setDigging(s32 button)
 		m_digging_button = button;
 }
 
-void Camera::wield(const ItemStack &item, u16 playeritem)
+void Camera::wield(const ItemStack &item)
 {
-	IItemDefManager *idef = m_gamedef->idef();
-	std::string itemname = item.getDefinition(idef).name;
-	m_wield_mesh_next = idef->getWieldMesh(itemname, m_gamedef);
-	if(playeritem != m_previous_playeritem &&
-			!(m_previous_itemname == "" && itemname == "")) {
-		m_previous_playeritem = playeritem;
-		m_previous_itemname = itemname;
-		if(m_wield_change_timer >= 0.125)
-			m_wield_change_timer = -0.125;
-		else if(m_wield_change_timer > 0) {
+	if (item.name != m_wield_item_next.name) {
+		m_wield_item_next = item;
+		if (m_wield_change_timer > 0)
 			m_wield_change_timer = -m_wield_change_timer;
-		}
-	} else {
-		if(m_wield_mesh_next) {
-			m_wieldnode->setMesh(m_wield_mesh_next);
-			m_wieldnode->setVisible(true);
-		} else {
-			m_wieldnode->setVisible(false);
-		}
-		m_wield_mesh_next = NULL;
-		if(m_previous_itemname != itemname) {
-			m_previous_itemname = itemname;
-			m_wield_change_timer = 0;
-		}
-		else
-			m_wield_change_timer = 0.125;
+		else if (m_wield_change_timer == 0)
+			m_wield_change_timer = -0.001;
 	}
 }
 
-void Camera::drawWieldedTool()
+void Camera::drawWieldedTool(irr::core::matrix4* translation)
 {
-	// Set vertex colors of wield mesh according to light level
-	u8 li = m_wieldlight;
-	video::SColor color(255,li,li,li);
-	setMeshColor(m_wieldnode->getMesh(), color);
-
-	// Clear Z buffer
+	// Clear Z buffer so that the wielded tool stay in front of world geometry
 	m_wieldmgr->getVideoDriver()->clearZBuffer();
 
 	// Draw the wielded node (in a separate scene manager)
@@ -644,6 +670,18 @@ void Camera::drawWieldedTool()
 	cam->setAspectRatio(m_cameranode->getAspectRatio());
 	cam->setFOV(72.0*M_PI/180.0);
 	cam->setNearValue(0.1);
-	cam->setFarValue(100);
+	cam->setFarValue(1000);
+	if (translation != NULL)
+	{
+		irr::core::matrix4 startMatrix = cam->getAbsoluteTransformation();
+		irr::core::vector3df focusPoint = (cam->getTarget()
+				- cam->getAbsolutePosition()).setLength(1)
+				+ cam->getAbsolutePosition();
+
+		irr::core::vector3df camera_pos =
+				(startMatrix * *translation).getTranslation();
+		cam->setPosition(camera_pos);
+		cam->setTarget(focusPoint);
+	}
 	m_wieldmgr->drawAll();
 }

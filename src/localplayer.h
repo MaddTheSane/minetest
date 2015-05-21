@@ -23,30 +23,32 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "player.h"
 #include <list>
 
-class ClientEnvironment;
-
+class Environment;
+class GenericCAO;
 class ClientActiveObject;
+
+enum LocalPlayerAnimations {NO_ANIM, WALK_ANIM, DIG_ANIM, WD_ANIM};  // no local animation, walking, digging, both
 
 class LocalPlayer : public Player
 {
 public:
-	LocalPlayer(IGameDef *gamedef);
+	LocalPlayer(IGameDef *gamedef, const char *name);
 	virtual ~LocalPlayer();
 
 	bool isLocal() const
 	{
 		return true;
 	}
-	
+
 	ClientActiveObject *parent;
 
 	bool isAttached;
 
 	v3f overridePosition;
 	
-	void move(f32 dtime, ClientEnvironment *env, f32 pos_max_d,
-			std::list<CollisionInfo> *collision_info);
-	void move(f32 dtime, ClientEnvironment *env, f32 pos_max_d);
+	void move(f32 dtime, Environment *env, f32 pos_max_d);
+	void move(f32 dtime, Environment *env, f32 pos_max_d,
+			std::vector<CollisionInfo> *collision_info);
 
 	void applyControl(float dtime);
 
@@ -60,9 +62,25 @@ public:
 	unsigned int last_keyPressed;
 
 	float camera_impact;
+	v3f eye_offset_first;
+	v3f eye_offset_third;
+
+	int last_animation;
+	float last_animation_speed;
 
 	std::string hotbar_image;
 	std::string hotbar_selected_image;
+
+	video::SColor light_color;
+
+	GenericCAO* getCAO() const {
+		return m_cao;
+	}
+
+	void setCAO(GenericCAO* toset) {
+		assert( m_cao == NULL ); // Pre-condition
+		m_cao = toset;
+	}
 
 private:
 	// This is used for determining the sneaking range
@@ -76,6 +94,8 @@ private:
 	// Whether recalculation of the sneak node is needed
 	bool m_need_to_get_new_sneak_node;
 	bool m_can_jump;
+
+	GenericCAO* m_cao;
 };
 
 #endif

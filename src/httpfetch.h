@@ -20,8 +20,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef HTTPFETCH_HEADER
 #define HTTPFETCH_HEADER
 
-#include <string>
 #include <vector>
+#include "util/string.h"
 #include "config.h"
 
 // Can be used in place of "caller" in asynchronous transfers to discard result
@@ -47,10 +47,16 @@ struct HTTPFetchRequest
 	// Timeout for the connection phase, in milliseconds
 	long connect_timeout;
 
-	// POST data (should be application/x-www-form-urlencoded
-	// unless a Content-Type header is specified in extra_headers)
+	// Indicates if this is multipart/form-data or
+	// application/x-www-form-urlencoded.  POST-only.
+	bool multipart;
+
+	// POST fields.  Fields are escaped properly.
 	// If this is empty a GET request is done instead.
-	std::string post_fields;
+	StringMap post_fields;
+
+	// Raw POST data, overrides post_fields.
+	std::string post_data;
 
 	// If not empty, should contain entries such as "Accept: text/html"
 	std::vector<std::string> extra_headers;
@@ -81,14 +87,14 @@ struct HTTPFetchResult
 		request_id = 0;
 	}
 
-	HTTPFetchResult(const HTTPFetchRequest &fetchrequest)
+	HTTPFetchResult(const HTTPFetchRequest &fetch_request)
 	{
 		succeeded = false;
 		timeout = false;
 		response_code = 0;
 		data = "";
-		caller = fetchrequest.caller;
-		request_id = fetchrequest.request_id;
+		caller = fetch_request.caller;
+		request_id = fetch_request.request_id;
 	}
 
 };
@@ -100,11 +106,11 @@ void httpfetch_init(int parallel_limit);
 void httpfetch_cleanup();
 
 // Starts an asynchronous HTTP fetch request
-void httpfetch_async(const HTTPFetchRequest &fetchrequest);
+void httpfetch_async(const HTTPFetchRequest &fetch_request);
 
 // If any fetch for the given caller ID is complete, removes it from the
-// result queue, sets fetchresult and returns true. Otherwise returns false.
-bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetchresult);
+// result queue, sets the fetch result and returns true. Otherwise returns false.
+bool httpfetch_async_get(unsigned long caller, HTTPFetchResult &fetch_result);
 
 // Allocates a caller ID for httpfetch_async
 // Not required if you want to set caller = HTTPFETCH_DISCARD
@@ -117,8 +123,8 @@ void httpfetch_caller_free(unsigned long caller);
 
 // Performs a synchronous HTTP request. This blocks and therefore should
 // only be used from background threads.
-void httpfetch_sync(const HTTPFetchRequest &fetchrequest,
-		HTTPFetchResult &fetchresult);
+void httpfetch_sync(const HTTPFetchRequest &fetch_request,
+		HTTPFetchResult &fetch_result);
 
 
 #endif // !HTTPFETCH_HEADER
