@@ -1096,7 +1096,6 @@
 				D5D6DE0017091EBF001EB852 /* AppDelegate.h */,
 				D5D6DE0117091EBF001EB852 /* AppDelegate.m */,
 				D5D6DE0317091EBF001EB852 /* MainMenu.xib */,
-				55807D7818F7685700FC774F /* Images.xcassets */,
 				D5D6DDF517091EBF001EB852 /* Supporting Files */,
 			);
 			path = Minetest;
@@ -1105,6 +1104,7 @@
 		D5D6DDF517091EBF001EB852 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				55807D7818F7685700FC774F /* Images.xcassets */,
 				D5ABDBCE17097EB10037071C /* minetest-icon.icns */,
 				D5D6DDF617091EBF001EB852 /* Minetest-Info.plist */,
 				D5D6DDF717091EBF001EB852 /* InfoPlist.strings */,
