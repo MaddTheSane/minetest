@@ -37,10 +37,10 @@ with this program; ifnot, write to the Free Software Foundation, Inc.,
 	#include <AL/alext.h>
 #endif
 #include <vorbis/vorbisfile.h>
+#include <assert.h>
 #include "log.h"
 #include "filesys.h"
 #include "util/numeric.h" // myrand()
-#include "debug.h" // assert()
 #include "porting.h"
 #include <map>
 #include <vector>
@@ -434,7 +434,7 @@ public:
 				}
 			}
 		}
-		if(del_list.size() != 0)
+		if(!del_list.empty())
 			verbosestream<<"OpenALSoundManager::maintain(): deleting "
 					<<del_list.size()<<" playing sounds"<<std::endl;
 		for(std::set<int>::iterator i = del_list.begin();

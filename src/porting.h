@@ -24,8 +24,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef PORTING_HEADER
 #define PORTING_HEADER
 
+#ifdef _WIN32
+	#ifdef _WIN32_WINNT
+		#undef _WIN32_WINNT
+	#endif
+	#define _WIN32_WINNT 0x0501 // We need to do this before any other headers
+		// because those might include sdkddkver.h which defines _WIN32_WINNT if not already set
+#endif
+
 #include <string>
+#include <vector>
+#include "irrlicht.h"
 #include "irrlichttypes.h" // u32
+#include "irrlichttypes_extrabloated.h"
 #include "debug.h"
 #include "constants.h"
 #include "gettime.h"
@@ -42,17 +53,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 //#define ALIGNOF(type) offsetof (alignment_trick<type>, member)
 
 #ifdef _WIN32
-	#ifndef _WIN32_WINNT
-		#define _WIN32_WINNT 0x0501
-	#endif
 	#include <windows.h>
-	
+
 	#define sleep_ms(x) Sleep(x)
 #else
 	#include <unistd.h>
 	#include <stdint.h> //for uintptr_t
-	
-	#if (defined(linux) || defined(__linux)) && !defined(_GNU_SOURCE)
+
+#if (defined(linux) || defined(__linux) || defined(__GNU__)) && !defined(_GNU_SOURCE)
 		#define _GNU_SOURCE
 	#endif
 
@@ -72,7 +80,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 	#endif
 
 	#define sleep_ms(x) usleep(x*1000)
-	
+
 	#define THREAD_PRIORITY_LOWEST       0
 	#define THREAD_PRIORITY_BELOW_NORMAL 1
 	#define THREAD_PRIORITY_NORMAL       2
@@ -115,6 +123,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #endif
 
 #define PADDING(x, y) ((ALIGNOF(y) - ((uintptr_t)(x) & (ALIGNOF(y) - 1))) & (ALIGNOF(y) - 1))
+
+#if defined(__APPLE__)
+	#include <mach-o/dyld.h>
+	#include <CoreFoundation/CoreFoundation.h>
+#endif
 
 namespace porting
 {
@@ -173,6 +186,8 @@ bool threadSetPriority(threadid_t tid, int prio);
 */
 std::string get_sysinfo();
 
+void initIrrlicht(irr::IrrlichtDevice * );
+
 /*
 	Resolution is 10-20ms.
 	Remember to check for overflows.
@@ -183,17 +198,17 @@ std::string get_sysinfo();
 	#define _WIN32_WINNT 0x0501
 #endif
 	#include <windows.h>
-	
+
 	inline u32 getTimeS()
 	{
 		return GetTickCount() / 1000;
 	}
-	
+
 	inline u32 getTimeMs()
 	{
 		return GetTickCount();
 	}
-	
+
 	inline u32 getTimeUs()
 	{
 		LARGE_INTEGER freq, t;
@@ -201,7 +216,7 @@ std::string get_sysinfo();
 		QueryPerformanceCounter(&t);
 		return (double)(t.QuadPart) / ((double)(freq.QuadPart) / 1000000.0);
 	}
-	
+
 	inline u32 getTimeNs()
 	{
 		LARGE_INTEGER freq, t;
@@ -209,39 +224,54 @@ std::string get_sysinfo();
 		QueryPerformanceCounter(&t);
 		return (double)(t.QuadPart) / ((double)(freq.QuadPart) / 1000000000.0);
 	}
-	
+
 #else // Posix
-	#include <sys/time.h>
-	#include <time.h>
-	
+#include <sys/time.h>
+#include <time.h>
+#if defined(__MACH__) && defined(__APPLE__)
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 	inline u32 getTimeS()
 	{
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		return tv.tv_sec;
 	}
-	
+
 	inline u32 getTimeMs()
 	{
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 	}
-	
+
 	inline u32 getTimeUs()
 	{
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		return tv.tv_sec * 1000000 + tv.tv_usec;
 	}
-	
+
 	inline u32 getTimeNs()
 	{
 		struct timespec ts;
+		// from http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
+#if defined(__MACH__) && defined(__APPLE__) // OS X does not have clock_gettime, use clock_get_time
+		clock_serv_t cclock;
+		mach_timespec_t mts;
+		host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+		clock_get_time(cclock, &mts);
+		mach_port_deallocate(mach_task_self(), cclock);
+		ts.tv_sec = mts.tv_sec;
+		ts.tv_nsec = mts.tv_nsec;
+#else
 		clock_gettime(CLOCK_REALTIME, &ts);
+#endif
 		return ts.tv_sec * 1000000000 + ts.tv_nsec;
 	}
-	
+
 	/*#include <sys/timeb.h>
 	inline u32 getTimeMs()
 	{
@@ -266,28 +296,143 @@ inline u32 getTime(TimePrecision prec)
 	return 0;
 }
 
-#if (defined(linux) || defined(__linux))
-
-#include <sys/prctl.h>
-
-inline void setThreadName(const char* name) {
-	prctl(PR_SET_NAME,name);
-}
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-/* BSD doesn't seem to support thread names. If you know about a way 
- * to add this feature please create a pull request.
- * "setproctitle" doesn't work for threadnames.
+/**
+ * Delta calculation function taking two 32bit arguments.
+ * @param old_time_ms old time for delta calculation (order is relevant!)
+ * @param new_time_ms new time for delta calculation (order is relevant!)
+ * @return positive 32bit delta value
  */
-#define setThreadName(a)
-#elif defined(_WIN32)
-// threadnames are not supported on windows
-#define setThreadName(a)
+inline u32 getDeltaMs(u32 old_time_ms, u32 new_time_ms)
+{
+	if (new_time_ms >= old_time_ms) {
+		return (new_time_ms - old_time_ms);
+	} else {
+		return (old_time_ms - new_time_ms);
+	}
+}
+
+#if defined(linux) || defined(__linux)
+	#include <sys/prctl.h>
+
+	inline void setThreadName(const char *name) {
+		/* It would be cleaner to do this with pthread_setname_np,
+		 * which was added to glibc in version 2.12, but some major
+		 * distributions are still runing 2.11 and previous versions.
+		 */
+		prctl(PR_SET_NAME, name);
+	}
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+	#include <pthread.h>
+	#include <pthread_np.h>
+
+	inline void setThreadName(const char *name) {
+		pthread_set_name_np(pthread_self(), name);
+	}
+#elif defined(__NetBSD__)
+	#include <pthread.h>
+
+	inline void setThreadName(const char *name) {
+		pthread_setname_np(pthread_self(), name);
+	}
+#elif defined(_MSC_VER)
+	typedef struct tagTHREADNAME_INFO {
+		DWORD dwType; // must be 0x1000
+		LPCSTR szName; // pointer to name (in user addr space)
+		DWORD dwThreadID; // thread ID (-1=caller thread)
+		DWORD dwFlags; // reserved for future use, must be zero
+	} THREADNAME_INFO;
+
+	inline void setThreadName(const char *name) {
+		THREADNAME_INFO info;
+		info.dwType = 0x1000;
+		info.szName = name;
+		info.dwThreadID = -1;
+		info.dwFlags = 0;
+		__try {
+			RaiseException(0x406D1388, 0, sizeof(info) / sizeof(DWORD), (ULONG_PTR *) &info);
+		} __except (EXCEPTION_CONTINUE_EXECUTION) {}
+	}
+#elif defined(__APPLE__)
+	#include <pthread.h>
+
+	inline void setThreadName(const char *name) {
+		pthread_setname_np(name);
+	}
+#elif defined(_WIN32) || defined(__GNU__)
+	inline void setThreadName(const char* name) {}
 #else
-#warning "Unknown platform for setThreadName support, you wont have threadname support."
-#define setThreadName(a)
+	#warning "Unrecognized platform, thread names will not be available."
+	inline void setThreadName(const char* name) {}
 #endif
 
+#ifndef SERVER
+float getDisplayDensity();
+
+v2u32 getDisplaySize();
+v2u32 getWindowSize();
+
+std::vector<core::vector3d<u32> > getSupportedVideoModes();
+std::vector<irr::video::E_DRIVER_TYPE> getSupportedVideoDrivers();
+const char *getVideoDriverName(irr::video::E_DRIVER_TYPE type);
+const char *getVideoDriverFriendlyName(irr::video::E_DRIVER_TYPE type);
+#endif
+
+inline const char *getPlatformName()
+{
+	return
+#if defined(ANDROID)
+	"Android"
+#elif defined(linux) || defined(__linux) || defined(__linux__)
+	"Linux"
+#elif defined(_WIN32) || defined(_WIN64)
+	"Windows"
+#elif defined(__DragonFly__) || defined(__FreeBSD__) || \
+		defined(__NetBSD__) || defined(__OpenBSD__)
+	"BSD"
+#elif defined(__APPLE__) && defined(__MACH__)
+	#if TARGET_OS_MAC
+		"OSX"
+	#elif TARGET_OS_IPHONE
+		"iOS"
+	#else
+		"Apple"
+	#endif
+#elif defined(_AIX)
+	"AIX"
+#elif defined(__hpux)
+	"HP-UX"
+#elif defined(__sun) || defined(sun)
+	#if defined(__SVR4)
+		"Solaris"
+	#else
+		"SunOS"
+	#endif
+#elif defined(__CYGWIN__)
+	"Cygwin"
+#elif defined(__unix__) || defined(__unix)
+	#if defined(_POSIX_VERSION)
+		"Posix"
+	#else
+		"Unix"
+	#endif
+#else
+	"?"
+#endif
+	;
+}
+
+void setXorgClassHint(const video::SExposedVideoData &video_data,
+	const std::string &name);
+
+// This only needs to be called at the start of execution, since all future
+// threads in the process inherit this exception handler
+void setWin32ExceptionHandler();
+
 } // namespace porting
+
+#ifdef __ANDROID__
+#include "porting_android.h"
+#endif
 
 #endif // PORTING_HEADER
 

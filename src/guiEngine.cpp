@@ -19,25 +19,30 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "guiEngine.h"
 
+#include <fstream>
+#include <IGUIStaticText.h>
+#include <ICameraSceneNode.h>
 #include "scripting_mainmenu.h"
+#include "util/numeric.h"
 #include "config.h"
 #include "version.h"
 #include "porting.h"
 #include "filesys.h"
-#include "main.h"
 #include "settings.h"
 #include "guiMainMenu.h"
 #include "sound.h"
 #include "sound_openal.h"
 #include "clouds.h"
 #include "httpfetch.h"
+#include "log.h"
+#include "fontengine.h"
+#include "guiscalingfilter.h"
 
-#include <IGUIStaticText.h>
-#include <ICameraSceneNode.h>
-
-#if USE_CURL
-#include <curl/curl.h>
+#ifdef __ANDROID__
+#include "client/tile.h"
+#include <GLES/gl.h>
 #endif
+
 
 /******************************************************************************/
 /** TextDestGuiEngine                                                         */
@@ -48,7 +53,7 @@ TextDestGuiEngine::TextDestGuiEngine(GUIEngine* engine)
 }
 
 /******************************************************************************/
-void TextDestGuiEngine::gotText(std::map<std::string, std::string> fields)
+void TextDestGuiEngine::gotText(const StringMap &fields)
 {
 	m_engine->getScriptIface()->handleMainMenuButtons(fields);
 }
@@ -86,6 +91,16 @@ video::ITexture* MenuTextureSource::getTexture(const std::string &name, u32 *id)
 	if(name.empty())
 		return NULL;
 	m_to_delete.insert(name);
+
+#ifdef __ANDROID__
+	video::IImage *image = m_driver->createImageFromFile(name.c_str());
+	if (image) {
+		image = Align2Npot2(image, m_driver);
+		video::ITexture* retval = m_driver->addTexture(name.c_str(), image);
+		image->drop();
+		return retval;
+	}
+#endif
 	return m_driver->getTexture(name.c_str());
 }
 
@@ -140,7 +155,7 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 {
 	//initialize texture pointers
 	for (unsigned int i = 0; i < TEX_LAYER_MAX; i++) {
-		m_textures[i] = 0;
+		m_textures[i].texture = NULL;
 	}
 	// is deleted by guiformspec!
 	m_buttonhandler = new TextDestGuiEngine(this);
@@ -157,47 +172,51 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 		m_sound_manager = &dummySoundManager;
 
 	//create topleft header
-	core::rect<s32> rect(0, 0, 500, 20);
+	std::wstring t = narrow_to_wide(std::string(PROJECT_NAME_C " ") +
+			g_version_hash);
+
+	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(t), g_fontengine->getTextHeight());
 	rect += v2s32(4, 0);
-	std::string t = std::string("Minetest ") + minetest_version_hash;
 
 	m_irr_toplefttext =
-		m_device->getGUIEnvironment()->addStaticText(narrow_to_wide(t).c_str(),
+		m_device->getGUIEnvironment()->addStaticText(t.c_str(),
 		rect,false,true,0,-1);
 
 	//create formspecsource
-	m_formspecgui = new FormspecFormSource("",&m_formspecgui);
+	m_formspecgui = new FormspecFormSource("");
 
 	/* Create menu */
-	m_menu =
-		new GUIFormSpecMenu(	m_device,
-								m_parent,
-								-1,
-								m_menumanager,
-								0 /* &client */,
-								0 /* gamedef */,
-								m_texture_source);
+	m_menu = new GUIFormSpecMenu(m_device,
+			m_parent,
+			-1,
+			m_menumanager,
+			NULL /* &client */,
+			NULL /* gamedef */,
+			m_texture_source,
+			m_formspecgui,
+			m_buttonhandler,
+			NULL,
+			false);
 
 	m_menu->allowClose(false);
 	m_menu->lockSize(true,v2u32(800,600));
-	m_menu->setFormSource(m_formspecgui);
-	m_menu->setTextDest(m_buttonhandler);
 
 	// Initialize scripting
 
-	infostream<<"GUIEngine: Initializing Lua"<<std::endl;
+	infostream << "GUIEngine: Initializing Lua" << std::endl;
 
 	m_script = new MainMenuScripting(this);
 
 	try {
-		if (m_data->errormessage != "")
-		{
+		if (m_data->errormessage != "") {
 			m_script->setMainMenuErrorMessage(m_data->errormessage);
 			m_data->errormessage = "";
 		}
 
-		if (!loadMainMenuScript())
-			assert("no future without mainmenu" == 0);
+		if (!loadMainMenuScript()) {
+			errorstream << "No future without mainmenu" << std::endl;
+			abort();
+		}
 
 		run();
 	}
@@ -208,48 +227,27 @@ GUIEngine::GUIEngine(	irr::IrrlichtDevice* dev,
 
 	m_menu->quitMenu();
 	m_menu->drop();
-	m_menu = 0;
+	m_menu = NULL;
 }
 
 /******************************************************************************/
 bool GUIEngine::loadMainMenuScript()
 {
-	// Try custom menu script (main_menu_script)
+	// Try custom menu script (main_menu_path)
 
-	std::string menuscript = g_settings->get("main_menu_script");
-	if(menuscript != "") {
-		m_scriptdir = fs::RemoveLastPathComponent(menuscript);
-
-		if(m_script->loadMod(menuscript, "__custommenu")) {
-			// custom menu script loaded
-			return true;
-		}
-		else {
-			infostream
-				<< "GUIEngine: execution of custom menu failed!"
-				<< std::endl
-				<< "\tfalling back to builtin menu"
-				<< std::endl;
-		}
+	m_scriptdir = g_settings->get("main_menu_path");
+	if (m_scriptdir.empty()) {
+		m_scriptdir = porting::path_share + DIR_DELIM "builtin" + DIR_DELIM "mainmenu";
 	}
 
-	// Try builtin menu script (main_menu_script)
-
-	std::string builtin_menuscript =
-			porting::path_share + DIR_DELIM + "builtin"
-				+ DIR_DELIM + "mainmenu.lua";
-
-	m_scriptdir = fs::RemoveRelativePathComponents(
-			fs::RemoveLastPathComponent(builtin_menuscript));
-
-	if(m_script->loadMod(builtin_menuscript, "__builtinmenu")) {
-		// builtin menu script loaded
+	std::string script = porting::path_share + DIR_DELIM "builtin" + DIR_DELIM "init.lua";
+	if (m_script->loadScript(script)) {
+		// Menu script loaded
 		return true;
-	}
-	else {
-		errorstream
-			<< "GUIEngine: unable to load builtin menu"
-			<< std::endl;
+	} else {
+		infostream
+			<< "GUIEngine: execution of menu script in: \""
+			<< m_scriptdir << "\" failed!" << std::endl;
 	}
 
 	return false;
@@ -258,14 +256,22 @@ bool GUIEngine::loadMainMenuScript()
 /******************************************************************************/
 void GUIEngine::run()
 {
-
 	// Always create clouds because they may or may not be
 	// needed based on the game selected
 	video::IVideoDriver* driver = m_device->getVideoDriver();
 
 	cloudInit();
 
-	while(m_device->run() && (!m_startgame) && (!m_kill)) {
+	unsigned int text_height = g_fontengine->getTextHeight();
+
+	while(m_device->run() && (!m_startgame) && (!m_kill))
+	{
+		//check if we need to update the "upper left corner"-text
+		if (text_height != g_fontengine->getTextHeight()) {
+			updateTopLeftTextSize();
+			text_height = g_fontengine->getTextHeight();
+		}
+
 		driver->beginScene(true, true, video::SColor(255,140,186,250));
 
 		if (m_clouds_enabled)
@@ -288,7 +294,11 @@ void GUIEngine::run()
 		else
 			sleep_ms(25);
 
-		m_script->Step();
+		m_script->step();
+
+#ifdef __ANDROID__
+		m_menu->getAndroidUIInput();
+#endif
 	}
 }
 
@@ -296,14 +306,12 @@ void GUIEngine::run()
 GUIEngine::~GUIEngine()
 {
 	video::IVideoDriver* driver = m_device->getVideoDriver();
-	assert(driver != 0);
+	FATAL_ERROR_IF(driver == 0, "Could not get video driver");
 
 	if(m_sound_manager != &dummySoundManager){
 		delete m_sound_manager;
 		m_sound_manager = NULL;
 	}
-
-	//TODO: clean up m_menu here
 
 	infostream<<"GUIEngine: Deinitializing scripting"<<std::endl;
 	delete m_script;
@@ -312,12 +320,12 @@ GUIEngine::~GUIEngine()
 
 	//clean up texture pointers
 	for (unsigned int i = 0; i < TEX_LAYER_MAX; i++) {
-		if (m_textures[i] != 0)
-			driver->removeTexture(m_textures[i]);
+		if (m_textures[i].texture != NULL)
+			driver->removeTexture(m_textures[i].texture);
 	}
 
 	delete m_texture_source;
-	
+
 	if (m_cloud.clouds)
 		m_cloud.clouds->drop();
 }
@@ -358,15 +366,14 @@ void GUIEngine::cloudPostProcess()
 {
 	float fps_max = g_settings->getFloat("fps_max");
 	// Time of frame without fps limit
-	float busytime;
 	u32 busytime_u32;
+
 	// not using getRealTime is necessary for wine
 	u32 time = m_device->getTimer()->getTime();
 	if(time > m_cloud.lasttime)
 		busytime_u32 = time - m_cloud.lasttime;
 	else
 		busytime_u32 = 0;
-	busytime = busytime_u32 / 1000.0;
 
 	// FPS limiter
 	u32 frametime_min = 1000./fps_max;
@@ -382,7 +389,7 @@ void GUIEngine::drawBackground(video::IVideoDriver* driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_BACKGROUND];
+	video::ITexture* texture = m_textures[TEX_LAYER_BACKGROUND].texture;
 
 	/* If no texture, draw background of solid color */
 	if(!texture){
@@ -392,9 +399,28 @@ void GUIEngine::drawBackground(video::IVideoDriver* driver)
 		return;
 	}
 
-	/* Draw background texture */
 	v2u32 sourcesize = texture->getOriginalSize();
-	driver->draw2DImage(texture,
+
+	if (m_textures[TEX_LAYER_BACKGROUND].tile)
+	{
+		v2u32 tilesize(
+				MYMAX(sourcesize.X,m_textures[TEX_LAYER_BACKGROUND].minsize),
+				MYMAX(sourcesize.Y,m_textures[TEX_LAYER_BACKGROUND].minsize));
+		for (unsigned int x = 0; x < screensize.X; x += tilesize.X )
+		{
+			for (unsigned int y = 0; y < screensize.Y; y += tilesize.Y )
+			{
+				draw2DImageFilterScaled(driver, texture,
+					core::rect<s32>(x, y, x+tilesize.X, y+tilesize.Y),
+					core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
+					NULL, NULL, true);
+			}
+		}
+		return;
+	}
+
+	/* Draw background texture */
+	draw2DImageFilterScaled(driver, texture,
 		core::rect<s32>(0, 0, screensize.X, screensize.Y),
 		core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
 		NULL, NULL, true);
@@ -405,7 +431,7 @@ void GUIEngine::drawOverlay(video::IVideoDriver* driver)
 {
 	v2u32 screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_OVERLAY];
+	video::ITexture* texture = m_textures[TEX_LAYER_OVERLAY].texture;
 
 	/* If no texture, draw background of solid color */
 	if(!texture)
@@ -413,7 +439,7 @@ void GUIEngine::drawOverlay(video::IVideoDriver* driver)
 
 	/* Draw background texture */
 	v2u32 sourcesize = texture->getOriginalSize();
-	driver->draw2DImage(texture,
+	draw2DImageFilterScaled(driver, texture,
 		core::rect<s32>(0, 0, screensize.X, screensize.Y),
 		core::rect<s32>(0, 0, sourcesize.X, sourcesize.Y),
 		NULL, NULL, true);
@@ -424,7 +450,7 @@ void GUIEngine::drawHeader(video::IVideoDriver* driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_HEADER];
+	video::ITexture* texture = m_textures[TEX_LAYER_HEADER].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)
@@ -446,7 +472,7 @@ void GUIEngine::drawHeader(video::IVideoDriver* driver)
 
 	video::SColor bgcolor(255,50,50,50);
 
-	driver->draw2DImage(texture, splashrect,
+	draw2DImageFilterScaled(driver, texture, splashrect,
 		core::rect<s32>(core::position2d<s32>(0,0),
 		core::dimension2di(texture->getOriginalSize())),
 		NULL, NULL, true);
@@ -458,7 +484,7 @@ void GUIEngine::drawFooter(video::IVideoDriver* driver)
 {
 	core::dimension2d<u32> screensize = driver->getScreenSize();
 
-	video::ITexture* texture = m_textures[TEX_LAYER_FOOTER];
+	video::ITexture* texture = m_textures[TEX_LAYER_FOOTER].texture;
 
 	/* If no texture, draw nothing */
 	if(!texture)
@@ -478,7 +504,7 @@ void GUIEngine::drawFooter(video::IVideoDriver* driver)
 		rect += v2s32(screensize.Width/2,screensize.Height-footersize.Y);
 		rect -= v2s32(footersize.X/2, 0);
 
-		driver->draw2DImage(texture, rect,
+		draw2DImageFilterScaled(driver, texture, rect,
 			core::rect<s32>(core::position2d<s32>(0,0),
 			core::dimension2di(texture->getOriginalSize())),
 			NULL, NULL, true);
@@ -486,71 +512,92 @@ void GUIEngine::drawFooter(video::IVideoDriver* driver)
 }
 
 /******************************************************************************/
-bool GUIEngine::setTexture(texture_layer layer,std::string texturepath) {
-
+bool GUIEngine::setTexture(texture_layer layer, std::string texturepath,
+		bool tile_image, unsigned int minsize)
+{
 	video::IVideoDriver* driver = m_device->getVideoDriver();
-	assert(driver != 0);
+	FATAL_ERROR_IF(driver == 0, "Could not get video driver");
 
-	if (m_textures[layer] != 0)
+	if (m_textures[layer].texture != NULL)
 	{
-		driver->removeTexture(m_textures[layer]);
-		m_textures[layer] = 0;
+		driver->removeTexture(m_textures[layer].texture);
+		m_textures[layer].texture = NULL;
 	}
 
 	if ((texturepath == "") || !fs::PathExists(texturepath))
+	{
 		return false;
+	}
 
-	m_textures[layer] = driver->getTexture(texturepath.c_str());
+	m_textures[layer].texture = driver->getTexture(texturepath.c_str());
+	m_textures[layer].tile    = tile_image;
+	m_textures[layer].minsize = minsize;
 
-	if (m_textures[layer] == 0) return false;
+	if (m_textures[layer].texture == NULL)
+	{
+		return false;
+	}
 
 	return true;
 }
 
 /******************************************************************************/
-bool GUIEngine::downloadFile(std::string url,std::string target) {
+bool GUIEngine::downloadFile(std::string url, std::string target)
+{
 #if USE_CURL
-	bool retval = true;
+	std::ofstream target_file(target.c_str(), std::ios::out | std::ios::binary);
 
-	FILE* targetfile = fopen(target.c_str(),"wb");
-
-	if (targetfile) {
-		HTTPFetchRequest fetchrequest;
-		HTTPFetchResult fetchresult;
-		fetchrequest.url = url;
-		fetchrequest.caller = HTTPFETCH_SYNC;
-		httpfetch_sync(fetchrequest,fetchresult);
-
-		if (fetchresult.succeeded) {
-			if (fwrite(fetchresult.data.c_str(),1,fetchresult.data.size(),targetfile) != fetchresult.data.size()) {
-				retval = false;
-			}
-		}
-		else {
-			retval = false;
-		}
-		fclose(targetfile);
-	}
-	else {
-		retval = false;
+	if (!target_file.good()) {
+		return false;
 	}
 
-	return retval;
+	HTTPFetchRequest fetch_request;
+	HTTPFetchResult fetch_result;
+	fetch_request.url = url;
+	fetch_request.caller = HTTPFETCH_SYNC;
+	fetch_request.timeout = g_settings->getS32("curl_file_download_timeout");
+	httpfetch_sync(fetch_request, fetch_result);
+
+	if (!fetch_result.succeeded) {
+		return false;
+	}
+	target_file << fetch_result.data;
+
+	return true;
 #else
 	return false;
 #endif
 }
 
 /******************************************************************************/
-void GUIEngine::setTopleftText(std::string append) {
-	std::string toset = std::string("Minetest ") + minetest_version_hash;
+void GUIEngine::setTopleftText(std::string append)
+{
+	std::wstring toset = narrow_to_wide(std::string(PROJECT_NAME_C " ") +
+			g_version_hash);
 
-	if (append != "") {
-		toset += " / ";
-		toset += append;
+	if (append != "")
+	{
+		toset += L" / ";
+		toset += narrow_to_wide(append);
 	}
 
-	m_irr_toplefttext->setText(narrow_to_wide(toset).c_str());
+	m_irr_toplefttext->setText(toset.c_str());
+
+	updateTopLeftTextSize();
+}
+
+/******************************************************************************/
+void GUIEngine::updateTopLeftTextSize()
+{
+	std::wstring text = m_irr_toplefttext->getText();
+
+	core::rect<s32> rect(0, 0, g_fontengine->getTextWidth(text), g_fontengine->getTextHeight());
+		rect += v2s32(4, 0);
+
+	m_irr_toplefttext->remove();
+	m_irr_toplefttext =
+		m_device->getGUIEnvironment()->addStaticText(text.c_str(),
+		rect,false,true,0,-1);
 }
 
 /******************************************************************************/
@@ -567,7 +614,9 @@ void GUIEngine::stopSound(s32 handle)
 }
 
 /******************************************************************************/
-unsigned int GUIEngine::DoAsync(std::string serialized_fct,
-		std::string serialized_params) {
-	return m_script->DoAsync(serialized_fct,serialized_params);
+unsigned int GUIEngine::queueAsync(std::string serialized_func,
+		std::string serialized_params)
+{
+	return m_script->queueAsync(serialized_func, serialized_params);
 }
+

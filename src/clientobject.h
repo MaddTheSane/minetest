@@ -41,6 +41,7 @@ class ITextureSource;
 class IGameDef;
 class LocalPlayer;
 struct ItemStack;
+class WieldMeshSceneNode;
 
 class ClientActiveObject : public ActiveObject
 {
@@ -55,35 +56,37 @@ public:
 	virtual void updateLight(u8 light_at_pos){}
 	virtual v3s16 getLightPosition(){return v3s16(0,0,0);}
 	virtual core::aabbox3d<f32>* getSelectionBox(){return NULL;}
-	virtual core::aabbox3d<f32>* getCollisionBox(){return NULL;}
+	virtual bool getCollisionBox(aabb3f *toset){return false;}
 	virtual bool collideWithObjects(){return false;}
 	virtual v3f getPosition(){return v3f(0,0,0);}
+	virtual scene::ISceneNode *getSceneNode(){return NULL;}
 	virtual scene::IMeshSceneNode *getMeshSceneNode(){return NULL;}
 	virtual scene::IAnimatedMeshSceneNode *getAnimatedMeshSceneNode(){return NULL;}
+	virtual WieldMeshSceneNode *getWieldMeshSceneNode(){return NULL;}
 	virtual scene::IBillboardSceneNode *getSpriteSceneNode(){return NULL;}
-	virtual bool isPlayer(){return false;}
-	virtual bool isLocalPlayer(){return false;}
+	virtual bool isPlayer() const {return false;}
+	virtual bool isLocalPlayer() const {return false;}
 	virtual void setAttachments(){}
 	virtual bool doShowSelectionBox(){return true;}
 	virtual void updateCameraOffset(v3s16 camera_offset){};
-	
+
 	// Step object in time
 	virtual void step(float dtime, ClientEnvironment *env){}
-	
+
 	// Process a message sent by the server side object
 	virtual void processMessage(const std::string &data){}
 
 	virtual std::string infoText() {return "";}
 	virtual std::string debugInfoText() {return "";}
-	
+
 	/*
 		This takes the return value of
 		ServerActiveObject::getClientInitializationData
 	*/
 	virtual void initialize(const std::string &data){}
-	
+
 	// Create a certain type of ClientActiveObject
-	static ClientActiveObject* create(u8 type, IGameDef *gamedef,
+	static ClientActiveObject* create(ActiveObjectType type, IGameDef *gamedef,
 			ClientEnvironment *env);
 
 	// If returns true, punch will not be sent to the server
@@ -120,4 +123,3 @@ struct DistanceSortedActiveObject
 };
 
 #endif
-

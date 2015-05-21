@@ -28,9 +28,8 @@ class ModApiUtil : public ModApiBase {
 private:
 	/*
 		NOTE:
-		The functions in this module are available through
-		minetest.<function> in the in-game API as well as
-		engine.<function> in the mainmenu API
+		The functions in this module are available in the in-game API
+		as well as in the mainmenu API.
 
 		All functions that don't require either a Server or
 		GUIEngine instance should be in here.
@@ -79,6 +78,24 @@ private:
 	// is_yes(arg)
 	static int l_is_yes(lua_State *L);
 
+	// get_builtin_path()
+	static int l_get_builtin_path(lua_State *L);
+
+	// compress(data, method, ...)
+	static int l_compress(lua_State *L);
+
+	// decompress(data, method, ...)
+	static int l_decompress(lua_State *L);
+
+	// mkdir(path)
+	static int l_mkdir(lua_State *L);
+
+	// get_dir_list(path, is_dir)
+	static int l_get_dir_list(lua_State *L);
+
+	// request_insecure_environment()
+	static int l_request_insecure_environment(lua_State *L);
+
 public:
 	static void Initialize(lua_State *L, int top);
 
@@ -87,3 +104,4 @@ public:
 };
 
 #endif /* L_UTIL_H_ */
+

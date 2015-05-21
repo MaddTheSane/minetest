@@ -1,11 +1,16 @@
 ## Generic ignorable patterns and files
 *~
 .*.swp
+.*-swp
 *bak*
 tags
 *.vim
 *.orig
 *.rej
+.DS_Store
+
+## Files related to minetest development cycle
+/*.patch
 
 ## Non-static Minetest directories
 /bin/
@@ -26,10 +31,16 @@ tags
 minetest.conf
 debug.txt
 
+## Doxygen files
+doc/Doxyfile
+doc/html/
+doc/doxygen_*
+
 ## Build files
 CMakeFiles/*
 src/CMakeFiles/*
 src/Makefile
+src/android_version.h
 src/cmake_config.h
 src/cmake_config_githash.h
 src/cmake_install.cmake
@@ -38,6 +49,7 @@ src/script/common/CMakeFiles/*
 src/script/cpp_api/CMakeFiles/*
 src/script/lua_api/CMakeFiles/*
 src/util/CMakeFiles/*
+src/unittest/CMakeFiles/*
 src/jthread/CMakeFiles/*
 src/jthread/Makefile
 src/jthread/cmake_config.h
@@ -50,18 +62,37 @@ src/cguittfont/CMakeFiles/
 src/cguittfont/libcguittfont.a
 src/cguittfont/cmake_install.cmake
 src/cguittfont/Makefile
+src/gmp/CMakeFiles/
+src/gmp/libgmp.a
 src/json/CMakeFiles/
 src/json/libjsoncpp.a
 src/sqlite/CMakeFiles/*
 src/sqlite/libsqlite3.a
+src/client/CMakeFiles/
+src/network/CMakeFiles/
 CMakeCache.txt
 CPackConfig.cmake
 CPackSourceConfig.cmake
 Makefile
 cmake_install.cmake
 locale/
+.directory
+.kdev4/
 *.cbp
+*.kdev4
 *.layout
 *.o
 
-**/.DS_Store
+## Android build files
+build/android/assets
+build/android/bin
+build/android/Debug
+build/android/deps
+build/android/gen
+build/android/jni/src
+build/android/libs
+build/android/obj
+build/android/path.cfg
+build/android/AndroidManifest.xml
+timestamp
+

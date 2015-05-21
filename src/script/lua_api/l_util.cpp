@@ -21,13 +21,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "lua_api/l_internal.h"
 #include "common/c_converter.h"
 #include "common/c_content.h"
-#include "lua_api/l_async_events.h"
+#include "cpp_api/s_async.h"
+#include "serialization.h"
+#include "json/json.h"
+#include "cpp_api/s_security.h"
 #include "debug.h"
+#include "porting.h"
 #include "log.h"
 #include "tool.h"
+#include "filesys.h"
 #include "settings.h"
-#include "main.h"  //required for g_settings, g_settings_path
-#include "json/json.h"
+#include "util/auth.h"
+#include <algorithm>
 
 // debug(...)
 // Writes a line to dstream
@@ -46,11 +51,12 @@ int ModApiUtil::l_debug(lua_State *L)
 		lua_pushvalue(L, -1);  /* function to be called */
 		lua_pushvalue(L, i);   /* value to print */
 		lua_call(L, 1, 1);
-		const char *s = lua_tostring(L, -1);
-		if (i>1)
+		size_t len;
+		const char *s = lua_tolstring(L, -1, &len);
+		if (i > 1)
 			dstream << "\t";
 		if (s)
-			dstream << s;
+			dstream << std::string(s, len);
 		lua_pop(L, 1);
 	}
 	dstream << std::endl;
@@ -78,17 +84,29 @@ int ModApiUtil::l_log(lua_State *L)
 			level = LMT_ACTION;
 		else if(levelname == "verbose")
 			level = LMT_VERBOSE;
+		else if (levelname == "deprecated") {
+			log_deprecated(L,text);
+			return 0;
+		}
+
 	}
 	log_printline(level, text);
 	return 0;
 }
 
+#define CHECK_SECURE_SETTING(L, name) \
+	if (name.compare(0, 7, "secure.") == 0) {\
+		lua_pushliteral(L, "Attempt to set secure setting.");\
+		lua_error(L);\
+	}
+
 // setting_set(name, value)
 int ModApiUtil::l_setting_set(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	const char *name = luaL_checkstring(L, 1);
-	const char *value = luaL_checkstring(L, 2);
+	std::string name = luaL_checkstring(L, 1);
+	std::string value = luaL_checkstring(L, 2);
+	CHECK_SECURE_SETTING(L, name);
 	g_settings->set(name, value);
 	return 0;
 }
@@ -111,8 +129,9 @@ int ModApiUtil::l_setting_get(lua_State *L)
 int ModApiUtil::l_setting_setbool(lua_State *L)
 {
 	NO_MAP_LOCK_REQUIRED;
-	const char *name = luaL_checkstring(L, 1);
+	std::string name = luaL_checkstring(L, 1);
 	bool value = lua_toboolean(L, 2);
+	CHECK_SECURE_SETTING(L, name);
 	g_settings->setBool(name, value);
 	return 0;
 }
@@ -247,8 +266,7 @@ int ModApiUtil::l_get_password_hash(lua_State *L)
 	NO_MAP_LOCK_REQUIRED;
 	std::string name = luaL_checkstring(L, 1);
 	std::string raw_password = luaL_checkstring(L, 2);
-	std::string hash = translatePassword(name,
-			narrow_to_wide(raw_password));
+	std::string hash = translatePassword(name, raw_password);
 	lua_pushstring(L, hash.c_str());
 	return 1;
 }
@@ -268,6 +286,106 @@ int ModApiUtil::l_is_yes(lua_State *L)
 	lua_pushboolean(L, yes);
 	return 1;
 }
+
+int ModApiUtil::l_get_builtin_path(lua_State *L)
+{
+	std::string path = porting::path_share + DIR_DELIM + "builtin";
+	lua_pushstring(L, path.c_str());
+	return 1;
+}
+
+// compress(data, method, level)
+int ModApiUtil::l_compress(lua_State *L)
+{
+	size_t size;
+	const char *data = luaL_checklstring(L, 1, &size);
+
+	int level = -1;
+	if (!lua_isnone(L, 3) && !lua_isnil(L, 3))
+		level = luaL_checknumber(L, 3);
+
+	std::ostringstream os;
+	compressZlib(std::string(data, size), os, level);
+
+	std::string out = os.str();
+
+	lua_pushlstring(L, out.data(), out.size());
+	return 1;
+}
+
+// decompress(data, method)
+int ModApiUtil::l_decompress(lua_State *L)
+{
+	size_t size;
+	const char *data = luaL_checklstring(L, 1, &size);
+
+	std::istringstream is(std::string(data, size));
+	std::ostringstream os;
+	decompressZlib(is, os);
+
+	std::string out = os.str();
+
+	lua_pushlstring(L, out.data(), out.size());
+	return 1;
+}
+
+// mkdir(path)
+int ModApiUtil::l_mkdir(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *path = luaL_checkstring(L, 1);
+	CHECK_SECURE_PATH_OPTIONAL(L, path);
+	lua_pushboolean(L, fs::CreateAllDirs(path));
+	return 1;
+}
+
+// get_dir_list(path, is_dir)
+int ModApiUtil::l_get_dir_list(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const char *path = luaL_checkstring(L, 1);
+	short is_dir = lua_isboolean(L, 2) ? lua_toboolean(L, 2) : -1;
+
+	CHECK_SECURE_PATH_OPTIONAL(L, path);
+
+	std::vector<fs::DirListNode> list = fs::GetDirListing(path);
+
+	int index = 0;
+	lua_newtable(L);
+
+	for (size_t i = 0; i < list.size(); i++) {
+		if (is_dir == -1 || is_dir == list[i].dir) {
+			lua_pushstring(L, list[i].name.c_str());
+			lua_rawseti(L, -2, ++index);
+		}
+	}
+
+	return 1;
+}
+
+int ModApiUtil::l_request_insecure_environment(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	if (!ScriptApiSecurity::isSecure(L)) {
+		lua_getglobal(L, "_G");
+		return 1;
+	}
+	lua_getfield(L, LUA_REGISTRYINDEX, SCRIPT_MOD_NAME_FIELD);
+	if (!lua_isstring(L, -1)) {
+		lua_pushnil(L);
+		return 1;
+	}
+	const char *mod_name = lua_tostring(L, -1);
+	std::string trusted_mods = g_settings->get("secure.trusted_mods");
+	std::vector<std::string> mod_list = str_split(trusted_mods, ',');
+	if (std::find(mod_list.begin(), mod_list.end(), mod_name) == mod_list.end()) {
+		lua_pushnil(L);
+		return 1;
+	}
+	lua_getfield(L, LUA_REGISTRYINDEX, "globals_backup");
+	return 1;
+}
+
 
 void ModApiUtil::Initialize(lua_State *L, int top)
 {
@@ -289,6 +407,16 @@ void ModApiUtil::Initialize(lua_State *L, int top)
 	API_FCT(get_password_hash);
 
 	API_FCT(is_yes);
+
+	API_FCT(get_builtin_path);
+
+	API_FCT(compress);
+	API_FCT(decompress);
+
+	API_FCT(mkdir);
+	API_FCT(get_dir_list);
+
+	API_FCT(request_insecure_environment);
 }
 
 void ModApiUtil::InitializeAsync(AsyncEngine& engine)
@@ -303,6 +431,16 @@ void ModApiUtil::InitializeAsync(AsyncEngine& engine)
 	//ASYNC_API_FCT(setting_save);
 
 	ASYNC_API_FCT(parse_json);
+	ASYNC_API_FCT(write_json);
 
 	ASYNC_API_FCT(is_yes);
+
+	ASYNC_API_FCT(get_builtin_path);
+
+	ASYNC_API_FCT(compress);
+	ASYNC_API_FCT(decompress);
+
+	ASYNC_API_FCT(mkdir);
+	ASYNC_API_FCT(get_dir_list);
 }
+

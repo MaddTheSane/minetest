@@ -80,9 +80,9 @@ public:
 		Modifying methods
 	*/
 
-	void addArea(VoxelArea &a)
+	void addArea(const VoxelArea &a)
 	{
-		if(getExtent() == v3s16(0,0,0))
+		if (hasEmptyExtent())
 		{
 			*this = a;
 			return;
@@ -94,9 +94,9 @@ public:
 		if(a.MaxEdge.Y > MaxEdge.Y) MaxEdge.Y = a.MaxEdge.Y;
 		if(a.MaxEdge.Z > MaxEdge.Z) MaxEdge.Z = a.MaxEdge.Z;
 	}
-	void addPoint(v3s16 p)
+	void addPoint(const v3s16 &p)
 	{
-		if(getExtent() == v3s16(0,0,0))
+		if(hasEmptyExtent())
 		{
 			MinEdge = p;
 			MaxEdge = p;
@@ -111,7 +111,7 @@ public:
 	}
 
 	// Pad with d nodes
-	void pad(v3s16 d)
+	void pad(const v3s16 &d)
 	{
 		MinEdge -= d;
 		MaxEdge += d;
@@ -137,6 +137,15 @@ public:
 	{
 		return MaxEdge - MinEdge + v3s16(1,1,1);
 	}
+
+	/* Because MaxEdge and MinEdge are included in the voxel area an empty extent
+	 * is not represented by (0, 0, 0), but instead (-1, -1, -1)
+	 */
+	bool hasEmptyExtent() const
+	{
+		return MaxEdge - MinEdge == v3s16(-1, -1, -1);
+	}
+
 	s32 getVolume() const
 	{
 		v3s16 e = getExtent();
@@ -146,7 +155,7 @@ public:
 	{
 		// No area contains an empty area
 		// NOTE: Algorithms depend on this, so do not change.
-		if(a.getExtent() == v3s16(0,0,0))
+		if(a.hasEmptyExtent())
 			return false;
 
 		return(
@@ -204,7 +213,7 @@ public:
 			return;
 		}
 
-		assert(contains(a));
+		assert(contains(a));	// pre-condition
 
 		// Take back area, XY inclusive
 		{
@@ -320,10 +329,10 @@ public:
 	v3s16 MaxEdge;
 };
 
-// Hasn't been copied from source (emerged)
-#define VOXELFLAG_NOT_LOADED (1<<0)
-// Checked as being inexistent in source
-#define VOXELFLAG_INEXISTENT (1<<1)
+// unused 
+#define VOXELFLAG_UNUSED   (1<<0)
+// no data about that node
+#define VOXELFLAG_NO_DATA  (1<<1)
 // Algorithm-dependent
 #define VOXELFLAG_CHECKED1 (1<<2)
 // Algorithm-dependent
@@ -356,8 +365,8 @@ public:
 	}
 	bool isValidPosition(v3s16 p)
 	{
-		emerge(p);
-		return !(m_flags[m_area.index(p)] & VOXELFLAG_INEXISTENT);
+		addArea(p);
+		return !(m_flags[m_area.index(p)] & VOXELFLAG_NO_DATA);
 	}*/
 
 	/*
@@ -366,9 +375,10 @@ public:
 	*/
 	MapNode getNode(v3s16 p)
 	{
-		emerge(p);
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
 
-		if(m_flags[m_area.index(p)] & VOXELFLAG_INEXISTENT)
+		if(m_flags[m_area.index(p)] & VOXELFLAG_NO_DATA)
 		{
 			/*dstream<<"EXCEPT: VoxelManipulator::getNode(): "
 					<<"p=("<<p.X<<","<<p.Y<<","<<p.Z<<")"
@@ -383,9 +393,10 @@ public:
 	}
 	MapNode getNodeNoEx(v3s16 p)
 	{
-		emerge(p);
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
 
-		if(m_flags[m_area.index(p)] & VOXELFLAG_INEXISTENT)
+		if(m_flags[m_area.index(p)] & VOXELFLAG_NO_DATA)
 		{
 			return MapNode(CONTENT_IGNORE);
 		}
@@ -396,16 +407,27 @@ public:
 	{
 		if(m_area.contains(p) == false)
 			return MapNode(CONTENT_IGNORE);
-		if(m_flags[m_area.index(p)] & VOXELFLAG_INEXISTENT)
+		if(m_flags[m_area.index(p)] & VOXELFLAG_NO_DATA)
 			return MapNode(CONTENT_IGNORE);
 		return m_data[m_area.index(p)];
 	}
 	// Stuff explodes if non-emerged area is touched with this.
-	// Emerge first, and check VOXELFLAG_INEXISTENT if appropriate.
-	MapNode & getNodeRefUnsafe(v3s16 p)
+	// Emerge first, and check VOXELFLAG_NO_DATA if appropriate.
+	MapNode & getNodeRefUnsafe(const v3s16 &p)
 	{
 		return m_data[m_area.index(p)];
 	}
+
+	const MapNode & getNodeRefUnsafeCheckFlags(const v3s16 &p)
+	{
+		s32 index = m_area.index(p);
+
+		if (m_flags[index] & VOXELFLAG_NO_DATA)
+			return ContentIgnoreNode;
+
+		return m_data[index];
+	}
+
 	u8 & getFlagsRefUnsafe(v3s16 p)
 	{
 		return m_flags[m_area.index(p)];
@@ -413,12 +435,13 @@ public:
 	bool exists(v3s16 p)
 	{
 		return m_area.contains(p) &&
-			!(getFlagsRefUnsafe(p) & VOXELFLAG_INEXISTENT);
+			!(getFlagsRefUnsafe(p) & VOXELFLAG_NO_DATA);
 	}
 	MapNode & getNodeRef(v3s16 p)
 	{
-		emerge(p);
-		if(getFlagsRefUnsafe(p) & VOXELFLAG_INEXISTENT)
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
+		if(getFlagsRefUnsafe(p) & VOXELFLAG_NO_DATA)
 		{
 			/*dstream<<"EXCEPT: VoxelManipulator::getNode(): "
 					<<"p=("<<p.X<<","<<p.Y<<","<<p.Z<<")"
@@ -432,11 +455,11 @@ public:
 	}
 	void setNode(v3s16 p, const MapNode &n)
 	{
-		emerge(p);
+		VoxelArea voxel_area(p);
+		addArea(voxel_area);
 
 		m_data[m_area.index(p)] = n;
-		m_flags[m_area.index(p)] &= ~VOXELFLAG_INEXISTENT;
-		m_flags[m_area.index(p)] &= ~VOXELFLAG_NOT_LOADED;
+		m_flags[m_area.index(p)] &= ~VOXELFLAG_NO_DATA;
 	}
 	// TODO: Should be removed and replaced with setNode
 	void setNodeNoRef(v3s16 p, const MapNode &n)
@@ -446,12 +469,12 @@ public:
 
 	/*void setExists(VoxelArea a)
 	{
-		emerge(a);
+		addArea(a);
 		for(s32 z=a.MinEdge.Z; z<=a.MaxEdge.Z; z++)
 		for(s32 y=a.MinEdge.Y; y<=a.MaxEdge.Y; y++)
 		for(s32 x=a.MinEdge.X; x<=a.MaxEdge.X; x++)
 		{
-			m_flags[m_area.index(x,y,z)] &= ~VOXELFLAG_INEXISTENT;
+			m_flags[m_area.index(x,y,z)] &= ~VOXELFLAG_NO_DATA;
 		}
 	}*/
 
@@ -459,7 +482,7 @@ public:
 	{
 		//dstream<<"operator[] p=("<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;
 		if(isValidPosition(p) == false)
-			emerge(VoxelArea(p));
+			addArea(VoxelArea(p));
 
 		return m_data[m_area.index(p)];
 	}*/
@@ -500,17 +523,17 @@ public:
 	void print(std::ostream &o, INodeDefManager *nodemgr,
 			VoxelPrintMode mode=VOXELPRINT_MATERIAL);
 
-	void addArea(VoxelArea area);
+	void addArea(const VoxelArea &area);
 
 	/*
 		Copy data and set flags to 0
 		dst_area.getExtent() <= src_area.getExtent()
 	*/
-	void copyFrom(MapNode *src, VoxelArea src_area,
+	void copyFrom(MapNode *src, const VoxelArea& src_area,
 			v3s16 from_pos, v3s16 to_pos, v3s16 size);
 
 	// Copy data
-	void copyTo(MapNode *dst, VoxelArea dst_area,
+	void copyTo(MapNode *dst, const VoxelArea& dst_area,
 			v3s16 dst_pos, v3s16 from_pos, v3s16 size);
 
 	/*
@@ -536,29 +559,6 @@ public:
 	*/
 
 	/*
-		Get the contents of the requested area from somewhere.
-		Shall touch only nodes that have VOXELFLAG_NOT_LOADED
-		Shall reset VOXELFLAG_NOT_LOADED
-
-		If not found from source, add with VOXELFLAG_INEXISTENT
-	*/
-	virtual void emerge(VoxelArea a, s32 caller_id=-1)
-	{
-		//dstream<<"emerge p=("<<p.X<<","<<p.Y<<","<<p.Z<<")"<<std::endl;
-		addArea(a);
-		for(s32 z=a.MinEdge.Z; z<=a.MaxEdge.Z; z++)
-		for(s32 y=a.MinEdge.Y; y<=a.MaxEdge.Y; y++)
-		for(s32 x=a.MinEdge.X; x<=a.MaxEdge.X; x++)
-		{
-			s32 i = m_area.index(x,y,z);
-			// Don't touch nodes that have already been loaded
-			if(!(m_flags[i] & VOXELFLAG_NOT_LOADED))
-				continue;
-			m_flags[i] = VOXELFLAG_INEXISTENT;
-		}
-	}
-
-	/*
 		Member variables
 	*/
 
@@ -579,6 +579,8 @@ public:
 		Flags of all nodes
 	*/
 	u8 *m_flags;
+
+	static const MapNode ContentIgnoreNode;
 
 	//TODO: Use these or remove them
 	//TODO: Would these make any speed improvement?

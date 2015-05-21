@@ -83,7 +83,7 @@ u32 ChatBuffer::getScrollback() const
 
 const ChatLine& ChatBuffer::getLine(u32 index) const
 {
-	assert(index < getLineCount());
+	assert(index < getLineCount());	// pre-condition
 	return m_unformatted[index];
 }
 
@@ -107,7 +107,8 @@ void ChatBuffer::deleteOldest(u32 count)
 		// keep m_formatted in sync
 		if (del_formatted < m_formatted.size())
 		{
-			assert(m_formatted[del_formatted].first);
+
+			sanity_check(m_formatted[del_formatted].first);
 			++del_formatted;
 			while (del_formatted < m_formatted.size() &&
 					!m_formatted[del_formatted].first)
@@ -151,7 +152,7 @@ void ChatBuffer::reformat(u32 cols, u32 rows)
 	}
 	else if (cols != m_cols || rows != m_rows)
 	{
-		// TODO: Avoid reformatting ALL lines (even inivisble ones)
+		// TODO: Avoid reformatting ALL lines (even invisible ones)
 		// each time the console size changes.
 
 		// Find out the scroll position in *unformatted* lines
@@ -402,6 +403,15 @@ void ChatPrompt::input(wchar_t ch)
 {
 	m_line.insert(m_cursor, 1, ch);
 	m_cursor++;
+	clampView();
+	m_nick_completion_start = 0;
+	m_nick_completion_end = 0;
+}
+
+void ChatPrompt::input(const std::wstring &str)
+{
+	m_line.insert(m_cursor, str);
+	m_cursor += str.size();
 	clampView();
 	m_nick_completion_start = 0;
 	m_nick_completion_end = 0;
@@ -765,5 +775,5 @@ void ChatBackend::scrollPageDown()
 
 void ChatBackend::scrollPageUp()
 {
-	m_console_buffer.scroll(-m_console_buffer.getRows());
+	m_console_buffer.scroll(-(s32)m_console_buffer.getRows());
 }

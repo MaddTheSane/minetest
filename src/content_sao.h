@@ -21,13 +21,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define CONTENT_SAO_HEADER
 
 #include "serverobject.h"
-#include "content_object.h"
 #include "itemgroup.h"
 #include "player.h"
 #include "object_properties.h"
-
-ServerActiveObject* createItemSAO(ServerEnvironment *env, v3f pos,
-                                  const std::string &itemstring);
 
 /*
 	LuaEntitySAO needs some internals exposed.
@@ -39,9 +35,9 @@ public:
 	LuaEntitySAO(ServerEnvironment *env, v3f pos,
 	             const std::string &name, const std::string &state);
 	~LuaEntitySAO();
-	u8 getType() const
+	ActiveObjectType getType() const
 	{ return ACTIVEOBJECT_TYPE_LUAENTITY; }
-	u8 getSendType() const
+	ActiveObjectType getSendType() const
 	{ return ACTIVEOBJECT_TYPE_GENERIC; }
 	virtual void addedToEnvironment(u32 dtime_s);
 	static ServerActiveObject* create(ServerEnvironment *env, v3f pos,
@@ -158,9 +154,9 @@ public:
 	PlayerSAO(ServerEnvironment *env_, Player *player_, u16 peer_id_,
 			const std::set<std::string> &privs, bool is_singleplayer);
 	~PlayerSAO();
-	u8 getType() const
+	ActiveObjectType getType() const
 	{ return ACTIVEOBJECT_TYPE_PLAYER; }
-	u8 getSendType() const
+	ActiveObjectType getSendType() const
 	{ return ACTIVEOBJECT_TYPE_GENERIC; }
 	std::string getDescription();
 
@@ -171,7 +167,6 @@ public:
 	void addedToEnvironment(u32 dtime_s);
 	void removingFromEnvironment();
 	bool isStaticAllowed() const;
-	bool unlimitedTransferDistance() const;
 	std::string getClientInitializationData(u16 protocol_version);
 	std::string getStaticData();
 	bool isAttached();
@@ -202,6 +197,8 @@ public:
 	void setAttachment(int parent_id, std::string bone, v3f position, v3f rotation);
 	ObjectProperties* accessObjectProperties();
 	void notifyObjectPropertiesModified();
+	void setNametagColor(video::SColor color);
+	video::SColor getNametagColor();
 
 	/*
 		Inventory interface
@@ -210,7 +207,6 @@ public:
 	Inventory* getInventory();
 	const Inventory* getInventory() const;
 	InventoryLocation getInventoryLocation() const;
-	void setInventoryModified();
 	std::string getWieldList() const;
 	int getWieldIndex() const;
 	void setWieldIndex(int i);
@@ -319,14 +315,10 @@ private:
 	v3f m_attachment_rotation;
 	bool m_attachment_sent;
 
-public:
-	// Some flags used by Server
-	bool m_moved;
-	bool m_inventory_not_sent;
-	bool m_hp_not_sent;
-	bool m_breath_not_sent;
-	bool m_wielded_item_not_sent;
+	video::SColor m_nametag_color;
+	bool m_nametag_sent;
 
+public:
 	float m_physics_override_speed;
 	float m_physics_override_jump;
 	float m_physics_override_gravity;

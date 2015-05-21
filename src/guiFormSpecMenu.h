@@ -28,10 +28,12 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "inventorymanager.h"
 #include "modalMenu.h"
 #include "guiTable.h"
+#include "network/networkprotocol.h"
 
 class IGameDef;
 class InventoryManager;
 class ISimpleTextureSource;
+class Client;
 
 typedef enum {
 	f_Button,
@@ -39,6 +41,7 @@ typedef enum {
 	f_TabHeader,
 	f_CheckBox,
 	f_DropDown,
+	f_ScrollBar,
 	f_Unknown
 } FormspecFieldType;
 
@@ -53,7 +56,7 @@ struct TextDest
 	virtual ~TextDest() {};
 	// This is deprecated I guess? -celeron55
 	virtual void gotText(std::wstring text){}
-	virtual void gotText(std::map<std::string, std::string> fields) = 0;
+	virtual void gotText(const StringMap &fields) = 0;
 	virtual void setFormName(std::string formname)
 	{ m_formname = formname;};
 
@@ -143,14 +146,14 @@ class GUIFormSpecMenu : public GUIModalMenu
 		v2s32 geom;
 		bool scale;
 	};
-	
+
 	struct FieldSpec
 	{
 		FieldSpec()
 		{
 		}
 		FieldSpec(const std::wstring &name, const std::wstring &label,
-		          const std::wstring &fdeflt, int id) :
+				const std::wstring &fdeflt, int id) :
 			fname(name),
 			flabel(label),
 			fdefault(fdeflt),
@@ -159,7 +162,6 @@ class GUIFormSpecMenu : public GUIModalMenu
 			send = false;
 			ftype = f_Unknown;
 			is_exit = false;
-			tooltip="";
 		}
 		std::wstring fname;
 		std::wstring flabel;
@@ -169,7 +171,6 @@ class GUIFormSpecMenu : public GUIModalMenu
 		FormspecFieldType ftype;
 		bool is_exit;
 		core::rect<s32> rect;
-		std::string tooltip;
 	};
 
 	struct BoxDrawSpec {
@@ -184,14 +185,33 @@ class GUIFormSpecMenu : public GUIModalMenu
 		irr::video::SColor color;
 	};
 
+	struct TooltipSpec {
+		TooltipSpec()
+		{
+		}
+		TooltipSpec(std::string a_tooltip, irr::video::SColor a_bgcolor,
+				irr::video::SColor a_color):
+			tooltip(a_tooltip),
+			bgcolor(a_bgcolor),
+			color(a_color)
+		{
+		}
+		std::string tooltip;
+		irr::video::SColor bgcolor;
+		irr::video::SColor color;
+	};
+
 public:
 	GUIFormSpecMenu(irr::IrrlichtDevice* dev,
 			gui::IGUIElement* parent, s32 id,
 			IMenuManager *menumgr,
 			InventoryManager *invmgr,
 			IGameDef *gamedef,
-			ISimpleTextureSource *tsrc
-			);
+			ISimpleTextureSource *tsrc,
+			IFormSource* fs_src,
+			TextDest* txt_dst,
+			Client* client,
+			bool remap_dbl_click = true);
 
 	~GUIFormSpecMenu();
 
@@ -202,16 +222,22 @@ public:
 		m_current_inventory_location = current_inventory_location;
 		regenerateGui(m_screensize_old);
 	}
-	
+
 	// form_src is deleted by this GUIFormSpecMenu
 	void setFormSource(IFormSource *form_src)
 	{
+		if (m_form_src != NULL) {
+			delete m_form_src;
+		}
 		m_form_src = form_src;
 	}
 
 	// text_dst is deleted by this GUIFormSpecMenu
 	void setTextDest(TextDest *text_dst)
 	{
+		if (m_text_dst != NULL) {
+			delete m_text_dst;
+		}
 		m_text_dst = text_dst;
 	}
 
@@ -220,18 +246,25 @@ public:
 		m_allowclose = value;
 	}
 
-	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0)) {
+	void lockSize(bool lock,v2u32 basescreensize=v2u32(0,0))
+	{
 		m_lock = lock;
 		m_lockscreensize = basescreensize;
 	}
 
 	void removeChildren();
 	void setInitialFocus();
+
+	void setFocus(std::wstring elementname)
+	{
+		m_focused_element = elementname;
+	}
+
 	/*
 		Remove and re-add (or reposition) stuff
 	*/
 	void regenerateGui(v2u32 screensize);
-	
+
 	ItemSpec getItemAtPos(v2s32 p) const;
 	void drawList(const ListDrawSpec &s, int phase);
 	void drawSelectedItem();
@@ -247,8 +280,9 @@ public:
 
 	GUITable* getTable(std::wstring tablename);
 
-	static bool parseColor(const std::string &value,
-			video::SColor &color, bool quiet);
+#ifdef __ANDROID__
+	bool getAndroidUIInput();
+#endif
 
 protected:
 	v2s32 getBasePos() const
@@ -260,16 +294,16 @@ protected:
 	v2s32 spacing;
 	v2s32 imgsize;
 	v2s32 offset;
-	
+
 	irr::IrrlichtDevice* m_device;
 	InventoryManager *m_invmgr;
 	IGameDef *m_gamedef;
 	ISimpleTextureSource *m_tsrc;
+	Client *m_client;
 
 	std::string m_formspec_string;
 	InventoryLocation m_current_inventory_location;
-	IFormSource *m_form_src;
-	TextDest *m_text_dst;
+
 
 	std::vector<ListDrawSpec> m_inventorylists;
 	std::vector<ImageDrawSpec> m_backgrounds;
@@ -279,11 +313,13 @@ protected:
 	std::vector<FieldSpec> m_fields;
 	std::vector<std::pair<FieldSpec,GUITable*> > m_tables;
 	std::vector<std::pair<FieldSpec,gui::IGUICheckBox*> > m_checkboxes;
+	std::map<std::wstring, TooltipSpec> m_tooltips;
+	std::vector<std::pair<FieldSpec,gui::IGUIScrollBar*> > m_scrollbars;
 
 	ItemSpec *m_selected_item;
 	u32 m_selected_amount;
 	bool m_selected_dragging;
-	
+
 	// WARNING: BLACK MAGIC
 	// Used to guess and keep up with some special things the server can do.
 	// If name is "", no guess exists.
@@ -291,7 +327,15 @@ protected:
 	InventoryLocation m_selected_content_guess_inventory;
 
 	v2s32 m_pointer;
+	v2s32 m_old_pointer;  // Mouse position after previous mouse event
 	gui::IGUIStaticText *m_tooltip_element;
+
+	u32 m_tooltip_show_delay;
+	s32 m_hovered_time;
+	s32 m_old_tooltip_id;
+	std::string m_old_tooltip;
+
+	bool m_rmouse_auto_place;
 
 	bool m_allowclose;
 	bool m_lock;
@@ -304,13 +348,21 @@ protected:
 	video::SColor m_slotbg_n;
 	video::SColor m_slotbg_h;
 	video::SColor m_slotbordercolor;
+	video::SColor m_default_tooltip_bgcolor;
+	video::SColor m_default_tooltip_color;
+
 private:
+	IFormSource      *m_form_src;
+	TextDest         *m_text_dst;
+	unsigned int      m_formspec_version;
+	std::wstring      m_focused_element;
+
 	typedef struct {
+		bool explicit_size;
+		v2f invsize;
 		v2s32 size;
-		s32 helptext_h;
 		core::rect<s32> rect;
 		v2s32 basepos;
-		int bp_set;
 		v2u32 screensize;
 		std::wstring focused_fieldname;
 		GUITable::TableOptions table_options;
@@ -355,24 +407,58 @@ private:
 	void parseBox(parserData* data,std::string element);
 	void parseBackgroundColor(parserData* data,std::string element);
 	void parseListColors(parserData* data,std::string element);
+	void parseTooltip(parserData* data,std::string element);
+	bool parseVersionDirect(std::string data);
+	bool parseSizeDirect(parserData* data, std::string element);
+	void parseScrollBar(parserData* data, std::string element);
+
+	/**
+	 * check if event is part of a double click
+	 * @param event event to evaluate
+	 * @return true/false if a doubleclick was detected
+	 */
+	bool DoubleClickDetection(const SEvent event);
+
+	struct clickpos
+	{
+		v2s32 pos;
+		s32 time;
+	};
+	clickpos m_doubleclickdetect[2];
+
+	int m_btn_height;
+	gui::IGUIFont *m_font;
+
+	std::wstring getLabelByID(s32 id);
+	std::wstring getNameByID(s32 id);
+#ifdef __ANDROID__
+	v2s32 m_down_pos;
+	std::wstring m_JavaDialogFieldName;
+#endif
+
+	/* If true, remap a double-click (or double-tap) action to ESC. This is so
+	 * that, for example, Android users can double-tap to close a formspec.
+	*
+	 * This value can (currently) only be set by the class constructor
+	 * and the default value for the setting is true.
+	 */
+	bool m_remap_dbl_click;
+
 };
 
 class FormspecFormSource: public IFormSource
 {
 public:
-	FormspecFormSource(std::string formspec,FormspecFormSource** game_formspec)
+	FormspecFormSource(std::string formspec)
 	{
 		m_formspec = formspec;
-		m_game_formspec = game_formspec;
 	}
 
 	~FormspecFormSource()
-	{
-		*m_game_formspec = 0;
-	}
+	{}
 
 	void setForm(std::string formspec) {
-		m_formspec = formspec;
+		m_formspec = FORMSPEC_VERSION_STRING + formspec;
 	}
 
 	std::string getForm()
@@ -381,7 +467,6 @@ public:
 	}
 
 	std::string m_formspec;
-	FormspecFormSource** m_game_formspec;
 };
 
 #endif

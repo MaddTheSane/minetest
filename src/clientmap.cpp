@@ -24,11 +24,11 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <matrix4.h>
 #include "log.h"
 #include "mapsector.h"
-#include "main.h" // dout_client, g_settings
 #include "nodedef.h"
 #include "mapblock.h"
 #include "profiler.h"
 #include "settings.h"
+#include "camera.h"               // CameraModes
 #include "util/mathconstants.h"
 #include <algorithm>
 
@@ -52,12 +52,26 @@ ClientMap::ClientMap(
 {
 	m_box = core::aabbox3d<f32>(-BS*1000000,-BS*1000000,-BS*1000000,
 			BS*1000000,BS*1000000,BS*1000000);
+
+	/* TODO: Add a callback function so these can be updated when a setting
+	 *       changes.  At this point in time it doesn't matter (e.g. /set
+	 *       is documented to change server settings only)
+	 *
+	 * TODO: Local caching of settings is not optimal and should at some stage
+	 *       be updated to use a global settings object for getting thse values
+	 *       (as opposed to the this local caching). This can be addressed in
+	 *       a later release.
+	 */
+	m_cache_trilinear_filter  = g_settings->getBool("trilinear_filter");
+	m_cache_bilinear_filter   = g_settings->getBool("bilinear_filter");
+	m_cache_anistropic_filter = g_settings->getBool("anisotropic_filter");
+
 }
 
 ClientMap::~ClientMap()
 {
 	/*JMutexAutoLock lock(mesh_mutex);
-	
+
 	if(mesh != NULL)
 	{
 		mesh->drop();
@@ -75,45 +89,17 @@ MapSector * ClientMap::emergeSector(v2s16 p2d)
 	catch(InvalidPositionException &e)
 	{
 	}
-	
+
 	// Create a sector
 	ClientMapSector *sector = new ClientMapSector(this, p2d, m_gamedef);
-	
+
 	{
 		//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
 		m_sectors[p2d] = sector;
 	}
-	
+
 	return sector;
 }
-
-#if 0
-void ClientMap::deSerializeSector(v2s16 p2d, std::istream &is)
-{
-	DSTACK(__FUNCTION_NAME);
-	ClientMapSector *sector = NULL;
-
-	//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-	
-	core::map<v2s16, MapSector*>::Node *n = m_sectors.find(p2d);
-
-	if(n != NULL)
-	{
-		sector = (ClientMapSector*)n->getValue();
-		assert(sector->getId() == MAPSECTOR_CLIENT);
-	}
-	else
-	{
-		sector = new ClientMapSector(this, p2d);
-		{
-			//JMutexAutoLock lock(m_sector_mutex); // Bulk comment-out
-			m_sectors.insert(p2d, sector);
-		}
-	}
-
-	sector->deSerialize(is);
-}
-#endif
 
 void ClientMap::OnRegisterSceneNode()
 {
@@ -146,9 +132,9 @@ static bool isOccluded(Map *map, v3s16 p0, v3s16 p1, float step, float stepfac,
 		else
 			is_transparent = (f.solidness != 2);
 		if(!is_transparent){
-			count++;
-			if(count >= needed_count)
+			if(count == needed_count)
 				return true;
+			count++;
 		}
 		step *= stepfac;
 	}
@@ -175,7 +161,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 	v3f camera_position = m_camera_position;
 	v3f camera_direction = m_camera_direction;
 	f32 camera_fov = m_camera_fov;
-	v3s16 camera_offset = m_camera_offset;
+	//v3s16 camera_offset = m_camera_offset;
 	m_camera_mutex.Unlock();
 
 	// Use a higher fov to accomodate faster camera movements.
@@ -197,7 +183,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 			p_nodes_max.X / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Y / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Z / MAP_BLOCKSIZE + 1);
-	
+
 	// Number of blocks in rendering range
 	u32 blocks_in_range = 0;
 	// Number of blocks occlusion culled
@@ -222,7 +208,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 	{
 		MapSector *sector = si->second;
 		v2s16 sp = sector->getPos();
-		
+
 		if(m_control.range_all == false)
 		{
 			if(sp.X < p_blocks_min.X
@@ -232,17 +218,17 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 				continue;
 		}
 
-		std::list< MapBlock * > sectorblocks;
+		MapBlockVect sectorblocks;
 		sector->getBlocks(sectorblocks);
-		
+
 		/*
 			Loop through blocks in sector
 		*/
 
 		u32 sector_blocks_drawn = 0;
-		
-		std::list< MapBlock * >::iterator i;
-		for(i=sectorblocks.begin(); i!=sectorblocks.end(); i++)
+
+		for(MapBlockVect::iterator i = sectorblocks.begin();
+				i != sectorblocks.end(); i++)
 		{
 			MapBlock *block = *i;
 
@@ -250,10 +236,10 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 				Compare block position to camera position, skip
 				if not seen on display
 			*/
-			
+
 			if (block->mesh != NULL)
 				block->mesh->updateCameraOffset(m_camera_offset);
-			
+
 			float range = 100000 * BS;
 			if(m_control.range_all == false)
 				range = m_control.wanted_range * BS;
@@ -272,7 +258,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 				continue;*/
 
 			blocks_in_range++;
-			
+
 			/*
 				Ignore if mesh doesn't exist
 			*/
@@ -333,7 +319,7 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 				blocks_occlusion_culled++;
 				continue;
 			}
-			
+
 			// This block is in range. Reset usage timer.
 			block->resetUsageTimer();
 
@@ -376,24 +362,31 @@ void ClientMap::updateDrawList(video::IVideoDriver* driver)
 struct MeshBufList
 {
 	video::SMaterial m;
-	std::list<scene::IMeshBuffer*> bufs;
+	std::vector<scene::IMeshBuffer*> bufs;
 };
 
 struct MeshBufListList
 {
-	std::list<MeshBufList> lists;
-	
+	std::vector<MeshBufList> lists;
+
 	void clear()
 	{
 		lists.clear();
 	}
-	
+
 	void add(scene::IMeshBuffer *buf)
 	{
-		for(std::list<MeshBufList>::iterator i = lists.begin();
+		for(std::vector<MeshBufList>::iterator i = lists.begin();
 				i != lists.end(); ++i){
 			MeshBufList &l = *i;
-			if(l.m == buf->getMaterial()){
+			video::SMaterial &m = buf->getMaterial();
+
+			// comparing a full material is quite expensive so we don't do it if
+			// not even first texture is equal
+			if (l.m.TextureLayer[0].Texture != m.TextureLayer[0].Texture)
+				continue;
+
+			if (l.m == m) {
 				l.bufs.push_back(buf);
 				return;
 			}
@@ -410,7 +403,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	DSTACK(__FUNCTION_NAME);
 
 	bool is_transparent_pass = pass == scene::ESNRP_TRANSPARENT;
-	
+
 	std::string prefix;
 	if(pass == scene::ESNRP_SOLID)
 		prefix = "CM: solid: ";
@@ -425,13 +418,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		m_last_drawn_sectors.clear();
 	}
 
-	bool use_trilinear_filter = g_settings->getBool("trilinear_filter");
-	bool use_bilinear_filter = g_settings->getBool("bilinear_filter");
-	bool use_anisotropic_filter = g_settings->getBool("anisotropic_filter");
-
 	/*
 		Get time for measuring timeout.
-		
+
 		Measuring time is very useful for long delays when the
 		machine is swapping a lot.
 	*/
@@ -455,7 +444,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 	*/
 
 	v3s16 cam_pos_nodes = floatToInt(camera_position, BS);
-	
+
 	v3s16 box_nodes_d = m_control.wanted_range * v3s16(1,1,1);
 
 	v3s16 p_nodes_min = cam_pos_nodes - box_nodes_d;
@@ -471,14 +460,14 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			p_nodes_max.X / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Y / MAP_BLOCKSIZE + 1,
 			p_nodes_max.Z / MAP_BLOCKSIZE + 1);
-	
+
 	u32 vertex_count = 0;
 	u32 meshbuffer_count = 0;
-	
+
 	// For limiting number of mesh animations per frame
 	u32 mesh_animate_count = 0;
 	u32 mesh_animate_count_far = 0;
-	
+
 	// Blocks that were drawn and had a mesh
 	u32 blocks_drawn = 0;
 	// Blocks which had a corresponding meshbuffer for this pass
@@ -504,7 +493,7 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 		// If the mesh of the block happened to get deleted, ignore it
 		if(block->mesh == NULL)
 			continue;
-		
+
 		float d = 0.0;
 		if(isBlockInSight(block->getPos(), camera_position,
 				camera_direction, camera_fov,
@@ -558,9 +547,9 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			{
 				scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
 
-				buf->getMaterial().setFlag(video::EMF_TRILINEAR_FILTER, use_trilinear_filter);
-				buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, use_bilinear_filter);
-				buf->getMaterial().setFlag(video::EMF_ANISOTROPIC_FILTER, use_anisotropic_filter);
+				buf->getMaterial().setFlag(video::EMF_TRILINEAR_FILTER, m_cache_trilinear_filter);
+				buf->getMaterial().setFlag(video::EMF_BILINEAR_FILTER, m_cache_bilinear_filter);
+				buf->getMaterial().setFlag(video::EMF_ANISOTROPIC_FILTER, m_cache_anistropic_filter);
 
 				const video::SMaterial& material = buf->getMaterial();
 				video::IMaterialRenderer* rnd =
@@ -576,96 +565,45 @@ void ClientMap::renderMap(video::IVideoDriver* driver, s32 pass)
 			}
 		}
 	}
-	
-	std::list<MeshBufList> &lists = drawbufs.lists;
-	
+
+	std::vector<MeshBufList> &lists = drawbufs.lists;
+
 	int timecheck_counter = 0;
-	for(std::list<MeshBufList>::iterator i = lists.begin();
-			i != lists.end(); ++i)
-	{
-		{
-			timecheck_counter++;
-			if(timecheck_counter > 50)
-			{
-				timecheck_counter = 0;
-				int time2 = time(0);
-				if(time2 > time1 + 4)
-				{
-					infostream<<"ClientMap::renderMap(): "
-						"Rendering takes ages, returning."
-						<<std::endl;
-					return;
-				}
+	for(std::vector<MeshBufList>::iterator i = lists.begin();
+			i != lists.end(); ++i) {
+		timecheck_counter++;
+		if(timecheck_counter > 50) {
+			timecheck_counter = 0;
+			int time2 = time(0);
+			if(time2 > time1 + 4) {
+				infostream << "ClientMap::renderMap(): "
+					"Rendering takes ages, returning."
+					<< std::endl;
+				return;
 			}
 		}
 
 		MeshBufList &list = *i;
-		
+
 		driver->setMaterial(list.m);
-		
-		for(std::list<scene::IMeshBuffer*>::iterator j = list.bufs.begin();
-				j != list.bufs.end(); ++j)
-		{
+
+		for(std::vector<scene::IMeshBuffer*>::iterator j = list.bufs.begin();
+				j != list.bufs.end(); ++j) {
 			scene::IMeshBuffer *buf = *j;
 			driver->drawMeshBuffer(buf);
 			vertex_count += buf->getVertexCount();
 			meshbuffer_count++;
 		}
-#if 0
-		/*
-			Draw the faces of the block
-		*/
-		{
-			//JMutexAutoLock lock(block->mesh_mutex);
 
-			MapBlockMesh *mapBlockMesh = block->mesh;
-			assert(mapBlockMesh);
-
-			scene::SMesh *mesh = mapBlockMesh->getMesh();
-			assert(mesh);
-
-			u32 c = mesh->getMeshBufferCount();
-			bool stuff_actually_drawn = false;
-			for(u32 i=0; i<c; i++)
-			{
-				scene::IMeshBuffer *buf = mesh->getMeshBuffer(i);
-				const video::SMaterial& material = buf->getMaterial();
-				video::IMaterialRenderer* rnd =
-						driver->getMaterialRenderer(material.MaterialType);
-				bool transparent = (rnd && rnd->isTransparent());
-				// Render transparent on transparent pass and likewise.
-				if(transparent == is_transparent_pass)
-				{
-					if(buf->getVertexCount() == 0)
-						errorstream<<"Block ["<<analyze_block(block)
-								<<"] contains an empty meshbuf"<<std::endl;
-					/*
-						This *shouldn't* hurt too much because Irrlicht
-						doesn't change opengl textures if the old
-						material has the same texture.
-					*/
-					driver->setMaterial(buf->getMaterial());
-					driver->drawMeshBuffer(buf);
-					vertex_count += buf->getVertexCount();
-					meshbuffer_count++;
-					stuff_actually_drawn = true;
-				}
-			}
-			if(stuff_actually_drawn)
-				blocks_had_pass_meshbuf++;
-			else
-				blocks_without_stuff++;
-		}
-#endif
 	}
 	} // ScopeProfiler
-	
+
 	// Log only on solid pass because values are the same
 	if(pass == scene::ESNRP_SOLID){
 		g_profiler->avg("CM: animated meshes", mesh_animate_count);
 		g_profiler->avg("CM: animated meshes (far)", mesh_animate_count_far);
 	}
-	
+
 	g_profiler->avg(prefix+"vertices drawn", vertex_count);
 	if(blocks_had_pass_meshbuf != 0)
 		g_profiler->avg(prefix+"meshbuffers per block",
@@ -716,7 +654,7 @@ static bool getVisibleBrightness(Map *map, v3f p0, v3f dir, float step,
 		pf += dir * step;
 		distance += step;
 		step *= step_multiplier;
-		
+
 		v3s16 p = floatToInt(pf, BS);
 		MapNode n = map->getNodeNoEx(p);
 		if(allow_allowing_non_sunlight_propagates && i == 0 &&
@@ -836,7 +774,6 @@ int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
 			ret = decode_light(n.getLightBlend(daylight_factor, ndef));
 		} else {
 			ret = oldvalue;
-			//ret = blend_light(255, 0, daylight_factor);
 		}
 	} else {
 		/*float pre = (float)brightness_sum / (float)brightness_count;
@@ -855,7 +792,7 @@ int ClientMap::getBackgroundBrightness(float max_d, u32 daylight_factor,
 	return ret;
 }
 
-void ClientMap::renderPostFx()
+void ClientMap::renderPostFx(CameraMode cam_mode)
 {
 	INodeDefManager *nodemgr = m_gamedef->ndef();
 
@@ -870,9 +807,12 @@ void ClientMap::renderPostFx()
 
 	// - If the player is in a solid node, make everything black.
 	// - If the player is in liquid, draw a semi-transparent overlay.
+	// - Do not if player is in third person mode
 	const ContentFeatures& features = nodemgr->get(n);
 	video::SColor post_effect_color = features.post_effect_color;
-	if(features.solidness == 2 && !(g_settings->getBool("noclip") && m_gamedef->checkLocalPrivilege("noclip")))
+	if(features.solidness == 2 && !(g_settings->getBool("noclip") &&
+			m_gamedef->checkLocalPrivilege("noclip")) &&
+			cam_mode == CAMERA_MODE_FIRST)
 	{
 		post_effect_color = video::SColor(255, 0, 0, 0);
 	}

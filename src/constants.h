@@ -43,7 +43,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #define CONNECTION_TIMEOUT 30
 
-#define RESEND_TIMEOUT_MIN 0.333
+#define RESEND_TIMEOUT_MIN 0.1
 #define RESEND_TIMEOUT_MAX 3.0
 // resend_timeout = avg_rtt * this
 #define RESEND_TIMEOUT_FACTOR 4
@@ -89,11 +89,31 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 // Maximum hit points of a player
 #define PLAYER_MAX_HP 20
 
+// Maximal breath of a player
+#define PLAYER_MAX_BREATH 11
+
+// Number of different files to try to save a player to if the first fails
+// (because of a case-insensitive filesystem)
+// TODO: Use case-insensitive player names instead of this hack.
+#define PLAYER_FILE_ALTERNATE_TRIES 1000
+
+// For screenshots a serial number is appended to the filename + datetimestamp
+// if filename + datetimestamp is not unique.
+// This is the maximum number of attempts to try and add a serial to the end of
+// the file attempting to ensure a unique filename
+#define SCREENSHOT_MAX_SERIAL_TRIES 1000
+
 /*
-	Environmental condition constants
+    GUI related things
 */
-#define HEAT_UNDEFINED     (-0x7fff-1)
-#define HUMIDITY_UNDEFINED (-0x7fff-1)
+
+// TODO: implement dpi-based scaling for windows and remove this hack
+#if defined(_WIN32)
+	#define TTF_DEFAULT_FONT_SIZE   (18)
+#else
+	#define TTF_DEFAULT_FONT_SIZE	(15)
+#endif
+#define DEFAULT_FONT_SIZE       (10)
 
 #endif
 

@@ -18,15 +18,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "content_mapblock.h"
-
-#include "main.h" // For g_settings
+#include "util/numeric.h"
+#include "util/directiontables.h"
 #include "mapblock_mesh.h" // For MapBlock_LightColor() and MeshCollector
 #include "settings.h"
 #include "nodedef.h"
-#include "tile.h"
+#include "client/tile.h"
+#include "mesh.h"
+#include <IMeshManipulator.h>
 #include "gamedef.h"
-#include "util/numeric.h"
-#include "util/directiontables.h"
+#include "log.h"
+
 
 // Create a cuboid.
 //  collector - the MeshCollector for the resulting polygons
@@ -42,18 +44,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 //              (compatible with ContentFeatures). If you specified 0,0,1,1
 //              for each face, that would be the same as passing NULL.
 void makeCuboid(MeshCollector *collector, const aabb3f &box,
-	TileSpec *tiles, int tilecount,
-	video::SColor &c, const f32* txc)
+	TileSpec *tiles, int tilecount, video::SColor &c, const f32* txc)
 {
-	assert(tilecount >= 1 && tilecount <= 6);
+	assert(tilecount >= 1 && tilecount <= 6); // pre-condition
 
 	v3f min = box.MinEdge;
 	v3f max = box.MaxEdge;
  
  
  
-	if(txc == NULL)
-	{
+	if(txc == NULL) {
 		static const f32 txc_default[24] = {
 			0,0,1,1,
 			0,0,1,1,
@@ -99,9 +99,9 @@ void makeCuboid(MeshCollector *collector, const aabb3f &box,
 		video::S3DVertex(min.X,min.Y,min.Z, 0,0,-1, c, txc[20],txc[23]),
 	};
 
-	for(int i = 0; i < tilecount; i++)
+	for(int i = 0; i < 6; i++)
 				{
-				switch (tiles[i].rotation)
+				switch (tiles[MYMIN(i, tilecount-1)].rotation)
 				{
 				case 0:
 					break;
@@ -157,18 +157,23 @@ void makeCuboid(MeshCollector *collector, const aabb3f &box,
 			}
 	u16 indices[] = {0,1,2,2,3,0};
 	// Add to mesh collector
-	for(s32 j=0; j<24; j+=4)
-	{
-		int tileindex = MYMIN(j/4, tilecount-1);
-		collector->append(tiles[tileindex],
-				vertices+j, 4, indices, 6);
+	for (s32 j = 0; j < 24; j += 4) {
+		int tileindex = MYMIN(j / 4, tilecount - 1);
+		collector->append(tiles[tileindex], vertices + j, 4, indices, 6);
 	}
 }
 
+/*
+	TODO: Fix alpha blending for special nodes
+	Currently only the last element rendered is blended correct
+*/
 void mapblock_mesh_generate_special(MeshMakeData *data,
 		MeshCollector &collector)
 {
 	INodeDefManager *nodedef = data->m_gamedef->ndef();
+	ITextureSource *tsrc = data->m_gamedef->tsrc();
+	scene::ISceneManager* smgr = data->m_gamedef->getSceneManager();
+	scene::IMeshManipulator* meshmanip = smgr->getMeshManipulator();
 
 	// 0ms
 	//TimeTaker timer("mapblock_mesh_generate_special()");
@@ -176,31 +181,32 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 	/*
 		Some settings
 	*/
+	bool enable_mesh_cache	= g_settings->getBool("enable_mesh_cache");
 	bool new_style_water = g_settings->getBool("new_style_water");
-	
+
 	float node_liquid_level = 1.0;
-	if(new_style_water)
+	if (new_style_water)
 		node_liquid_level = 0.85;
-	
+
 	v3s16 blockpos_nodes = data->m_blockpos*MAP_BLOCKSIZE;
 
-	for(s16 z=0; z<MAP_BLOCKSIZE; z++)
-	for(s16 y=0; y<MAP_BLOCKSIZE; y++)
-	for(s16 x=0; x<MAP_BLOCKSIZE; x++)
+	for(s16 z = 0; z < MAP_BLOCKSIZE; z++)
+	for(s16 y = 0; y < MAP_BLOCKSIZE; y++)
+	for(s16 x = 0; x < MAP_BLOCKSIZE; x++)
 	{
 		v3s16 p(x,y,z);
 
-		MapNode n = data->m_vmanip.getNodeNoEx(blockpos_nodes+p);
+		MapNode n = data->m_vmanip.getNodeNoEx(blockpos_nodes + p);
 		const ContentFeatures &f = nodedef->get(n);
 
 		// Only solidness=0 stuff is drawn here
 		if(f.solidness != 0)
 			continue;
-		
+
 		switch(f.drawtype){
 		default:
-			infostream<<"Got "<<f.drawtype<<std::endl;
-			assert(0);
+			infostream << "Got " << f.drawtype << std::endl;
+			FATAL_ERROR("Unknown drawtype");
 			break;
 		case NDT_AIRLIKE:
 			break;
@@ -220,7 +226,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				top_is_same_liquid = true;
 
 			u16 l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(f.alpha, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(f.alpha, l, f.light_source);
 
 			/*
 				Generate sides
@@ -383,7 +389,6 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			// it at what it emits, for an increased effect
 			u8 light_source = nodedef->get(n).light_source;
 			if(light_source != 0){
-				//l = decode_light(undiminish_light(light_source));
 				l = decode_light(light_source);
 				l = l | (l<<8);
 			}
@@ -393,7 +398,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			// Otherwise use the light of this node (the liquid)
 			else
 				l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(f.alpha, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(f.alpha, l, f.light_source);
 			
 			u8 range = rangelim(nodedef->get(c_flowing).liquid_range, 1, 8);
 
@@ -697,12 +702,13 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			TileSpec tile = getNodeTile(n, p, v3s16(0,0,0), data);
 
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			for(u32 j=0; j<6; j++)
 			{
 				// Check this neighbor
-				v3s16 n2p = blockpos_nodes + p + g_6dirs[j];
+				v3s16 dir = g_6dirs[j];
+				v3s16 n2p = blockpos_nodes + p + dir;
 				MapNode n2 = data->m_vmanip.getNodeNoEx(n2p);
 				// Don't make face if neighbor is of same type
 				if(n2.getContent() == n.getContent())
@@ -710,10 +716,10 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 				// The face at Z+
 				video::S3DVertex vertices[4] = {
-					video::S3DVertex(-BS/2,-BS/2,BS/2, 0,0,0, c, 0,1),
-					video::S3DVertex(BS/2,-BS/2,BS/2, 0,0,0, c, 1,1),
-					video::S3DVertex(BS/2,BS/2,BS/2, 0,0,0, c, 1,0),
-					video::S3DVertex(-BS/2,BS/2,BS/2, 0,0,0, c, 0,0),
+					video::S3DVertex(-BS/2,-BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 1,1),
+					video::S3DVertex(BS/2,-BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 0,1),
+					video::S3DVertex(BS/2,BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 0,0),
+					video::S3DVertex(-BS/2,BS/2,BS/2, dir.X,dir.Y,dir.Z, c, 1,0),
 				};
 				
 				// Rotations in the g_6dirs format
@@ -745,6 +751,10 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				collector.append(tile, vertices, 4, indices, 6);
 			}
 		break;}
+		case NDT_GLASSLIKE_FRAMED_OPTIONAL:
+			// This is always pre-converted to something else
+			FATAL_ERROR("NDT_GLASSLIKE_FRAMED_OPTIONAL not pre-converted as expected");
+			break;
 		case NDT_GLASSLIKE_FRAMED:
 		{
 			static const v3s16 dirs[6] = {
@@ -755,14 +765,37 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				v3s16( 0, 0, 1),
 				v3s16( 0, 0,-1)
 			};
-			TileSpec tiles[2];
-			tiles[0] = getNodeTile(n, p, dirs[0], data);
-			tiles[1] = getNodeTile(n, p, dirs[1], data);
+
+			u8 i;
+			TileSpec tiles[6];
+			for (i = 0; i < 6; i++)
+				tiles[i] = getNodeTile(n, p, dirs[i], data);
+			
+			TileSpec glass_tiles[6];
+			if (tiles[1].texture && tiles[2].texture && tiles[3].texture) {
+				glass_tiles[0] = tiles[2];
+				glass_tiles[1] = tiles[3];
+				glass_tiles[2] = tiles[1];
+				glass_tiles[3] = tiles[1];
+				glass_tiles[4] = tiles[1];
+				glass_tiles[5] = tiles[1];
+			} else {
+				for (i = 0; i < 6; i++)
+					glass_tiles[i] = tiles[1];	
+			}
+			
+			u8 param2 = n.getParam2();
+			bool H_merge = ! bool(param2 & 128);
+			bool V_merge = ! bool(param2 & 64);
+			param2  = param2 & 63;
+			
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 			v3f pos = intToFloat(p, BS);
-			static const float a=BS/2;
-			static const float b=.876*(BS/2);
+			static const float a = BS / 2;
+			static const float g = a - 0.003;
+			static const float b = .876 * ( BS / 2 );
+			
 			static const aabb3f frame_edges[12] = {
 				aabb3f( b, b,-a, a, a, a), // y+
 				aabb3f(-a, b,-a,-b, a, a), // y+
@@ -777,66 +810,117 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				aabb3f(-a,-a,-a, a,-b,-b), // z-
 				aabb3f(-a, b,-a, a, a,-b)  // z-
 			};
-			aabb3f glass_faces[6] = {
-				aabb3f(-a, a,-a, a, a, a), // y+
-				aabb3f(-a,-a,-a, a,-a, a), // y-
-				aabb3f( a,-a,-a, a, a, a), // x+
-				aabb3f(-a,-a,-a,-a, a, a), // x-
-				aabb3f(-a,-a, a, a, a, a), // z+
-				aabb3f(-a,-a,-a, a, a,-a)  // z-
+			static const aabb3f glass_faces[6] = {
+				aabb3f(-g, g,-g, g, g, g), // y+
+				aabb3f(-g,-g,-g, g,-g, g), // y-
+				aabb3f( g,-g,-g, g, g, g), // x+
+				aabb3f(-g,-g,-g,-g, g, g), // x-
+				aabb3f(-g,-g, g, g, g, g), // z+
+				aabb3f(-g,-g,-g, g, g,-g)  // z-
 			};
 			
+			// table of node visible faces, 0 = invisible
 			int visible_faces[6] = {0,0,0,0,0,0};
+			
+			// table of neighbours, 1 = same type, checked with g_26dirs
 			int nb[18] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-			u8 i;
+			
+			// g_26dirs to check when only horizontal merge is allowed
+			int nb_H_dirs[8] = {0,2,3,5,10,11,12,13};
+			
 			content_t current = n.getContent();
-			content_t content;
+			content_t n2c;
 			MapNode n2;
 			v3s16 n2p;
-			for(i=0; i<18; i++)
-			{
-				n2p = blockpos_nodes + p + g_26dirs[i];
+
+			// neighbours checks for frames visibility
+
+			if (!H_merge && V_merge) {
+				n2p = blockpos_nodes + p + g_26dirs[1];
 				n2 = data->m_vmanip.getNodeNoEx(n2p);
-				content_t n2c = n2.getContent();
-				//TODO: remove CONTENT_IGNORE check when getNodeNoEx is fixed
+				n2c = n2.getContent();
 				if (n2c == current || n2c == CONTENT_IGNORE)
-					nb[i]=1;
-			}
-			for(i=0; i<6; i++)
-			{
-				n2p = blockpos_nodes + p + dirs[i];
+					nb[1] = 1;
+				n2p = blockpos_nodes + p + g_26dirs[4];
 				n2 = data->m_vmanip.getNodeNoEx(n2p);
-				content = n2.getContent();
-				const ContentFeatures &f2 = nodedef->get(content);
-				if (content == CONTENT_AIR || f2.isLiquid())
-					visible_faces[i]=1;
+				n2c = n2.getContent();
+				if (n2c == current || n2c == CONTENT_IGNORE)
+					nb[4] = 1;	
+			} else if (H_merge && !V_merge) {
+				for(i = 0; i < 8; i++) {
+					n2p = blockpos_nodes + p + g_26dirs[nb_H_dirs[i]];
+					n2 = data->m_vmanip.getNodeNoEx(n2p);
+					n2c = n2.getContent();
+					if (n2c == current || n2c == CONTENT_IGNORE)
+						nb[nb_H_dirs[i]] = 1;		
+				}
+			} else if (H_merge && V_merge) {
+				for(i = 0; i < 18; i++)	{
+					n2p = blockpos_nodes + p + g_26dirs[i];
+					n2 = data->m_vmanip.getNodeNoEx(n2p);
+					n2c = n2.getContent();
+					if (n2c == current || n2c == CONTENT_IGNORE)
+						nb[i] = 1;
+				}
 			}
+
+			// faces visibility checks
+
+			if (!V_merge) {
+				visible_faces[0] = 1;
+				visible_faces[1] = 1;
+			} else {
+				for(i = 0; i < 2; i++) {
+					n2p = blockpos_nodes + p + dirs[i];
+					n2 = data->m_vmanip.getNodeNoEx(n2p);
+					n2c = n2.getContent();
+					if (n2c != current)
+						visible_faces[i] = 1;
+				}
+			}
+				
+			if (!H_merge) {
+				visible_faces[2] = 1;
+				visible_faces[3] = 1;
+				visible_faces[4] = 1;
+				visible_faces[5] = 1;
+			} else {
+				for(i = 2; i < 6; i++) {
+					n2p = blockpos_nodes + p + dirs[i];
+					n2 = data->m_vmanip.getNodeNoEx(n2p);
+					n2c = n2.getContent();
+					if (n2c != current)
+						visible_faces[i] = 1;
+				}
+			}
+	
 			static const u8 nb_triplet[12*3] = {
 				1,2, 7,  1,5, 6,  4,2,15,  4,5,14,
 				2,0,11,  2,3,13,  5,0,10,  5,3,12,
 				0,1, 8,  0,4,16,  3,4,17,  3,1, 9
 			};
 
-			f32 tx1,ty1,tz1,tx2,ty2,tz2;
+			f32 tx1, ty1, tz1, tx2, ty2, tz2;
 			aabb3f box;
-			for(i=0; i<12; i++)
+
+			for(i = 0; i < 12; i++)
 			{
 				int edge_invisible;
-				if (nb[nb_triplet[i*3+2]]==1)
-					edge_invisible=nb[nb_triplet[i*3]] & nb[nb_triplet[i*3+1]];
+				if (nb[nb_triplet[i*3+2]])
+					edge_invisible = nb[nb_triplet[i*3]] & nb[nb_triplet[i*3+1]];
 				else
-					edge_invisible=nb[nb_triplet[i*3]] ^ nb[nb_triplet[i*3+1]];
+					edge_invisible = nb[nb_triplet[i*3]] ^ nb[nb_triplet[i*3+1]];
 				if (edge_invisible)
 					continue;
-				box=frame_edges[i];
+				box = frame_edges[i];
 				box.MinEdge += pos;
 				box.MaxEdge += pos;
-				tx1 = (box.MinEdge.X/BS)+0.5;
-				ty1 = (box.MinEdge.Y/BS)+0.5;
-				tz1 = (box.MinEdge.Z/BS)+0.5;
-				tx2 = (box.MaxEdge.X/BS)+0.5;
-				ty2 = (box.MaxEdge.Y/BS)+0.5;
-				tz2 = (box.MaxEdge.Z/BS)+0.5;
+				tx1 = (box.MinEdge.X / BS) + 0.5;
+				ty1 = (box.MinEdge.Y / BS) + 0.5;
+				tz1 = (box.MinEdge.Z / BS) + 0.5;
+				tx2 = (box.MaxEdge.X / BS) + 0.5;
+				ty2 = (box.MaxEdge.Y / BS) + 0.5;
+				tz2 = (box.MaxEdge.Z / BS) + 0.5;
 				f32 txc1[24] = {
 					tx1,   1-tz2,   tx2, 1-tz1,
 					tx1,     tz1,   tx2,   tz2,
@@ -847,19 +931,20 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				};
 				makeCuboid(&collector, box, &tiles[0], 1, c, txc1);
 			}
-			for(i=0; i<6; i++)
+
+			for(i = 0; i < 6; i++)
 			{
-				if (visible_faces[i]==0)
+				if (!visible_faces[i])
 					continue;
-				box=glass_faces[i];
+				box = glass_faces[i];
 				box.MinEdge += pos;
 				box.MaxEdge += pos;
-				tx1 = (box.MinEdge.X/BS)+0.5;
-				ty1 = (box.MinEdge.Y/BS)+0.5;
-				tz1 = (box.MinEdge.Z/BS)+0.5;
-				tx2 = (box.MaxEdge.X/BS)+0.5;
-				ty2 = (box.MaxEdge.Y/BS)+0.5;
-				tz2 = (box.MaxEdge.Z/BS)+0.5;
+				tx1 = (box.MinEdge.X / BS) + 0.5;
+				ty1 = (box.MinEdge.Y / BS) + 0.5;
+				tz1 = (box.MinEdge.Z / BS) + 0.5;
+				tx2 = (box.MaxEdge.X / BS) + 0.5;
+				ty2 = (box.MaxEdge.Y / BS) + 0.5;
+				tz2 = (box.MaxEdge.Z / BS) + 0.5;
 				f32 txc2[24] = {
 					tx1,   1-tz2,   tx2, 1-tz1,
 					tx1,     tz1,   tx2,   tz2,
@@ -868,7 +953,40 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					1-tx2, 1-ty2, 1-tx1, 1-ty1,
 					tx1,   1-ty2,   tx2, 1-ty1,
 				};
-				makeCuboid(&collector, box, &tiles[1], 1, c, txc2);
+				makeCuboid(&collector, box, &glass_tiles[i], 1, c, txc2);
+			}
+
+			if (param2 > 0 && f.special_tiles[0].texture) {
+				// Interior volume level is in range 0 .. 63,
+				// convert it to -0.5 .. 0.5
+				float vlev = (((float)param2 / 63.0 ) * 2.0 - 1.0);
+				TileSpec interior_tiles[6];
+				for (i = 0; i < 6; i++)
+					interior_tiles[i] = f.special_tiles[0];
+				float offset = 0.003;
+				box = aabb3f(visible_faces[3] ? -b : -a + offset,
+							 visible_faces[1] ? -b : -a + offset,
+							 visible_faces[5] ? -b : -a + offset,
+							 visible_faces[2] ? b : a - offset,
+							 visible_faces[0] ? b * vlev : a * vlev - offset,
+							 visible_faces[4] ? b : a - offset);
+				box.MinEdge += pos;
+				box.MaxEdge += pos;
+				tx1 = (box.MinEdge.X / BS) + 0.5;
+				ty1 = (box.MinEdge.Y / BS) + 0.5;
+				tz1 = (box.MinEdge.Z / BS) + 0.5;
+				tx2 = (box.MaxEdge.X / BS) + 0.5;
+				ty2 = (box.MaxEdge.Y / BS) + 0.5;
+				tz2 = (box.MaxEdge.Z / BS) + 0.5;
+				f32 txc3[24] = {
+					tx1,   1-tz2,   tx2, 1-tz1,
+					tx1,     tz1,   tx2,   tz2,
+					tz1,   1-ty2,   tz2, 1-ty1,
+					1-tz2, 1-ty2, 1-tz1, 1-ty1,
+					1-tx2, 1-ty2, 1-tx1, 1-ty1,
+					tx1,   1-ty2,   tx2, 1-ty1,
+				};
+				makeCuboid(&collector, box, interior_tiles, 6, c,  txc3);
 			}
 		break;}
 		case NDT_ALLFACES:
@@ -877,7 +995,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					v3s16(0,0,0), data);
 
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			v3f pos = intToFloat(p, BS);
 			aabb3f box(-BS/2,-BS/2,-BS/2,BS/2,BS/2,BS/2);
@@ -887,7 +1005,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 		break;}
 		case NDT_ALLFACES_OPTIONAL:
 			// This is always pre-converted to something else
-			assert(0);
+			FATAL_ERROR("NDT_ALLFACES_OPTIONAL not pre-converted");
 			break;
 		case NDT_TORCHLIKE:
 		{
@@ -910,7 +1028,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
 
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			float s = BS/2*f.visual_scale;
 			// Wall at X+ of node
@@ -951,7 +1069,7 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
 
 			u16 l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 				
 			float d = (float)BS/16;
 			float s = BS/2*f.visual_scale;
@@ -992,14 +1110,94 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 		{
 			TileSpec tile = getNodeTileN(n, p, 0, data);
 			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
-			
+
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
+			
+			float s = BS / 2 * f.visual_scale;
+
+			for (int j = 0; j < 2; j++)
+			{
+				video::S3DVertex vertices[4] =
+				{
+					video::S3DVertex(-s,-BS/2, 0, 0,0,0, c, 0,1),
+					video::S3DVertex( s,-BS/2, 0, 0,0,0, c, 1,1),
+					video::S3DVertex( s,-BS/2 + s*2,0, 0,0,0, c, 1,0),
+					video::S3DVertex(-s,-BS/2 + s*2,0, 0,0,0, c, 0,0),
+				};
+
+				if(j == 0)
+				{
+					for(u16 i = 0; i < 4; i++)
+						vertices[i].Pos.rotateXZBy(46 + n.param2 * 2);
+				}
+				else if(j == 1)
+				{
+					for(u16 i = 0; i < 4; i++)
+						vertices[i].Pos.rotateXZBy(-44 + n.param2 * 2);
+				}
+
+				for (int i = 0; i < 4; i++)
+				{
+					vertices[i].Pos *= f.visual_scale;
+					vertices[i].Pos.Y += BS/2 * (f.visual_scale - 1);
+					vertices[i].Pos += intToFloat(p, BS);
+				}
+
+				u16 indices[] = {0, 1, 2, 2, 3, 0};
+				// Add to mesh collector
+				collector.append(tile, vertices, 4, indices, 6);
+			}
+		break;}
+		case NDT_FIRELIKE:
+		{
+			TileSpec tile = getNodeTileN(n, p, 0, data);
+			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
+
+			u16 l = getInteriorLight(n, 1, nodedef);
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			float s = BS/2*f.visual_scale;
 
-			for(u32 j=0; j<2; j++)
+			content_t current = n.getContent();
+			content_t n2c;
+			MapNode n2;
+			v3s16 n2p;
+
+			static const v3s16 dirs[6] = {
+				v3s16( 0, 1, 0),
+				v3s16( 0,-1, 0),
+				v3s16( 1, 0, 0),
+				v3s16(-1, 0, 0),
+				v3s16( 0, 0, 1),
+				v3s16( 0, 0,-1)
+			};
+
+			int doDraw[6] = {0,0,0,0,0,0};
+
+			bool drawAllFaces = true;
+
+			bool drawBottomFacesOnly = false; // Currently unused
+
+			// Check for adjacent nodes
+			for(int i = 0; i < 6; i++)
 			{
+				n2p = blockpos_nodes + p + dirs[i];
+				n2 = data->m_vmanip.getNodeNoEx(n2p);
+				n2c = n2.getContent();
+				if (n2c != CONTENT_IGNORE && n2c != CONTENT_AIR && n2c != current) {
+					doDraw[i] = 1;
+					if(drawAllFaces)
+						drawAllFaces = false;
+
+				}
+			}
+
+			for(int j = 0; j < 6; j++)
+			{
+				int vOffset = 0; // Vertical offset of faces after rotation
+				int hOffset = 4; // Horizontal offset of faces to reach the edge
+
 				video::S3DVertex vertices[4] =
 				{
 					video::S3DVertex(-s,-BS/2,      0, 0,0,0, c, 0,1),
@@ -1008,18 +1206,101 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 					video::S3DVertex(-s,-BS/2 + s*2,0, 0,0,0, c, 0,0),
 				};
 
-				if(j == 0)
+				// Calculate which faces should be drawn, (top or sides)
+				if(j == 0 && (drawAllFaces || (doDraw[3] == 1 || doDraw[1] == 1)))
 				{
-					for(u16 i=0; i<4; i++)
-						vertices[i].Pos.rotateXZBy(45);
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateXZBy(90 + n.param2 * 2);
+						vertices[i].Pos.rotateXYBy(-10);
+						vertices[i].Pos.Y -= vOffset;
+						vertices[i].Pos.X -= hOffset;
+					}
 				}
-				else if(j == 1)
+				else if(j == 1 && (drawAllFaces || (doDraw[5] == 1 || doDraw[1] == 1)))
 				{
-					for(u16 i=0; i<4; i++)
-						vertices[i].Pos.rotateXZBy(-45);
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateXZBy(180 + n.param2 * 2);
+						vertices[i].Pos.rotateYZBy(10);
+						vertices[i].Pos.Y -= vOffset;
+						vertices[i].Pos.Z -= hOffset;
+					}
+				}
+				else if(j == 2 && (drawAllFaces || (doDraw[2] == 1 || doDraw[1] == 1)))
+				{
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateXZBy(270 + n.param2 * 2);
+						vertices[i].Pos.rotateXYBy(10);
+						vertices[i].Pos.Y -= vOffset;
+						vertices[i].Pos.X += hOffset;
+					}
+				}
+				else if(j == 3 && (drawAllFaces || (doDraw[4] == 1 || doDraw[1] == 1)))
+				{
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateYZBy(-10);
+						vertices[i].Pos.Y -= vOffset;
+						vertices[i].Pos.Z += hOffset;
+					}
 				}
 
-				for(u16 i=0; i<4; i++)
+				// Center cross-flames
+				else if(j == 4 && (drawAllFaces || doDraw[1] == 1))
+				{
+					for(int i=0; i<4; i++) {
+						vertices[i].Pos.rotateXZBy(45 + n.param2 * 2);
+						vertices[i].Pos.Y -= vOffset;
+					}
+				}
+				else if(j == 5 && (drawAllFaces || doDraw[1] == 1))
+				{
+					for(int i=0; i<4; i++) {
+						vertices[i].Pos.rotateXZBy(-45 + n.param2 * 2);
+						vertices[i].Pos.Y -= vOffset;
+					}
+				}
+
+				// Render flames on bottom
+				else if(j == 0 && (drawBottomFacesOnly || (doDraw[0] == 1 && doDraw[1] == 0)))
+				{
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateYZBy(70);
+						vertices[i].Pos.rotateXZBy(90 + n.param2 * 2);
+						vertices[i].Pos.Y += 4.84;
+						vertices[i].Pos.X -= hOffset+0.7;
+					}
+				}
+				else if(j == 1 && (drawBottomFacesOnly || (doDraw[0] == 1 && doDraw[1] == 0)))
+				{
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateYZBy(70);
+						vertices[i].Pos.rotateXZBy(180 + n.param2 * 2);
+						vertices[i].Pos.Y += 4.84;
+						vertices[i].Pos.Z -= hOffset+0.7;
+					}
+				}
+				else if(j == 2 && (drawBottomFacesOnly || (doDraw[0] == 1 && doDraw[1] == 0)))
+				{
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateYZBy(70);
+						vertices[i].Pos.rotateXZBy(270 + n.param2 * 2);
+						vertices[i].Pos.Y += 4.84;
+						vertices[i].Pos.X += hOffset+0.7;
+					}
+				}
+				else if(j == 3 && (drawBottomFacesOnly || (doDraw[0] == 1 && doDraw[1] == 0)))
+				{
+					for(int i = 0; i < 4; i++) {
+						vertices[i].Pos.rotateYZBy(70);
+						vertices[i].Pos.Y += 4.84;
+						vertices[i].Pos.Z += hOffset+0.7;
+					}
+				}
+				else {
+					// Skip faces that aren't adjacent to a node
+					continue;
+				}
+
+				for(int i=0; i<4; i++)
 				{
 					vertices[i].Pos *= f.visual_scale;
 					vertices[i].Pos += intToFloat(p, BS);
@@ -1035,18 +1316,13 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			TileSpec tile = getNodeTile(n, p, v3s16(0,0,0), data);
 			TileSpec tile_nocrack = tile;
 			tile_nocrack.material_flags &= ~MATERIAL_FLAG_CRACK;
-			
-			// A hack to put wood the right way around in the posts
-			ITextureSource *tsrc = data->m_gamedef->tsrc();
-			std::string texturestring_rot = tsrc->getTextureName(
-					tile.texture_id) + "^[transformR90";
+
+			// Put wood the right way around in the posts
 			TileSpec tile_rot = tile;
-			tile_rot.texture = tsrc->getTexture(
-					texturestring_rot,
-					&tile_rot.texture_id);
-			
+			tile_rot.rotation = 1;
+
 			u16 l = getInteriorLight(n, 1, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			const f32 post_rad=(f32)BS/8;
 			const f32 bar_rad=(f32)BS/16;
@@ -1121,109 +1397,42 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 		break;}
 		case NDT_RAILLIKE:
 		{
-			bool is_rail_x [] = { false, false };  /* x-1, x+1 */
-			bool is_rail_z [] = { false, false };  /* z-1, z+1 */
-
-			bool is_rail_z_minus_y [] = { false, false };  /* z-1, z+1; y-1 */
-			bool is_rail_x_minus_y [] = { false, false };  /* x-1, z+1; y-1 */
-			bool is_rail_z_plus_y [] = { false, false };  /* z-1, z+1; y+1 */
-			bool is_rail_x_plus_y [] = { false, false };  /* x-1, x+1; y+1 */
-
-			MapNode n_minus_x = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x-1,y,z));
-			MapNode n_plus_x = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x+1,y,z));
-			MapNode n_minus_z = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x,y,z-1));
-			MapNode n_plus_z = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x,y,z+1));
-			MapNode n_plus_x_plus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x+1, y+1, z));
-			MapNode n_plus_x_minus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x+1, y-1, z));
-			MapNode n_minus_x_plus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x-1, y+1, z));
-			MapNode n_minus_x_minus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x-1, y-1, z));
-			MapNode n_plus_z_plus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x, y+1, z+1));
-			MapNode n_minus_z_plus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x, y+1, z-1));
-			MapNode n_plus_z_minus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x, y-1, z+1));
-			MapNode n_minus_z_minus_y = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x, y-1, z-1));
+			bool is_rail_x[6]; /* (-1,-1,0) X (1,-1,0) (-1,0,0) X (1,0,0) (-1,1,0) X (1,1,0) */
+			bool is_rail_z[6];
 
 			content_t thiscontent = n.getContent();
 			std::string groupname = "connect_to_raillike"; // name of the group that enables connecting to raillike nodes of different kind
-			bool self_connect_to_raillike = ((ItemGroupList) nodedef->get(n).groups)[groupname] != 0;
+			int self_group = ((ItemGroupList) nodedef->get(n).groups)[groupname];
 
-			if ((nodedef->get(n_minus_x).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_minus_x).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_minus_x.getContent() == thiscontent)
-				is_rail_x[0] = true;
+			u8 index = 0;
+			for (s8 y0 = -1; y0 <= 1; y0++) {
+				// Prevent from indexing never used coordinates
+				for (s8 xz = -1; xz <= 1; xz++) {
+					if (xz == 0)
+						continue;
+					MapNode n_xy = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x + xz, y + y0, z));
+					MapNode n_zy = data->m_vmanip.getNodeNoEx(blockpos_nodes + v3s16(x, y + y0, z + xz));
+					ContentFeatures def_xy = nodedef->get(n_xy);
+					ContentFeatures def_zy = nodedef->get(n_zy);
 
-			if ((nodedef->get(n_minus_x_minus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_minus_x_minus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_minus_x_minus_y.getContent() == thiscontent)
-				is_rail_x_minus_y[0] = true;
+					// Check if current node would connect with the rail
+					is_rail_x[index] = ((def_xy.drawtype == NDT_RAILLIKE
+							&& ((ItemGroupList) def_xy.groups)[groupname] == self_group)
+							|| n_xy.getContent() == thiscontent);
 
-			if ((nodedef->get(n_minus_x_plus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_minus_x_plus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_minus_x_plus_y.getContent() == thiscontent)
-				is_rail_x_plus_y[0] = true;
+					is_rail_z[index] = ((def_zy.drawtype == NDT_RAILLIKE
+							&& ((ItemGroupList) def_zy.groups)[groupname] == self_group)
+							|| n_zy.getContent() == thiscontent);
+					index++;
+				}
+			}
 
-			if ((nodedef->get(n_plus_x).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_plus_x).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_plus_x.getContent() == thiscontent)
-				is_rail_x[1] = true;
-
-			if ((nodedef->get(n_plus_x_minus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_plus_x_minus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_plus_x_minus_y.getContent() == thiscontent)
-				is_rail_x_minus_y[1] = true;
-
-			if ((nodedef->get(n_plus_x_plus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_plus_x_plus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_plus_x_plus_y.getContent() == thiscontent)
-				is_rail_x_plus_y[1] = true;
-
-			if ((nodedef->get(n_minus_z).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_minus_z).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_minus_z.getContent() == thiscontent)
-				is_rail_z[0] = true;
-
-			if ((nodedef->get(n_minus_z_minus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_minus_z_minus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_minus_z_minus_y.getContent() == thiscontent)
-				is_rail_z_minus_y[0] = true;
-
-			if ((nodedef->get(n_minus_z_plus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_minus_z_plus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_minus_z_plus_y.getContent() == thiscontent)
-				is_rail_z_plus_y[0] = true;
-
-			if ((nodedef->get(n_plus_z).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_plus_z).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_plus_z.getContent() == thiscontent)
-				is_rail_z[1] = true;
-
-			if ((nodedef->get(n_plus_z_minus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_plus_z_minus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_plus_z_minus_y.getContent() == thiscontent)
-				is_rail_z_minus_y[1] = true;
-
-			if ((nodedef->get(n_plus_z_plus_y).drawtype == NDT_RAILLIKE
-					&& ((ItemGroupList) nodedef->get(n_plus_z_plus_y).groups)[groupname] != 0
-					&& self_connect_to_raillike)
-					|| n_plus_z_plus_y.getContent() == thiscontent)
-				is_rail_z_plus_y[1] = true;
-
-			bool is_rail_x_all[] = {false, false};
-			bool is_rail_z_all[] = {false, false};
-			is_rail_x_all[0]=is_rail_x[0] || is_rail_x_minus_y[0] || is_rail_x_plus_y[0];
-			is_rail_x_all[1]=is_rail_x[1] || is_rail_x_minus_y[1] || is_rail_x_plus_y[1];
-			is_rail_z_all[0]=is_rail_z[0] || is_rail_z_minus_y[0] || is_rail_z_plus_y[0];
-			is_rail_z_all[1]=is_rail_z[1] || is_rail_z_minus_y[1] || is_rail_z_plus_y[1];
+			bool is_rail_x_all[2]; // [0] = negative x, [1] = positive x coordinate from the current node position
+			bool is_rail_z_all[2];
+			is_rail_x_all[0] = is_rail_x[0] || is_rail_x[2] || is_rail_x[4];
+			is_rail_x_all[1] = is_rail_x[1] || is_rail_x[3] || is_rail_x[5];
+			is_rail_z_all[0] = is_rail_z[0] || is_rail_z[2] || is_rail_z[4];
+			is_rail_z_all[1] = is_rail_z[1] || is_rail_z[3] || is_rail_z[5];
 
 			// reasonable default, flat straight unrotated rail
 			bool is_straight = true;
@@ -1232,13 +1441,10 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			u8 tileindex = 0;
 
 			// check for sloped rail
-			if (is_rail_x_plus_y[0] || is_rail_x_plus_y[1] || is_rail_z_plus_y[0] || is_rail_z_plus_y[1])
-			{
-				adjacencies = 5; //5 means sloped
+			if (is_rail_x[4] || is_rail_x[5] || is_rail_z[4] || is_rail_z[5]) {
+				adjacencies = 5; // 5 means sloped
 				is_straight = true; // sloped is always straight
-			}
-			else
-			{
+			} else {
 				// is really straight, rails on both sides
 				is_straight = (is_rail_x_all[0] && is_rail_x_all[1]) || (is_rail_z_all[0] && is_rail_z_all[1]);
 				adjacencies = is_rail_x_all[0] + is_rail_x_all[1] + is_rail_z_all[0] + is_rail_z_all[1];
@@ -1246,44 +1452,44 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 
 			switch (adjacencies) {
 			case 1:
-				if(is_rail_x_all[0] || is_rail_x_all[1])
+				if (is_rail_x_all[0] || is_rail_x_all[1])
 					angle = 90;
 				break;
 			case 2:
-				if(!is_straight)
+				if (!is_straight)
 					tileindex = 1; // curved
-				if(is_rail_x_all[0] && is_rail_x_all[1])
+				if (is_rail_x_all[0] && is_rail_x_all[1])
 					angle = 90;
-				if(is_rail_z_all[0] && is_rail_z_all[1]){
-					if (is_rail_z_plus_y[0])
+				if (is_rail_z_all[0] && is_rail_z_all[1]) {
+					if (is_rail_z[4])
 						angle = 180;
 				}
-				else if(is_rail_x_all[0] && is_rail_z_all[0])
+				else if (is_rail_x_all[0] && is_rail_z_all[0])
 					angle = 270;
-				else if(is_rail_x_all[0] && is_rail_z_all[1])
+				else if (is_rail_x_all[0] && is_rail_z_all[1])
 					angle = 180;
-				else if(is_rail_x_all[1] && is_rail_z_all[1])
+				else if (is_rail_x_all[1] && is_rail_z_all[1])
 					angle = 90;
 				break;
 			case 3:
 				// here is where the potential to 'switch' a junction is, but not implemented at present
 				tileindex = 2; // t-junction
 				if(!is_rail_x_all[1])
-					angle=180;
+					angle = 180;
 				if(!is_rail_z_all[0])
-					angle=90;
+					angle = 90;
 				if(!is_rail_z_all[1])
-					angle=270;
+					angle = 270;
 				break;
 			case 4:
 				tileindex = 3; // crossing
 				break;
 			case 5: //sloped
-				if(is_rail_z_plus_y[0])
+				if (is_rail_z[4])
 					angle = 180;
-				if(is_rail_x_plus_y[0])
+				if (is_rail_x[4])
 					angle = 90;
-				if(is_rail_x_plus_y[1])
+				if (is_rail_x[5])
 					angle = -90;
 				break;
 			default:
@@ -1295,20 +1501,21 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			tile.material_flags |= MATERIAL_FLAG_CRACK_OVERLAY;
 
 			u16 l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			float d = (float)BS/64;
-			
-			char g=-1;
-			if (is_rail_x_plus_y[0] || is_rail_x_plus_y[1] || is_rail_z_plus_y[0] || is_rail_z_plus_y[1])
-				g=1; //Object is at a slope
+			float s = BS/2;
+
+			short g = -1;
+			if (is_rail_x[4] || is_rail_x[5] || is_rail_z[4] || is_rail_z[5])
+				g = 1; //Object is at a slope
 
 			video::S3DVertex vertices[4] =
 			{
-					video::S3DVertex(-BS/2,-BS/2+d,-BS/2, 0,0,0, c, 0,1),
-					video::S3DVertex(BS/2,-BS/2+d,-BS/2, 0,0,0, c, 1,1),
-					video::S3DVertex(BS/2,g*BS/2+d,BS/2, 0,0,0, c, 1,0),
-					video::S3DVertex(-BS/2,g*BS/2+d,BS/2, 0,0,0, c, 0,0),
+					video::S3DVertex(-s,  -s+d,-s,  0,0,0,  c,0,1),
+					video::S3DVertex( s,  -s+d,-s,  0,0,0,  c,1,1),
+					video::S3DVertex( s, g*s+d, s,  0,0,0,  c,1,0),
+					video::S3DVertex(-s, g*s+d, s,  0,0,0,  c,0,0),
 			};
 
 			for(s32 i=0; i<4; i++)
@@ -1333,8 +1540,8 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 			};
 			TileSpec tiles[6];
 			
-			u16 l = getInteriorLight(n, 0, nodedef);
-			video::SColor c = MapBlock_LightColor(255, l, decode_light(f.light_source));
+			u16 l = getInteriorLight(n, 1, nodedef);
+			video::SColor c = MapBlock_LightColor(255, l, f.light_source);
 
 			v3f pos = intToFloat(p, BS);
 
@@ -1397,6 +1604,97 @@ void mapblock_mesh_generate_special(MeshMakeData *data,
 				makeCuboid(&collector, box, tiles, 6, c, txc);
 			}
 		break;}
+		case NDT_MESH:
+		{
+			v3f pos = intToFloat(p, BS);
+			video::SColor c = MapBlock_LightColor(255, getInteriorLight(n, 1, nodedef), f.light_source);
+
+			u8 facedir = 0;
+			if (f.param_type_2 == CPT2_FACEDIR) {
+				facedir = n.getFaceDir(nodedef);
+			} else if (f.param_type_2 == CPT2_WALLMOUNTED) {
+				//convert wallmounted to 6dfacedir.
+				//when cache enabled, it is already converted
+				facedir = n.getWallMounted(nodedef);
+				if (!enable_mesh_cache) {
+					static const u8 wm_to_6d[6] = {20, 0, 16+1, 12+3, 8, 4+2};
+					facedir = wm_to_6d[facedir];
+				}
+			}
+
+			if (f.mesh_ptr[facedir]) {
+				// use cached meshes
+				for(u16 j = 0; j < f.mesh_ptr[0]->getMeshBufferCount(); j++) {
+					scene::IMeshBuffer *buf = f.mesh_ptr[facedir]->getMeshBuffer(j);
+					collector.append(getNodeTileN(n, p, j, data),
+						(video::S3DVertex *)buf->getVertices(), buf->getVertexCount(),
+						buf->getIndices(), buf->getIndexCount(), pos, c);
+				}
+			} else if (f.mesh_ptr[0]) {
+				// no cache, clone and rotate mesh
+				scene::IMesh* mesh = cloneMesh(f.mesh_ptr[0]);
+				rotateMeshBy6dFacedir(mesh, facedir);
+				recalculateBoundingBox(mesh);
+				meshmanip->recalculateNormals(mesh, true, false);
+				for(u16 j = 0; j < mesh->getMeshBufferCount(); j++) {
+					scene::IMeshBuffer *buf = mesh->getMeshBuffer(j);
+					collector.append(getNodeTileN(n, p, j, data),
+						(video::S3DVertex *)buf->getVertices(), buf->getVertexCount(),
+						buf->getIndices(), buf->getIndexCount(), pos, c);
+				}
+				mesh->drop();
+			}
+		break;}
+		}
+	}
+	
+	/*
+		Caused by incorrect alpha blending, selection mesh needs to be created as
+		last element to ensure it gets blended correct over nodes with alpha channel
+	*/
+	// Create selection mesh
+	v3s16 p = data->m_highlighted_pos_relative;
+	if (data->m_show_hud &&
+			(p.X >= 0) && (p.X < MAP_BLOCKSIZE) &&
+			(p.Y >= 0) && (p.Y < MAP_BLOCKSIZE) &&
+			(p.Z >= 0) && (p.Z < MAP_BLOCKSIZE)) {
+
+		MapNode n = data->m_vmanip.getNodeNoEx(blockpos_nodes + p);
+		if(n.getContent() != CONTENT_AIR) {
+			// Get selection mesh light level
+			static const v3s16 dirs[7] = {
+					v3s16( 0, 0, 0),
+					v3s16( 0, 1, 0),
+					v3s16( 0,-1, 0),
+					v3s16( 1, 0, 0),
+					v3s16(-1, 0, 0),
+					v3s16( 0, 0, 1),
+					v3s16( 0, 0,-1)
+			};
+
+			u16 l = 0;
+			u16 l1 = 0;
+			for (u8 i = 0; i < 7; i++) {
+				MapNode n1 = data->m_vmanip.getNodeNoEx(blockpos_nodes + p + dirs[i]);	
+				l1 = getInteriorLight(n1, -4, nodedef);
+				if (l1 > l) 
+					l = l1;
+			}
+			video::SColor c = MapBlock_LightColor(255, l, 0);
+			data->m_highlight_mesh_color = c;
+			std::vector<aabb3f> boxes = n.getSelectionBoxes(nodedef);
+			TileSpec h_tile;			
+			h_tile.material_flags |= MATERIAL_FLAG_HIGHLIGHTED;
+			h_tile.texture = tsrc->getTextureForMesh("halo.png",&h_tile.texture_id);
+			v3f pos = intToFloat(p, BS);
+			f32 d = 0.05 * BS;
+			for (std::vector<aabb3f>::iterator i = boxes.begin();
+					i != boxes.end(); i++) {
+				aabb3f box = *i;
+				box.MinEdge += v3f(-d, -d, -d) + pos;
+				box.MaxEdge += v3f(d, d, d) + pos;
+				makeCuboid(&collector, box, &h_tile, 1, c, NULL);
+			}
 		}
 	}
 }

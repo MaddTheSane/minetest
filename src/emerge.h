@@ -23,32 +23,28 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <map>
 #include "irr_v3d.h"
 #include "util/container.h"
-#include "map.h" // for ManualMapVoxelManipulator
 #include "mapgen.h" // for MapgenParams
-
-#define MGPARAMS_SET_MGNAME      1
-#define MGPARAMS_SET_SEED        2
-#define MGPARAMS_SET_WATER_LEVEL 4
-#define MGPARAMS_SET_FLAGS       8
+#include "map.h"
 
 #define BLOCK_EMERGE_ALLOWGEN (1<<0)
 
 #define EMERGE_DBG_OUT(x) \
-	{ if (enable_mapgen_debug_info) \
-	infostream << "EmergeThread: " x << std::endl; }
+	do {                                                   \
+		if (enable_mapgen_debug_info)                      \
+			infostream << "EmergeThread: " x << std::endl; \
+	} while (0)
 
 class EmergeThread;
-//class Mapgen;
-//struct MapgenFactory;
-class Biome;
-class BiomeDefManager;
-class Decoration;
-class Ore;
 class INodeDefManager;
 class Settings;
 
+class BiomeManager;
+class OreManager;
+class DecorationManager;
+class SchematicManager;
+
 struct BlockMakeData {
-	ManualMapVoxelManipulator *vmanip;
+	MMVManip *vmanip;
 	u64 seed;
 	v3s16 blockpos_min;
 	v3s16 blockpos_max;
@@ -74,8 +70,6 @@ class EmergeManager {
 public:
 	INodeDefManager *ndef;
 
-	std::map<std::string, MapgenFactory *> mglist;
-
 	std::vector<Mapgen *> mapgen;
 	std::vector<EmergeThread *> emergethread;
 
@@ -88,40 +82,39 @@ public:
 	u16 qlimit_diskonly;
 	u16 qlimit_generate;
 
-	u32 gennotify;
+	u32 gen_notify_on;
+	std::set<u32> gen_notify_on_deco_ids;
 
-	//block emerge queue data structures
+	//// Block emerge queue data structures
 	JMutex queuemutex;
 	std::map<v3s16, BlockEmergeData *> blocks_enqueued;
 	std::map<u16, u16> peer_queue_count;
 
-	//Mapgen-related structures
-	BiomeDefManager *biomedef;
-	std::vector<Ore *> ores;
-	std::vector<Decoration *> decorations;
+	//// Managers of map generation-related components
+	BiomeManager *biomemgr;
+	OreManager *oremgr;
+	DecorationManager *decomgr;
+	SchematicManager *schemmgr;
 
+	//// Methods
 	EmergeManager(IGameDef *gamedef);
 	~EmergeManager();
 
 	void loadMapgenParams();
+	static MapgenSpecificParams *createMapgenParams(const std::string &mgname);
 	void initMapgens();
 	Mapgen *getCurrentMapgen();
-	Mapgen *createMapgen(std::string mgname, int mgid,
-						MapgenParams *mgparams);
-	MapgenSpecificParams *createMapgenParams(std::string mgname);
+	Mapgen *createMapgen(const std::string &mgname, int mgid,
+		MapgenParams *mgparams);
+	static void getMapgenNames(std::list<const char *> &mgnames);
 	void startThreads();
 	void stopThreads();
 	bool enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate);
-
-	void registerMapgen(std::string name, MapgenFactory *mgfactory);
-	void loadParamsFromSettings(Settings *settings);
-	void saveParamsToSettings(Settings *settings);
 
 	//mapgen helper methods
 	Biome *getBiomeAtPoint(v3s16 p);
 	int getGroundLevelAtPoint(v2s16 p);
 	bool isBlockUnderground(v3s16 blockpos);
-	u32 getBlockSeed(v3s16 p);
 };
 
 #endif

@@ -19,6 +19,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "common/c_internal.h"
 #include "debug.h"
+#include "log.h"
+#include "settings.h"
 
 std::string script_get_backtrace(lua_State *L)
 {
@@ -61,7 +63,7 @@ int script_exception_wrapper(lua_State *L, lua_CFunction f)
 		return f(L);  // Call wrapped function and return result.
 	} catch (const char *s) {  // Catch and convert exceptions.
 		lua_pushstring(L, s);
-	} catch (LuaError& e) {
+	} catch (std::exception &e) {
 		lua_pushstring(L, e.what());
 	}
 	return lua_error(L);  // Rethrow as a Lua error.
@@ -82,15 +84,15 @@ void script_error(lua_State *L)
 //     computed depending on mode
 void script_run_callbacks(lua_State *L, int nargs, RunCallbacksMode mode)
 {
-	assert(lua_gettop(L) >= nargs + 1);
+	FATAL_ERROR_IF(lua_gettop(L) < nargs + 1, "Not enough arguments");
 
 	// Insert error handler
 	lua_pushcfunction(L, script_error_handler);
 	int errorhandler = lua_gettop(L) - nargs - 1;
 	lua_insert(L, errorhandler);
 
-	// Insert minetest.run_callbacks between error handler and table
-	lua_getglobal(L, "minetest");
+	// Insert run_callbacks between error handler and table
+	lua_getglobal(L, "core");
 	lua_getfield(L, -1, "run_callbacks");
 	lua_remove(L, -2);
 	lua_insert(L, errorhandler + 1);
@@ -109,4 +111,38 @@ void script_run_callbacks(lua_State *L, int nargs, RunCallbacksMode mode)
 	lua_remove(L, -2); // Remove error handler
 }
 
+void log_deprecated(lua_State *L, std::string message)
+{
+	static bool configured = false;
+	static bool dolog      = false;
+	static bool doerror    = false;
+
+	// performance optimization to not have to read and compare setting for every logline
+	if (!configured) {
+		std::string value = g_settings->get("deprecated_lua_api_handling");
+		if (value == "log") {
+			dolog = true;
+		}
+		if (value == "error") {
+			dolog = true;
+			doerror = true;
+		}
+	}
+
+	if (doerror) {
+		if (L != NULL) {
+			script_error(L);
+		} else {
+			FATAL_ERROR("Can't do a scripterror for this deprecated message, so exit completely!");
+		}
+	}
+
+	if (dolog) {
+		/* abusing actionstream because of lack of file-only-logged loglevel */
+		actionstream << message << std::endl;
+		if (L != NULL) {
+			actionstream << script_get_backtrace(L) << std::endl;
+		}
+	}
+}
 

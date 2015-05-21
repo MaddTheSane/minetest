@@ -29,6 +29,7 @@
 */
 
 #include <irrlicht.h>
+#include <iostream>
 #include "CGUITTFont.h"
 
 namespace irr
@@ -64,8 +65,24 @@ scene::SMesh CGUITTFont::shared_plane_;
 
 //
 
+/** Checks that no dimension of the FT_BitMap object is negative.  If either is
+ * negative, abort execution.
+ */
+inline void checkFontBitmapSize(const FT_Bitmap &bits)
+{
+	if ((s32)bits.rows < 0 || (s32)bits.width < 0) {
+		std::cout << "Insane font glyph size. File: "
+		          << __FILE__ << " Line " << __LINE__
+		          << std::endl;
+		abort();
+	}
+}
+
 video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVideoDriver* driver) const
 {
+	// Make sure our casts to s32 in the loops below will not cause problems
+	checkFontBitmapSize(bits);
+
 	// Determine what our texture size should be.
 	// Add 1 because textures are inclusive-exclusive.
 	core::dimension2du d(bits.width + 1, bits.rows + 1);
@@ -87,10 +104,11 @@ video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVide
 			const u32 image_pitch = image->getPitch() / sizeof(u16);
 			u16* image_data = (u16*)image->lock();
 			u8* glyph_data = bits.buffer;
-			for (s32 y = 0; y < bits.rows; ++y)
+
+			for (s32 y = 0; y < (s32)bits.rows; ++y)
 			{
 				u16* row = image_data;
-				for (s32 x = 0; x < bits.width; ++x)
+				for (s32 x = 0; x < (s32)bits.width; ++x)
 				{
 					// Monochrome bitmaps store 8 pixels per byte.  The left-most pixel is the bit 0x80.
 					// So, we go through the data each bit at a time.
@@ -116,10 +134,10 @@ video::IImage* SGUITTGlyph::createGlyphImage(const FT_Bitmap& bits, video::IVide
 			const u32 image_pitch = image->getPitch() / sizeof(u32);
 			u32* image_data = (u32*)image->lock();
 			u8* glyph_data = bits.buffer;
-			for (s32 y = 0; y < bits.rows; ++y)
+			for (s32 y = 0; y < (s32)bits.rows; ++y)
 			{
 				u8* row = glyph_data;
-				for (s32 x = 0; x < bits.width; ++x)
+				for (s32 x = 0; x < (s32)bits.width; ++x)
 				{
 					image_data[y * image_pitch + x] |= static_cast<u32>(255.0f * (static_cast<float>(*row++) / gray_count)) << 24;
 					//data[y * image_pitch + x] |= ((u32)(*bitsdata++) << 24);
@@ -568,32 +586,32 @@ void CGUITTFont::draw(const core::stringw& text, const core::rect<s32>& position
 		uchar32_t currentChar = *iter;
 		n = getGlyphIndexByChar(currentChar);
 		bool visible = (Invisible.findFirst(currentChar) == -1);
+		bool lineBreak=false;
+		if (currentChar == L'\r') // Mac or Windows breaks
+		{
+			lineBreak = true;
+			if (*(iter + 1) == (uchar32_t)'\n')	// Windows line breaks.
+				currentChar = *(++iter);
+		}
+		else if (currentChar == (uchar32_t)'\n') // Unix breaks
+		{
+			lineBreak = true;
+		}
+
+		if (lineBreak)
+		{
+			previousChar = 0;
+			offset.Y += font_metrics.height / 64;
+			offset.X = position.UpperLeftCorner.X;
+
+			if (hcenter)
+				offset.X += (position.getWidth() - textDimension.Width) >> 1;
+			++iter;
+			continue;
+		}
+
 		if (n > 0 && visible)
 		{
-			bool lineBreak=false;
-			if (currentChar == L'\r') // Mac or Windows breaks
-			{
-				lineBreak = true;
-				if (*(iter + 1) == (uchar32_t)'\n')	// Windows line breaks.
-					currentChar = *(++iter);
-			}
-			else if (currentChar == (uchar32_t)'\n') // Unix breaks
-			{
-				lineBreak = true;
-			}
-
-			if (lineBreak)
-			{
-				previousChar = 0;
-				offset.Y += font_metrics.ascender / 64;
-				offset.X = position.UpperLeftCorner.X;
-
-				if (hcenter)
-					offset.X += (position.getWidth() - textDimension.Width) >> 1;
-				++iter;
-				continue;
-			}
-
 			// Calculate the glyph offset.
 			s32 offx = Glyphs[n-1].offset.X;
 			s32 offy = (font_metrics.ascender / 64) - Glyphs[n-1].offset.Y;

@@ -20,21 +20,46 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <sstream>
 
 #include "clientiface.h"
+#include "util/numeric.h"
+#include "util/mathconstants.h"
 #include "player.h"
 #include "settings.h"
 #include "mapblock.h"
-#include "connection.h"
+#include "network/connection.h"
 #include "environment.h"
 #include "map.h"
 #include "emerge.h"
 #include "serverobject.h"              // TODO this is used for cleanup of only
+#include "log.h"
+#include "util/srp.h"
 
-#include "util/numeric.h"
-#include "util/mathconstants.h"
+const char *ClientInterface::statenames[] = {
+	"Invalid",
+	"Disconnecting",
+	"Denied",
+	"Created",
+	"InitSent",
+	"InitDone",
+	"DefinitionsSent",
+	"Active"
+};
 
-#include "main.h"                      // for g_settings
 
-void RemoteClient::GetNextBlocks(
+
+std::string ClientInterface::state2Name(ClientState state)
+{
+	return statenames[state];
+}
+
+void RemoteClient::ResendBlockIfOnWire(v3s16 p)
+{
+	// if this block is on wire, mark it for sending again as soon as possible
+	if (m_blocks_sending.find(p) != m_blocks_sending.end()) {
+		SetBlockNotSent(p);
+	}
+}
+
+void RemoteClient::GetNextBlocks (
 		ServerEnvironment *env,
 		EmergeManager * emerge,
 		float dtime,
@@ -154,21 +179,18 @@ void RemoteClient::GetNextBlocks(
 	s32 nearest_emerged_d = -1;
 	s32 nearest_emergefull_d = -1;
 	s32 nearest_sent_d = -1;
-	bool queue_is_full = false;
+	//bool queue_is_full = false;
 
 	s16 d;
-	for(d = d_start; d <= d_max; d++)
-	{
+	for(d = d_start; d <= d_max; d++) {
 		/*
 			Get the border/face dot coordinates of a "d-radiused"
 			box
 		*/
-		std::list<v3s16> list;
-		getFacePositions(list, d);
+		std::vector<v3s16> list = FacePositionCache::getFacePositions(d);
 
-		std::list<v3s16>::iterator li;
-		for(li=list.begin(); li!=list.end(); ++li)
-		{
+		std::vector<v3s16>::iterator li;
+		for(li = list.begin(); li != list.end(); ++li) {
 			v3s16 p = *li + center;
 
 			/*
@@ -189,7 +211,7 @@ void RemoteClient::GetNextBlocks(
 			// Don't select too many blocks for sending
 			if(num_blocks_selected >= max_simul_dynamic)
 			{
-				queue_is_full = true;
+				//queue_is_full = true;
 				goto queue_full_break;
 			}
 
@@ -402,50 +424,69 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 	std::ostringstream myerror;
 	switch (m_state)
 	{
-	case Invalid:
+	case CS_Invalid:
 		//intentionally do nothing
 		break;
-
-	case Created:
-		switch(event)
-		{
-		case Init:
-			m_state = InitSent;
+	case CS_Created:
+		switch (event) {
+		case CSE_Hello:
+			m_state = CS_HelloSent;
 			break;
-
-		case Disconnect:
-			m_state = Disconnecting;
+		case CSE_InitLegacy:
+			m_state = CS_AwaitingInit2;
 			break;
-
-		case SetDenied:
-			m_state = Denied;
+		case CSE_Disconnect:
+			m_state = CS_Disconnecting;
 			break;
-
+		case CSE_SetDenied:
+			m_state = CS_Denied;
+			break;
 		/* GotInit2 SetDefinitionsSent SetMediaSent */
 		default:
 			myerror << "Created: Invalid client state transition! " << event;
 			throw ClientStateError(myerror.str());
 		}
 		break;
-
-	case Denied:
+	case CS_Denied:
 		/* don't do anything if in denied state */
 		break;
-
-	case InitSent:
+	case CS_HelloSent:
 		switch(event)
 		{
-		case GotInit2:
+		case CSE_AuthAccept:
+			m_state = CS_AwaitingInit2;
+			if ((chosen_mech == AUTH_MECHANISM_SRP)
+					|| (chosen_mech == AUTH_MECHANISM_LEGACY_PASSWORD))
+				srp_verifier_delete((SRPVerifier *) auth_data);
+			chosen_mech = AUTH_MECHANISM_NONE;
+			break;
+		case CSE_Disconnect:
+			m_state = CS_Disconnecting;
+			break;
+		case CSE_SetDenied:
+			m_state = CS_Denied;
+			if ((chosen_mech == AUTH_MECHANISM_SRP)
+					|| (chosen_mech == AUTH_MECHANISM_LEGACY_PASSWORD))
+				srp_verifier_delete((SRPVerifier *) auth_data);
+			chosen_mech = AUTH_MECHANISM_NONE;
+			break;
+		default:
+			myerror << "HelloSent: Invalid client state transition! " << event;
+			throw ClientStateError(myerror.str());
+		}
+		break;
+	case CS_AwaitingInit2:
+		switch(event)
+		{
+		case CSE_GotInit2:
 			confirmSerializationVersion();
-			m_state = InitDone;
+			m_state = CS_InitDone;
 			break;
-
-		case Disconnect:
-			m_state = Disconnecting;
+		case CSE_Disconnect:
+			m_state = CS_Disconnecting;
 			break;
-
-		case SetDenied:
-			m_state = Denied;
+		case CSE_SetDenied:
+			m_state = CS_Denied;
 			break;
 
 		/* Init SetDefinitionsSent SetMediaSent */
@@ -455,19 +496,17 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 		}
 		break;
 
-	case InitDone:
+	case CS_InitDone:
 		switch(event)
 		{
-		case SetDefinitionsSent:
-			m_state = DefinitionsSent;
+		case CSE_SetDefinitionsSent:
+			m_state = CS_DefinitionsSent;
 			break;
-
-		case Disconnect:
-			m_state = Disconnecting;
+		case CSE_Disconnect:
+			m_state = CS_Disconnecting;
 			break;
-
-		case SetDenied:
-			m_state = Denied;
+		case CSE_SetDenied:
+			m_state = CS_Denied;
 			break;
 
 		/* Init GotInit2 SetMediaSent */
@@ -476,40 +515,40 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 			throw ClientStateError(myerror.str());
 		}
 		break;
-
-	case DefinitionsSent:
+	case CS_DefinitionsSent:
 		switch(event)
 		{
-		case SetClientReady:
-			m_state = Active;
+		case CSE_SetClientReady:
+			m_state = CS_Active;
 			break;
-
-		case Disconnect:
-			m_state = Disconnecting;
+		case CSE_Disconnect:
+			m_state = CS_Disconnecting;
 			break;
-
-		case SetDenied:
-			m_state = Denied;
+		case CSE_SetDenied:
+			m_state = CS_Denied;
 			break;
-
 		/* Init GotInit2 SetDefinitionsSent */
 		default:
 			myerror << "DefinitionsSent: Invalid client state transition! " << event;
 			throw ClientStateError(myerror.str());
 		}
 		break;
-
-	case Active:
+	case CS_Active:
 		switch(event)
 		{
-		case SetDenied:
-			m_state = Denied;
+		case CSE_SetDenied:
+			m_state = CS_Denied;
 			break;
-
-		case Disconnect:
-			m_state = Disconnecting;
+		case CSE_Disconnect:
+			m_state = CS_Disconnecting;
 			break;
-
+		case CSE_SudoSuccess:
+			m_state = CS_SudoMode;
+			if ((chosen_mech == AUTH_MECHANISM_SRP)
+					|| (chosen_mech == AUTH_MECHANISM_LEGACY_PASSWORD))
+				srp_verifier_delete((SRPVerifier *) auth_data);
+			chosen_mech = AUTH_MECHANISM_NONE;
+			break;
 		/* Init GotInit2 SetDefinitionsSent SetMediaSent SetDenied */
 		default:
 			myerror << "Active: Invalid client state transition! " << event;
@@ -517,8 +556,25 @@ void RemoteClient::notifyEvent(ClientStateEvent event)
 			break;
 		}
 		break;
-
-	case Disconnecting:
+	case CS_SudoMode:
+		switch(event)
+		{
+		case CSE_SetDenied:
+			m_state = CS_Denied;
+			break;
+		case CSE_Disconnect:
+			m_state = CS_Disconnecting;
+			break;
+		case CSE_SudoLeave:
+			m_state = CS_Active;
+			break;
+		default:
+			myerror << "Active: Invalid client state transition! " << event;
+			throw ClientStateError(myerror.str());
+			break;
+		}
+		break;
+	case CS_Disconnecting:
 		/* we are already disconnecting */
 		break;
 	}
@@ -556,9 +612,9 @@ ClientInterface::~ClientInterface()
 	}
 }
 
-std::list<u16> ClientInterface::getClientIDs(ClientState min_state)
+std::vector<u16> ClientInterface::getClientIDs(ClientState min_state)
 {
-	std::list<u16> reply;
+	std::vector<u16> reply;
 	JMutexAutoLock clientslock(m_clients_mutex);
 
 	for(std::map<u16, RemoteClient*>::iterator
@@ -592,20 +648,22 @@ void ClientInterface::UpdatePlayerList()
 {
 	if (m_env != NULL)
 		{
-		std::list<u16> clients = getClientIDs();
+		std::vector<u16> clients = getClientIDs();
 		m_clients_names.clear();
 
 
-		if(clients.size() != 0)
+		if(!clients.empty())
 			infostream<<"Players:"<<std::endl;
-		for(std::list<u16>::iterator
+
+		for(std::vector<u16>::iterator
 			i = clients.begin();
-			i != clients.end(); ++i)
-		{
+			i != clients.end(); ++i) {
 			Player *player = m_env->getPlayer(*i);
-			if(player==NULL)
+
+			if (player == NULL)
 				continue;
-			infostream<<"* "<<player->getName()<<"\t";
+
+			infostream << "* " << player->getName() << "\t";
 
 			{
 				JMutexAutoLock clientslock(m_clients_mutex);
@@ -613,30 +671,29 @@ void ClientInterface::UpdatePlayerList()
 				if(client != NULL)
 					client->PrintInfo(infostream);
 			}
+
 			m_clients_names.push_back(player->getName());
 		}
 	}
 }
 
-void ClientInterface::send(u16 peer_id,u8 channelnum,
-		SharedBuffer<u8> data, bool reliable)
+void ClientInterface::send(u16 peer_id, u8 channelnum,
+		NetworkPacket* pkt, bool reliable)
 {
-	m_con->Send(peer_id, channelnum, data, reliable);
+	m_con->Send(peer_id, channelnum, pkt, reliable);
 }
 
 void ClientInterface::sendToAll(u16 channelnum,
-		SharedBuffer<u8> data, bool reliable)
+		NetworkPacket* pkt, bool reliable)
 {
 	JMutexAutoLock clientslock(m_clients_mutex);
 	for(std::map<u16, RemoteClient*>::iterator
 		i = m_clients.begin();
-		i != m_clients.end(); ++i)
-	{
+		i != m_clients.end(); ++i) {
 		RemoteClient *client = i->second;
 
-		if (client->net_proto_version != 0)
-		{
-			m_con->Send(client->peer_id, channelnum, data, reliable);
+		if (client->net_proto_version != 0) {
+			m_con->Send(client->peer_id, channelnum, pkt, reliable);
 		}
 	}
 }
@@ -680,7 +737,7 @@ ClientState ClientInterface::getClientState(u16 peer_id)
 	// The client may not exist; clients are immediately removed if their
 	// access is denied, and this event occurs later then.
 	if(n == m_clients.end())
-		return Invalid;
+		return CS_Invalid;
 
 	return n->second->getState();
 }
@@ -762,7 +819,9 @@ void ClientInterface::event(u16 peer_id, ClientStateEvent event)
 		n->second->notifyEvent(event);
 	}
 
-	if ((event == SetClientReady) || (event == Disconnect) || (event == SetDenied))
+	if ((event == CSE_SetClientReady) ||
+		(event == CSE_Disconnect)     ||
+		(event == CSE_SetDenied))
 	{
 		UpdatePlayerList();
 	}

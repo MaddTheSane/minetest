@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "constants.h"
 #include "serialization.h"             // for SER_FMT_VER_INVALID
 #include "jthread/jmutex.h"
+#include "network/networkpacket.h"
 
 #include <list>
 #include <vector>
@@ -46,132 +47,152 @@ class EmergeManager;
       |    Created      |
       |                 |
       \-----------------/
-               |
-               |
-+-----------------------------+            invalid playername, password
-|IN:                          |                    or denied by mod
-| TOSERVER_INIT               |------------------------------
-+-----------------------------+                             |
-               |                                            |
-               | Auth ok                                    |
-               |                                            |
-+-----------------------------+                             |
-|OUT:                         |                             |
-| TOCLIENT_INIT               |                             |
-+-----------------------------+                             |
-               |                                            |
-               v                                            |
-      /-----------------\                                   |
-      |                 |                                   |
-      |    InitSent     |                                   |
-      |                 |                                   |
-      \-----------------/                                   +------------------
-               |                                            |                 |
-+-----------------------------+             +-----------------------------+   |
-|IN:                          |             |OUT:                         |   |
-| TOSERVER_INIT2              |             | TOCLIENT_ACCESS_DENIED      |   |
-+-----------------------------+             +-----------------------------+   |
-               |                                            |                 |
-               v                                            v                 |
-      /-----------------\                           /-----------------\       |
-      |                 |                           |                 |       |
-      |    InitDone     |                           |     Denied      |       |
-      |                 |                           |                 |       |
-      \-----------------/                           \-----------------/       |
-               |                                                              |
-+-----------------------------+                                               |
-|OUT:                         |                                               |
-| TOCLIENT_MOVEMENT           |                                               |
-| TOCLIENT_ITEMDEF            |                                               |
-| TOCLIENT_NODEDEF            |                                               |
-| TOCLIENT_ANNOUNCE_MEDIA     |                                               |
-| TOCLIENT_DETACHED_INVENTORY |                                               |
-| TOCLIENT_TIME_OF_DAY        |                                               |
-+-----------------------------+                                               |
-               |                                                              |
-               |                                                              |
-               |      -----------------------------------                     |
-               v      |                                 |                     |
-      /-----------------\                               v                     |
-      |                 |                   +-----------------------------+   |
-      | DefinitionsSent |                   |IN:                          |   |
-      |                 |                   | TOSERVER_REQUEST_MEDIA      |   |
-      \-----------------/                   | TOSERVER_RECEIVED_MEDIA     |   |
-               |                            +-----------------------------+   |
-               |      ^                                 |                     |
-               |      -----------------------------------                     |
-               |                                                              |
-+-----------------------------+                                               |
-|IN:                          |                                               |
-| TOSERVER_CLIENT_READY       |                                               |
-+-----------------------------+                                               |
-               |                                                    async     |
-               v                                                  mod action  |
-+-----------------------------+                                   (ban,kick)  |
-|OUT:                         |                                               |
-| TOCLIENT_MOVE_PLAYER        |                                               |
-| TOCLIENT_PRIVILEGES         |                                               |
-| TOCLIENT_INVENTORY_FORMSPEC |                                               |
-| UpdateCrafting              |                                               |
-| TOCLIENT_INVENTORY          |                                               |
-| TOCLIENT_HP (opt)           |                                               |
-| TOCLIENT_BREATH             |                                               |
-| TOCLIENT_DEATHSCREEN        |                                               |
-+-----------------------------+                                               |
-              |                                                               |
-              v                                                               |
-      /-----------------\                                                     |
-      |                 |------------------------------------------------------
-      |     Active      |
-      |                 |----------------------------------
-      \-----------------/      timeout                    |
-               |                            +-----------------------------+
-               |                            |OUT:                         |
-               |                            | TOCLIENT_DISCONNECT         |
-               |                            +-----------------------------+
-               |                                          |
-               |                                          v
-+-----------------------------+                    /-----------------\
-|IN:                          |                    |                 |
-| TOSERVER_DISCONNECT         |------------------->|  Disconnecting  |
-+-----------------------------+                    |                 |
-                                                   \-----------------/
+               |                  depending of the incoming packet
+               +---------------------------------------
+               v                                      |
++-----------------------------+        +-----------------------------+
+|IN:                          |        |IN:                          |
+| TOSERVER_INIT_LEGACY        |-----   | TOSERVER_INIT               |      invalid playername,
++-----------------------------+    |   +-----------------------------+  password (for _LEGACY),
+               |                   |                  |                       or denied by mod
+               | Auth ok           -------------------+---------------------------------
+               |                                      |                                |
++-----------------------------+        +-----------------------------+                 |
+|OUT:                         |        |OUT:                         |                 |
+| TOCLIENT_INIT_LEGACY        |        | TOCLIENT_HELLO              |                 |
++-----------------------------+        +-----------------------------+                 |
+               |                                      |                                |
+               |                                      |                                |
+               v                                      v                                |
+      /-----------------\                    /-----------------\                       |
+      |                 |                    |                 |                       |
+      |  AwaitingInit2  |<---------          |    HelloSent    |                       |
+      |                 |         |          |                 |                       |
+      \-----------------/         |          \-----------------/                       |
+               |                  |                   |                                |
++-----------------------------+   |    *-----------------------------*     Auth fails  |
+|IN:                          |   |    |Authentication, depending on |-----------------+
+| TOSERVER_INIT2              |   |    | packet sent by client       |                 |
++-----------------------------+   |    *-----------------------------*                 |
+               |                  |                   |                                |
+               |                  |                   | Authentication                 |
+               v                  |                   |  successful                    |
+      /-----------------\         |                   v                                |
+      |                 |         |    +-----------------------------+                 |
+      |    InitDone     |         |    |OUT:                         |                 |
+      |                 |         |    | TOCLIENT_AUTH_ACCEPT        |                 |
+      \-----------------/         |    +-----------------------------+                 |
+               |                  |                   |                                |
++-----------------------------+   ---------------------                                |
+|OUT:                         |                                                        |
+| TOCLIENT_MOVEMENT           |                                                        |
+| TOCLIENT_ITEMDEF            |                                                        |
+| TOCLIENT_NODEDEF            |                                                        |
+| TOCLIENT_ANNOUNCE_MEDIA     |                                                        |
+| TOCLIENT_DETACHED_INVENTORY |                                                        |
+| TOCLIENT_TIME_OF_DAY        |                                                        |
++-----------------------------+                                                        |
+               |                                                                       |
+               |                                                                       |
+               |      -----------------------------                                    |
+               v      |                           |                                    |
+      /-----------------\                         v                                    |
+      |                 |             +-----------------------------+                  |
+      | DefinitionsSent |             |IN:                          |                  |
+      |                 |             | TOSERVER_REQUEST_MEDIA      |                  |
+      \-----------------/             | TOSERVER_RECEIVED_MEDIA     |                  |
+               |                      +-----------------------------+                  |
+               |      ^                           |                                    |
+               |      -----------------------------                                    |
+               |                                                                       |
++-----------------------------+                        --------------------------------+
+|IN:                          |                        |                               |
+| TOSERVER_CLIENT_READY       |                        v                               |
++-----------------------------+        +-------------------------------+               |
+               |                       |OUT:                           |               |
+               v                       | TOCLIENT_ACCESS_DENIED_LEGAGY |               |
++-----------------------------+        +-------------------------------+               |
+|OUT:                         |                        |                               |
+| TOCLIENT_MOVE_PLAYER        |                        v                               |
+| TOCLIENT_PRIVILEGES         |                /-----------------\                     |
+| TOCLIENT_INVENTORY_FORMSPEC |                |                 |                     |
+| UpdateCrafting              |                |     Denied      |                     |
+| TOCLIENT_INVENTORY          |                |                 |                     |
+| TOCLIENT_HP (opt)           |                \-----------------/                     |
+| TOCLIENT_BREATH             |                                                        |
+| TOCLIENT_DEATHSCREEN        |                                                        |
++-----------------------------+                                                        |
+              |                                                                        |
+              v                                                                        |
+      /-----------------\      async mod action (ban, kick)                            |
+      |                 |---------------------------------------------------------------
+ ---->|     Active      |
+ |    |                 |----------------------------------------------
+ |    \-----------------/      timeout                                |
+ |       |           |                                  +-----------------------------+
+ |       |           |                                  |OUT:                         |
+ |       |           |                                  | TOCLIENT_DISCONNECT         |
+ |       |           |                                  +-----------------------------+
+ |       |           |                                                |
+ |       |           |                                                v
+ |       |  +-----------------------------+                    /-----------------\
+ |       |  |IN:                          |                    |                 |
+ |       |  | TOSERVER_DISCONNECT         |------------------->|  Disconnecting  |
+ |       |  +-----------------------------+                    |                 |
+ |       |                                                     \-----------------/
+ |       | any auth packet which was
+ |       | allowed in TOCLIENT_AUTH_ACCEPT
+ |       v
+ |    *-----------------------------* Auth      +-------------------------------+
+ |    |Authentication, depending on | succeeds  |OUT:                           |
+ |    | packet sent by client       |---------->| TOCLIENT_ACCEPT_SUDO_MODE     |
+ |    *-----------------------------*           +-------------------------------+
+ |                  |                                            |
+ |                  | Auth fails                        /-----------------\
+ |                  v                                   |                 |
+ |    +-------------------------------+                 |    SudoMode     |
+ |    |OUT:                           |                 |                 |
+ |    | TOCLIENT_DENY_SUDO_MODE       |                 \-----------------/
+ |    +-------------------------------+                          |
+ |                  |                                            v
+ |                  |                               +-----------------------------+
+ |                  |    sets password accordingly  |IN:                          |
+ -------------------+-------------------------------| TOSERVER_FIRST_SRP          |
+                                                   +-----------------------------+
+
 */
 namespace con {
 	class Connection;
 }
 
+#define CI_ARRAYSIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 enum ClientState
 {
-	Invalid,
-	Disconnecting,
-	Denied,
-	Created,
-	InitSent,
-	InitDone,
-	DefinitionsSent,
-	Active
-};
-
-static const char** statenames = (const char*[]) {
-	"Invalid",
-	"Disconnecting",
-	"Denied",
-	"Created",
-	"InitSent",
-	"InitDone",
-	"DefinitionsSent",
-	"Active"
+	CS_Invalid,
+	CS_Disconnecting,
+	CS_Denied,
+	CS_Created,
+	CS_AwaitingInit2,
+	CS_HelloSent,
+	CS_InitDone,
+	CS_DefinitionsSent,
+	CS_Active,
+	CS_SudoMode
 };
 
 enum ClientStateEvent
 {
-	Init,
-	GotInit2,
-	SetDenied,
-	SetDefinitionsSent,
-	SetClientReady,
-	Disconnect
+	CSE_Hello,
+	CSE_AuthAccept,
+	CSE_InitLegacy,
+	CSE_GotInit2,
+	CSE_SetDenied,
+	CSE_SetDefinitionsSent,
+	CSE_SetClientReady,
+	CSE_SudoSuccess,
+	CSE_SudoLeave,
+	CSE_Disconnect
 };
 
 /*
@@ -209,23 +230,37 @@ public:
 	//
 	u16 net_proto_version;
 
+	/* Authentication information */
+	std::string enc_pwd;
+	AuthMechanism chosen_mech;
+	void * auth_data;
+	u32 allowed_auth_mechs;
+	u32 allowed_sudo_mechs;
+
+	bool isSudoMechAllowed(AuthMechanism mech)
+	{ return allowed_sudo_mechs & mech; }
+	bool isMechAllowed(AuthMechanism mech)
+	{ return allowed_auth_mechs & mech; }
+
 	RemoteClient():
 		peer_id(PEER_ID_INEXISTENT),
 		serialization_version(SER_FMT_VER_INVALID),
 		net_proto_version(0),
+		chosen_mech(AUTH_MECHANISM_NONE),
+		auth_data(NULL),
 		m_time_from_building(9999),
 		m_pending_serialization_version(SER_FMT_VER_INVALID),
-		m_state(Created),
+		m_state(CS_Created),
 		m_nearest_unsent_d(0),
 		m_nearest_unsent_reset_timer(0.0),
 		m_excess_gotblocks(0),
-		m_nothing_to_send_counter(0),
 		m_nothing_to_send_pause_timer(0.0),
 		m_name(""),
 		m_version_major(0),
 		m_version_minor(0),
 		m_version_patch(0),
 		m_full_version("unknown"),
+		m_deployed_compression(0),
 		m_connection_time(getTime(PRECISION_SECONDS))
 	{
 	}
@@ -247,6 +282,14 @@ public:
 
 	void SetBlockNotSent(v3s16 p);
 	void SetBlocksNotSent(std::map<v3s16, MapBlock*> &blocks);
+
+	/**
+	 * tell client about this block being modified right now.
+	 * this information is required to requeue the block in case it's "on wire"
+	 * while modification is processed by server
+	 * @param p position of modified block
+	 */
+	void ResendBlockIfOnWire(v3s16 p);
 
 	s32 SendingCount()
 	{
@@ -294,12 +337,14 @@ public:
 	void setPendingSerializationVersion(u8 version)
 		{ m_pending_serialization_version = version; }
 
+	void setDeployedCompressionMode(u16 byteFlag)
+		{ m_deployed_compression = byteFlag; }
+
 	void confirmSerializationVersion()
 		{ serialization_version = m_pending_serialization_version; }
 
 	/* get uptime */
 	u32 uptime();
-
 
 	/* set version information */
 	void setVersionInfo(u8 major, u8 minor, u8 patch, std::string full) {
@@ -355,7 +400,6 @@ private:
 	u32 m_excess_gotblocks;
 
 	// CPU usage optimization
-	u32 m_nothing_to_send_counter;
 	float m_nothing_to_send_pause_timer;
 
 	/*
@@ -371,6 +415,8 @@ private:
 	u8 m_version_patch;
 
 	std::string m_full_version;
+
+	u16 m_deployed_compression;
 
 	/*
 		time this client was created
@@ -390,16 +436,16 @@ public:
 	void step(float dtime);
 
 	/* get list of active client id's */
-	std::list<u16> getClientIDs(ClientState min_state=Active);
+	std::vector<u16> getClientIDs(ClientState min_state=CS_Active);
 
 	/* get list of client player names */
 	std::vector<std::string> getPlayerNames();
 
 	/* send message to client */
-	void send(u16 peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable);
+	void send(u16 peer_id, u8 channelnum, NetworkPacket* pkt, bool reliable);
 
 	/* send to all clients */
-	void sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable);
+	void sendToAll(u16 channelnum, NetworkPacket* pkt, bool reliable);
 
 	/* delete a client */
 	void DeleteClient(u16 peer_id);
@@ -408,10 +454,10 @@ public:
 	void CreateClient(u16 peer_id);
 
 	/* get a client by peer_id */
-	RemoteClient* getClientNoEx(u16 peer_id,  ClientState state_min=Active);
+	RemoteClient* getClientNoEx(u16 peer_id,  ClientState state_min=CS_Active);
 
 	/* get client by peer_id (make sure you have list lock before!*/
-	RemoteClient* lockedGetClientNoEx(u16 peer_id,  ClientState state_min=Active);
+	RemoteClient* lockedGetClientNoEx(u16 peer_id,  ClientState state_min=CS_Active);
 
 	/* get state of client by id*/
 	ClientState getClientState(u16 peer_id);
@@ -428,14 +474,14 @@ public:
 	/* event to update client state */
 	void event(u16 peer_id, ClientStateEvent event);
 
-	/* set environment */
-	void setEnv(ServerEnvironment* env)
-	{ assert(m_env == 0); m_env = env; }
-
-	static std::string state2Name(ClientState state) {
-		assert(state < sizeof(statenames));
-		return statenames[state];
+	/* Set environment. Do not call this function if environment is already set */
+	void setEnv(ServerEnvironment *env)
+	{
+		assert(m_env == NULL); // pre-condition
+		m_env = env;
 	}
+
+	static std::string state2Name(ClientState state);
 
 protected:
 	//TODO find way to avoid this functions
@@ -463,6 +509,8 @@ private:
 	JMutex m_env_mutex;
 
 	float m_print_info_timer;
+
+	static const char *statenames[];
 };
 
 #endif

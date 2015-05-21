@@ -18,7 +18,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 */
 
 #include "scripting_game.h"
+#include "server.h"
 #include "log.h"
+#include "settings.h"
 #include "cpp_api/s_internal.h"
 #include "lua_api/l_base.h"
 #include "lua_api/l_craft.h"
@@ -48,14 +50,14 @@ GameScripting::GameScripting(Server* server)
 	// setEnv(env) is called by ScriptApiEnv::initializeEnvironment()
 	// once the environment has been created
 
-	//TODO add security
-
-	luaL_openlibs(getStack());
-
 	SCRIPTAPI_PRECHECKHEADER
 
-	// Create the main minetest table
-	lua_newtable(L);
+	if (g_settings->getBool("secure.enable_security")) {
+		initializeSecurity();
+	}
+
+	lua_getglobal(L, "core");
+	int top = lua_gettop(L);
 
 	lua_newtable(L);
 	lua_setfield(L, -2, "object_refs");
@@ -63,15 +65,15 @@ GameScripting::GameScripting(Server* server)
 	lua_newtable(L);
 	lua_setfield(L, -2, "luaentities");
 
-	lua_setglobal(L, "minetest");
-
 	// Initialize our lua_api modules
-	lua_getglobal(L, "minetest");
-	int top = lua_gettop(L);
 	InitializeModApi(L, top);
 	lua_pop(L, 1);
 
-	infostream << "SCRIPTAPI: initialized game modules" << std::endl;
+	// Push builtin initialization type
+	lua_pushstring(L, "game");
+	lua_setglobal(L, "INIT");
+
+	infostream << "SCRIPTAPI: Initialized game modules" << std::endl;
 }
 
 void GameScripting::InitializeModApi(lua_State *L, int top)
@@ -93,9 +95,15 @@ void GameScripting::InitializeModApi(lua_State *L, int top)
 	LuaPerlinNoise::Register(L);
 	LuaPerlinNoiseMap::Register(L);
 	LuaPseudoRandom::Register(L);
+	LuaPcgRandom::Register(L);
 	LuaVoxelManip::Register(L);
 	NodeMetaRef::Register(L);
 	NodeTimerRef::Register(L);
 	ObjectRef::Register(L);
 	LuaSettings::Register(L);
+}
+
+void log_deprecated(std::string message)
+{
+	log_deprecated(NULL,message);
 }

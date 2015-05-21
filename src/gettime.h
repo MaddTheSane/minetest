@@ -32,7 +32,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 		Server build: servermain.cpp
 */
 enum TimePrecision {
-	PRECISION_SECONDS,
+	PRECISION_SECONDS = 0,
 	PRECISION_MILLI,
 	PRECISION_MICRO,
 	PRECISION_NANO
@@ -54,8 +54,8 @@ inline std::string getTimestamp()
 	// This is not really thread-safe but it won't break anything
 	// except its own output, so just go with it.
 	struct tm *tm = localtime(&t);
-	char cs[20];
-	strftime(cs, 20, "%H:%M:%S", tm);
+	char cs[20]; //YYYY-MM-DD HH:MM:SS + '\0'
+	strftime(cs, 20, "%Y-%m-%d %H:%M:%S", tm);
 	return cs;
 }
 

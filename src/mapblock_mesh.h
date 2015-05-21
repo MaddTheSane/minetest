@@ -21,7 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define MAPBLOCK_MESH_HEADER
 
 #include "irrlichttypes_extrabloated.h"
-#include "tile.h"
+#include "client/tile.h"
 #include "voxel.h"
 #include <map>
 
@@ -39,10 +39,15 @@ struct MeshMakeData
 	VoxelManipulator m_vmanip;
 	v3s16 m_blockpos;
 	v3s16 m_crack_pos_relative;
+	v3s16 m_highlighted_pos_relative;
 	bool m_smooth_lighting;
-	IGameDef *m_gamedef;
+	bool m_show_hud;
+	video::SColor m_highlight_mesh_color;
 
-	MeshMakeData(IGameDef *gamedef);
+	IGameDef *m_gamedef;
+	bool m_use_shaders;
+
+	MeshMakeData(IGameDef *gamedef, bool use_shaders);
 
 	/*
 		Copy central data directly from block, and other data from
@@ -60,6 +65,11 @@ struct MeshMakeData
 	*/
 	void setCrack(int crack_level, v3s16 crack_pos);
 
+	/*
+		Set the highlighted node position
+	*/
+
+	void setHighlighted(v3s16 highlighted_pos, bool show_hud);
 	/*
 		Enable or disable smooth lighting
 	*/
@@ -114,6 +124,11 @@ private:
 	scene::SMesh *m_mesh;
 	IGameDef *m_gamedef;
 
+	bool m_enable_shaders;
+	bool m_enable_highlighting;
+
+	video::SColor m_highlight_mesh_color;
+	
 	// Must animate() be called before rendering?
 	bool m_has_animation;
 	int m_animation_force_timer;
@@ -123,6 +138,7 @@ private:
 	int m_last_crack;
 	// Maps mesh buffer (i.e. material) indices to base texture names
 	std::map<u32, std::string> m_crack_materials;
+	std::list<u32> m_highlighted_materials;
 
 	// Animation info: texture animationi
 	// Maps meshbuffers to TileSpecs
@@ -159,6 +175,10 @@ struct MeshCollector
 	void append(const TileSpec &material,
 			const video::S3DVertex *vertices, u32 numVertices,
 			const u16 *indices, u32 numIndices);
+	void append(const TileSpec &material,
+			const video::S3DVertex *vertices, u32 numVertices,
+			const u16 *indices, u32 numIndices,
+			v3f pos, video::SColor c);
 };
 
 // This encodes
@@ -175,6 +195,11 @@ inline video::SColor MapBlock_LightColor(u8 alpha, u16 light, u8 light_source=0)
 u16 getInteriorLight(MapNode n, s32 increment, INodeDefManager *ndef);
 u16 getFaceLight(MapNode n, MapNode n2, v3s16 face_dir, INodeDefManager *ndef);
 u16 getSmoothLight(v3s16 p, v3s16 corner, MeshMakeData *data);
+
+// Converts from day + night color values (0..255)
+// and a given daynight_ratio to the final SColor shown on screen.
+void finalColorBlend(video::SColor& result,
+		u8 day, u8 night, u32 daynight_ratio);
 
 // Retrieves the TileSpec of a face of a node
 // Adds MATERIAL_FLAG_CRACK if the node is cracked

@@ -28,55 +28,55 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include <list>
 #include <vector>
 #include <map>
+#include <set>
+#include <queue>
 
 /*
-	Queue with unique values with fast checking of value existence
+Queue with unique values with fast checking of value existence
 */
 
 template<typename Value>
 class UniqueQueue
 {
 public:
-	
+
 	/*
-		Does nothing if value is already queued.
-		Return value:
-			true: value added
-			false: value already exists
+	Does nothing if value is already queued.
+	Return value:
+	true: value added
+	false: value already exists
 	*/
-	bool push_back(Value value)
+	bool push_back(const Value& value)
 	{
-		// Check if already exists
-		if(m_map.find(value) != m_map.end())
-			return false;
-
-		// Add
-		m_map[value] = 0;
-		m_list.push_back(value);
-		
-		return true;
+		if (m_set.insert(value).second)
+		{
+			m_queue.push(value);
+			return true;
+		}
+		return false;
 	}
 
-	Value pop_front()
+	void pop_front()
 	{
-		typename std::list<Value>::iterator i = m_list.begin();
-		Value value = *i;
-		m_map.erase(value);
-		m_list.erase(i);
-		return value;
+		m_set.erase(m_queue.front());
+		m_queue.pop();
 	}
 
-	u32 size()
+	const Value& front() const
 	{
-		return m_map.size();
+		return m_queue.front();
+	}
+
+	u32 size() const
+	{
+		return m_queue.size();
 	}
 
 private:
-	std::map<Value, u8> m_map;
-	std::list<Value> m_list;
+	std::set<Value> m_set;
+	std::queue<Value> m_queue;
 };
 
-#if 1
 template<typename Key, typename Value>
 class MutexedMap
 {
@@ -84,14 +84,14 @@ public:
 	MutexedMap()
 	{
 	}
-	
+
 	void set(const Key &name, const Value &value)
 	{
 		JMutexAutoLock lock(m_mutex);
 
 		m_values[name] = value;
 	}
-	
+
 	bool get(const Key &name, Value *result)
 	{
 		JMutexAutoLock lock(m_mutex);
@@ -101,24 +101,24 @@ public:
 
 		if(n == m_values.end())
 			return false;
-		
+
 		if(result != NULL)
 			*result = n->second;
-			
+
 		return true;
 	}
 
-	std::list<Value> getValues()
+	std::vector<Value> getValues()
 	{
-		std::list<Value> result;
+		std::vector<Value> result;
 		for(typename std::map<Key, Value>::iterator
-				i = m_values.begin();
-				i != m_values.end(); ++i){
+			i = m_values.begin();
+			i != m_values.end(); ++i){
 			result.push_back(i->second);
 		}
 		return result;
 	}
-	
+
 	void clear ()
 	{
 		m_values.clear();
@@ -128,19 +128,18 @@ private:
 	std::map<Key, Value> m_values;
 	JMutex m_mutex;
 };
-#endif
 
 /*
-	Generates ids for comparable values.
-	Id=0 is reserved for "no value".
+Generates ids for comparable values.
+Id=0 is reserved for "no value".
 
-	Is fast at:
-	- Returning value by id (very fast)
-	- Returning id by value
-	- Generating a new id for a value
+Is fast at:
+- Returning value by id (very fast)
+- Returning id by value
+- Generating a new id for a value
 
-	Is not able to:
-	- Remove an id/value pair (is possible to implement but slow)
+Is not able to:
+- Remove an id/value pair (is possible to implement but slow)
 */
 template<typename T>
 class MutexedIdGenerator
@@ -149,7 +148,7 @@ public:
 	MutexedIdGenerator()
 	{
 	}
-	
+
 	// Returns true if found
 	bool getValue(u32 id, T &value)
 	{
@@ -161,7 +160,7 @@ public:
 		value = m_id_to_value[id-1];
 		return true;
 	}
-	
+
 	// If id exists for value, returns the id.
 	// Otherwise generates an id for the value.
 	u32 getId(const T &value)
@@ -185,68 +184,7 @@ private:
 };
 
 /*
-	FIFO queue (well, actually a FILO also)
-*/
-template<typename T>
-class Queue
-{
-public:
-	Queue():
-		m_list_size(0)
-	{}
-
-	void push_back(T t)
-	{
-		m_list.push_back(t);
-		++m_list_size;
-	}
-	
-	void push_front(T t)
-	{
-		m_list.push_front(t);
-		++m_list_size;
-	}
-
-	T pop_front()
-	{
-		if(m_list.empty())
-			throw ItemNotFoundException("Queue: queue is empty");
-
-		typename std::list<T>::iterator begin = m_list.begin();
-		T t = *begin;
-		m_list.erase(begin);
-		--m_list_size;
-		return t;
-	}
-	T pop_back()
-	{
-		if(m_list.empty())
-			throw ItemNotFoundException("Queue: queue is empty");
-
-		typename std::list<T>::iterator last = m_list.back();
-		T t = *last;
-		m_list.erase(last);
-		--m_list_size;
-		return t;
-	}
-
-	u32 size()
-	{
-		return m_list_size;
-	}
-
-	bool empty()
-	{
-		return m_list.empty();
-	}
-
-protected:
-	std::list<T> m_list;
-	u32 m_list_size;
-};
-
-/*
-	Thread-safe FIFO queue (well, actually a FILO also)
+Thread-safe FIFO queue (well, actually a FILO also)
 */
 
 template<typename T>
@@ -262,48 +200,42 @@ public:
 	bool empty()
 	{
 		JMutexAutoLock lock(m_mutex);
-		return (m_size.GetValue() == 0);
+		return (m_queue.size() == 0);
 	}
 	void push_back(T t)
 	{
 		JMutexAutoLock lock(m_mutex);
-		m_list.push_back(t);
+		m_queue.push_back(t);
 		m_size.Post();
 	}
 
 	/* this version of pop_front returns a empty element of T on timeout.
-	 * Make sure default constructor of T creates a recognizable "empty" element
-	 */
+	* Make sure default constructor of T creates a recognizable "empty" element
+	*/
 	T pop_frontNoEx(u32 wait_time_max_ms)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			JMutexAutoLock lock(m_mutex);
 
-			typename std::list<T>::iterator begin = m_list.begin();
-			T t = *begin;
-			m_list.erase(begin);
+			T t = m_queue.front();
+			m_queue.pop_front();
 			return t;
 		}
-		else
-		{
+		else {
 			return T();
 		}
 	}
 
 	T pop_front(u32 wait_time_max_ms)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			JMutexAutoLock lock(m_mutex);
 
-			typename std::list<T>::iterator begin = m_list.begin();
-			T t = *begin;
-			m_list.erase(begin);
+			T t = m_queue.front();
+			m_queue.pop_front();
 			return t;
 		}
-		else
-		{
+		else {
 			throw ItemNotFoundException("MutexedQueue: queue is empty");
 		}
 	}
@@ -314,47 +246,38 @@ public:
 
 		JMutexAutoLock lock(m_mutex);
 
-		typename std::list<T>::iterator begin = m_list.begin();
-		T t = *begin;
-		m_list.erase(begin);
+		T t = m_queue.front();
+		m_queue.pop_front();
 		return t;
 	}
 
 	T pop_back(u32 wait_time_max_ms=0)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			JMutexAutoLock lock(m_mutex);
 
-			typename std::list<T>::iterator last = m_list.end();
-			last--;
-			T t = *last;
-			m_list.erase(last);
+			T t = m_queue.back();
+			m_queue.pop_back();
 			return t;
 		}
-		else
-		{
+		else {
 			throw ItemNotFoundException("MutexedQueue: queue is empty");
 		}
 	}
 
 	/* this version of pop_back returns a empty element of T on timeout.
-	 * Make sure default constructor of T creates a recognizable "empty" element
-	 */
+	* Make sure default constructor of T creates a recognizable "empty" element
+	*/
 	T pop_backNoEx(u32 wait_time_max_ms=0)
 	{
-		if (m_size.Wait(wait_time_max_ms))
-		{
+		if (m_size.Wait(wait_time_max_ms)) {
 			JMutexAutoLock lock(m_mutex);
 
-			typename std::list<T>::iterator last = m_list.end();
-			last--;
-			T t = *last;
-			m_list.erase(last);
+			T t = m_queue.back();
+			m_queue.pop_back();
 			return t;
 		}
-		else
-		{
+		else {
 			return T();
 		}
 	}
@@ -365,10 +288,8 @@ public:
 
 		JMutexAutoLock lock(m_mutex);
 
-		typename std::list<T>::iterator last = m_list.end();
-		last--;
-		T t = *last;
-		m_list.erase(last);
+		T t = m_queue.back();
+		m_queue.pop_back();
 		return t;
 	}
 
@@ -378,15 +299,13 @@ protected:
 		return m_mutex;
 	}
 
-	// NEVER EVER modify the >>list<< you got by using this function!
-	// You may only modify it's content
-	std::list<T> & getList()
+	std::deque<T> & getQueue()
 	{
-		return m_list;
+		return m_queue;
 	}
 
+	std::deque<T> m_queue;
 	JMutex m_mutex;
-	std::list<T> m_list;
 	JSemaphore m_size;
 };
 

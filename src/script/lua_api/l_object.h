@@ -120,6 +120,9 @@ private:
 	// set_properties(self, properties)
 	static int l_set_properties(lua_State *L);
 
+	// is_player(self)
+	static int l_is_player(lua_State *L);
+
 	/* LuaEntitySAO-only */
 
 	// setvelocity(self, {x=num, y=num, z=num})
@@ -155,9 +158,6 @@ private:
 	static int l_get_luaentity(lua_State *L);
 
 	/* Player-only */
-
-	// is_player(self)
-	static int l_is_player(lua_State *L);
 
 	// is_player_connected(self)
 	static int l_is_player_connected(lua_State *L);
@@ -216,6 +216,9 @@ private:
 	// hud_set_flags(self, flags)
 	static int l_hud_set_flags(lua_State *L);
 
+	// hud_get_flags()
+	static int l_hud_get_flags(lua_State *L);
+
 	// hud_set_hotbar_itemcount(self, hotbar_itemcount)
 	static int l_hud_set_hotbar_itemcount(lua_State *L);
 
@@ -230,6 +233,18 @@ private:
 
 	// override_day_night_ratio(self, type, list)
 	static int l_override_day_night_ratio(lua_State *L);
+
+	// set_local_animation(self, {stand/idle}, {walk}, {dig}, {walk+dig}, frame_speed)
+	static int l_set_local_animation(lua_State *L);
+
+	// set_eye_offset(self, v3f first pv, v3f third pv)
+	static int l_set_eye_offset(lua_State *L);
+
+	// set_nametag_attributes(self, attributes)
+	static int l_set_nametag_attributes(lua_State *L);
+
+	// get_nametag_attributes(self)
+	static int l_get_nametag_attributes(lua_State *L);
 
 public:
 	ObjectRef(ServerActiveObject *object);

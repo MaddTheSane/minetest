@@ -28,7 +28,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "environment.h"
 #include "util/container.h"
 #include "util/thread.h"
-#include "main.h"
 #include "constants.h"
 #include "voxel.h"
 #include "config.h"
@@ -39,13 +38,26 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "profiler.h"
 #include "log.h"
 #include "nodedef.h"
-#include "biome.h"
+#include "mg_biome.h"
+#include "mg_ore.h"
+#include "mg_decoration.h"
+#include "mg_schematic.h"
+#include "mapgen_v5.h"
 #include "mapgen_v6.h"
 #include "mapgen_v7.h"
-#include "mapgen_indev.h"
 #include "mapgen_singlenode.h"
-#include "mapgen_math.h"
 
+struct MapgenDesc {
+	const char *name;
+	MapgenFactory *factory;
+};
+
+MapgenDesc reg_mapgens[] = {
+	{"v5",         new MapgenFactoryV5},
+	{"v6",         new MapgenFactoryV6},
+	{"v7",         new MapgenFactoryV7},
+	{"singlenode", new MapgenFactorySinglenode},
+};
 
 class EmergeThread : public JThread
 {
@@ -80,17 +92,14 @@ public:
 
 /////////////////////////////// Emerge Manager ////////////////////////////////
 
-EmergeManager::EmergeManager(IGameDef *gamedef) {
-	//register built-in mapgens
-	registerMapgen("v6",         new MapgenFactoryV6());
-	registerMapgen("v7",         new MapgenFactoryV7());
-	registerMapgen("indev",      new MapgenFactoryIndev());
-	registerMapgen("singlenode", new MapgenFactorySinglenode());
-	registerMapgen("math",       new MapgenFactoryMath());
-
-	this->ndef     = gamedef->getNodeDefManager();
-	this->biomedef = new BiomeDefManager();
-	this->gennotify = 0;
+EmergeManager::EmergeManager(IGameDef *gamedef)
+{
+	this->ndef      = gamedef->getNodeDefManager();
+	this->biomemgr  = new BiomeManager(gamedef);
+	this->oremgr    = new OreManager(gamedef);
+	this->decomgr   = new DecorationManager(gamedef);
+	this->schemmgr  = new SchematicManager(gamedef);
+	this->gen_notify_on = 0;
 
 	// Note that accesses to this variable are not synchronized.
 	// This is because the *only* thread ever starting or stopping
@@ -101,7 +110,7 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 
 	// if unspecified, leave a proc for the main thread and one for
 	// some other misc thread
-	int nthreads = 0;
+	s16 nthreads = 0;
 	if (!g_settings->getS16NoEx("num_emerge_threads", nthreads))
 		nthreads = porting::getNumberOfProcessors() - 2;
 	if (nthreads < 1)
@@ -121,15 +130,16 @@ EmergeManager::EmergeManager(IGameDef *gamedef) {
 	if (qlimit_generate < 1)
 		qlimit_generate = 1;
 
-	for (int i = 0; i != nthreads; i++)
-		emergethread.push_back(new EmergeThread((Server *)gamedef, i));
+	for (s16 i = 0; i < nthreads; i++)
+		emergethread.push_back(new EmergeThread((Server *) gamedef, i));
 
 	infostream << "EmergeManager: using " << nthreads << " threads" << std::endl;
 }
 
 
-EmergeManager::~EmergeManager() {
-	for (unsigned int i = 0; i != emergethread.size(); i++) {
+EmergeManager::~EmergeManager()
+{
+	for (u32 i = 0; i != emergethread.size(); i++) {
 		if (threads_active) {
 			emergethread[i]->Stop();
 			emergethread[i]->qevent.signal();
@@ -141,49 +151,28 @@ EmergeManager::~EmergeManager() {
 	emergethread.clear();
 	mapgen.clear();
 
-	for (unsigned int i = 0; i < ores.size(); i++)
-		delete ores[i];
-	ores.clear();
+	delete biomemgr;
+	delete oremgr;
+	delete decomgr;
+	delete schemmgr;
 
-	for (unsigned int i = 0; i < decorations.size(); i++)
-		delete decorations[i];
-	decorations.clear();
-
-	for (std::map<std::string, MapgenFactory *>::iterator iter = mglist.begin();
-			iter != mglist.end(); iter ++) {
-		delete iter->second;
-	}
-	mglist.clear();
-
-	delete biomedef;
-}
-
-
-void EmergeManager::loadMapgenParams() {
-	loadParamsFromSettings(g_settings);
-
-	if (g_settings->get("fixed_map_seed").empty()) {
-		params.seed = (((u64)(myrand() & 0xffff) << 0)
-					 | ((u64)(myrand() & 0xffff) << 16)
-					 | ((u64)(myrand() & 0xffff) << 32)
-					 | ((u64)(myrand() & 0xffff) << 48));
+	if (params.sparams) {
+		delete params.sparams;
+		params.sparams = NULL;
 	}
 }
 
 
-void EmergeManager::initMapgens() {
+void EmergeManager::loadMapgenParams()
+{
+	params.load(*g_settings);
+}
+
+
+void EmergeManager::initMapgens()
+{
 	if (mapgen.size())
 		return;
-
-	// Resolve names of nodes for things that were registered
-	// (at this point, the registration period is over)
-	biomedef->resolveNodeNames(ndef);
-
-	for (size_t i = 0; i != ores.size(); i++)
-		ores[i]->resolveNodeNames(ndef);
-
-	for (size_t i = 0; i != decorations.size(); i++)
-		decorations[i]->resolveNodeNames(ndef);
 
 	if (!params.sparams) {
 		params.sparams = createMapgenParams(params.mg_name);
@@ -196,7 +185,7 @@ void EmergeManager::initMapgens() {
 	}
 
 	// Create the mapgens
-	for (size_t i = 0; i != emergethread.size(); i++) {
+	for (u32 i = 0; i != emergethread.size(); i++) {
 		Mapgen *mg = createMapgen(params.mg_name, i, &params);
 		assert(mg);
 		mapgen.push_back(mg);
@@ -204,8 +193,9 @@ void EmergeManager::initMapgens() {
 }
 
 
-Mapgen *EmergeManager::getCurrentMapgen() {
-	for (unsigned int i = 0; i != emergethread.size(); i++) {
+Mapgen *EmergeManager::getCurrentMapgen()
+{
+	for (u32 i = 0; i != emergethread.size(); i++) {
 		if (emergethread[i]->IsSameThread())
 			return emergethread[i]->mapgen;
 	}
@@ -214,36 +204,39 @@ Mapgen *EmergeManager::getCurrentMapgen() {
 }
 
 
-void EmergeManager::startThreads() {
+void EmergeManager::startThreads()
+{
 	if (threads_active)
 		return;
 
-	for (unsigned int i = 0; i != emergethread.size(); i++)
+	for (u32 i = 0; i != emergethread.size(); i++)
 		emergethread[i]->Start();
 
 	threads_active = true;
 }
 
 
-void EmergeManager::stopThreads() {
+void EmergeManager::stopThreads()
+{
 	if (!threads_active)
 		return;
 
 	// Request thread stop in parallel
-	for (unsigned int i = 0; i != emergethread.size(); i++) {
+	for (u32 i = 0; i != emergethread.size(); i++) {
 		emergethread[i]->Stop();
 		emergethread[i]->qevent.signal();
 	}
 
 	// Then do the waiting for each
-	for (unsigned int i = 0; i != emergethread.size(); i++)
+	for (u32 i = 0; i != emergethread.size(); i++)
 		emergethread[i]->Wait();
 
 	threads_active = false;
 }
 
 
-bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate) {
+bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate)
+{
 	std::map<v3s16, BlockEmergeData *>::const_iterator iter;
 	BlockEmergeData *bedata;
 	u16 count;
@@ -281,7 +274,7 @@ bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate
 
 		// insert into the EmergeThread queue with the least items
 		int lowestitems = emergethread[0]->blockqueue.size();
-		for (unsigned int i = 1; i != emergethread.size(); i++) {
+		for (u32 i = 1; i != emergethread.size(); i++) {
 			int nitems = emergethread[i]->blockqueue.size();
 			if (nitems < lowestitems) {
 				idx = i;
@@ -297,7 +290,8 @@ bool EmergeManager::enqueueBlockEmerge(u16 peer_id, v3s16 p, bool allow_generate
 }
 
 
-int EmergeManager::getGroundLevelAtPoint(v2s16 p) {
+int EmergeManager::getGroundLevelAtPoint(v2s16 p)
+{
 	if (mapgen.size() == 0 || !mapgen[0]) {
 		errorstream << "EmergeManager: getGroundLevelAtPoint() called"
 			" before mapgen initialized" << std::endl;
@@ -308,7 +302,8 @@ int EmergeManager::getGroundLevelAtPoint(v2s16 p) {
 }
 
 
-bool EmergeManager::isBlockUnderground(v3s16 blockpos) {
+bool EmergeManager::isBlockUnderground(v3s16 blockpos)
+{
 	/*
 	v2s16 p = v2s16((blockpos.X * MAP_BLOCKSIZE) + MAP_BLOCKSIZE / 2,
 					(blockpos.Y * MAP_BLOCKSIZE) + MAP_BLOCKSIZE / 2);
@@ -322,83 +317,48 @@ bool EmergeManager::isBlockUnderground(v3s16 blockpos) {
 }
 
 
-u32 EmergeManager::getBlockSeed(v3s16 p) {
-	return (u32)(params.seed & 0xFFFFFFFF) +
-		p.Z * 38134234 +
-		p.Y * 42123 +
-		p.X * 23;
+void EmergeManager::getMapgenNames(std::list<const char *> &mgnames)
+{
+	for (u32 i = 0; i != ARRLEN(reg_mapgens); i++)
+		mgnames.push_back(reg_mapgens[i].name);
 }
 
 
-Mapgen *EmergeManager::createMapgen(std::string mgname, int mgid,
-									 MapgenParams *mgparams) {
-	std::map<std::string, MapgenFactory *>::const_iterator iter;
-	iter = mglist.find(mgname);
-	if (iter == mglist.end()) {
+Mapgen *EmergeManager::createMapgen(const std::string &mgname, int mgid,
+	MapgenParams *mgparams)
+{
+	u32 i;
+	for (i = 0; i != ARRLEN(reg_mapgens) && mgname != reg_mapgens[i].name; i++);
+	if (i == ARRLEN(reg_mapgens)) {
 		errorstream << "EmergeManager; mapgen " << mgname <<
-		 " not registered" << std::endl;
+			" not registered" << std::endl;
 		return NULL;
 	}
 
-	MapgenFactory *mgfactory = iter->second;
+	MapgenFactory *mgfactory = reg_mapgens[i].factory;
 	return mgfactory->createMapgen(mgid, mgparams, this);
 }
 
 
-MapgenSpecificParams *EmergeManager::createMapgenParams(std::string mgname) {
-	std::map<std::string, MapgenFactory *>::const_iterator iter;
-	iter = mglist.find(mgname);
-	if (iter == mglist.end()) {
-		errorstream << "EmergeManager: mapgen " << mgname <<
-		 " not registered" << std::endl;
+MapgenSpecificParams *EmergeManager::createMapgenParams(const std::string &mgname)
+{
+	u32 i;
+	for (i = 0; i < ARRLEN(reg_mapgens) && mgname != reg_mapgens[i].name; i++);
+	if (i == ARRLEN(reg_mapgens)) {
+		errorstream << "EmergeManager: Mapgen " << mgname <<
+			" not registered" << std::endl;
 		return NULL;
 	}
 
-	MapgenFactory *mgfactory = iter->second;
+	MapgenFactory *mgfactory = reg_mapgens[i].factory;
 	return mgfactory->createMapgenParams();
-}
-
-
-void EmergeManager::loadParamsFromSettings(Settings *settings) {
-	std::string seed_str;
-	const char *setname = (settings == g_settings) ? "fixed_map_seed" : "seed";
-
-	if (settings->getNoEx(setname, seed_str))
-		params.seed = read_seed(seed_str.c_str());
-
-	settings->getNoEx("mg_name",         params.mg_name);
-	settings->getS16NoEx("water_level",  params.water_level);
-	settings->getS16NoEx("chunksize",    params.chunksize);
-	settings->getFlagStrNoEx("mg_flags", params.flags, flagdesc_mapgen);
-
-	delete params.sparams;
-	params.sparams = createMapgenParams(params.mg_name);
-	if (params.sparams)
-		params.sparams->readParams(settings);
-}
-
-
-void EmergeManager::saveParamsToSettings(Settings *settings) {
-	settings->set("mg_name",         params.mg_name);
-	settings->setU64("seed",         params.seed);
-	settings->setS16("water_level",  params.water_level);
-	settings->setS16("chunksize",    params.chunksize);
-	settings->setFlagStr("mg_flags", params.flags, flagdesc_mapgen, (u32)-1);
-
-	if (params.sparams)
-		params.sparams->writeParams(settings);
-}
-
-
-void EmergeManager::registerMapgen(std::string mgname, MapgenFactory *mgfactory) {
-	mglist.insert(std::make_pair(mgname, mgfactory));
-	infostream << "EmergeManager: registered mapgen " << mgname << std::endl;
 }
 
 
 ////////////////////////////// Emerge Thread //////////////////////////////////
 
-bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags) {
+bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags)
+{
 	std::map<v3s16, BlockEmergeData *>::iterator iter;
 	JMutexAutoLock queuelock(emerge->queuemutex);
 
@@ -426,7 +386,8 @@ bool EmergeThread::popBlockEmerge(v3s16 *pos, u8 *flags) {
 
 
 bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
-									BlockMakeData *data, bool allow_gen) {
+	BlockMakeData *data, bool allow_gen)
+{
 	v2s16 p2d(p.X, p.Z);
 	//envlock: usually takes <=1ms, sometimes 90ms or ~400ms to acquire
 	JMutexAutoLock envlock(m_server->m_env_mutex);
@@ -457,7 +418,8 @@ bool EmergeThread::getBlockOrStartGen(v3s16 p, MapBlock **b,
 }
 
 
-void *EmergeThread::Thread() {
+void *EmergeThread::Thread()
+{
 	ThreadStarted();
 	log_register_thread("EmergeThread" + itos(id));
 	DSTACK(__FUNCTION_NAME);
@@ -465,7 +427,7 @@ void *EmergeThread::Thread() {
 
 	v3s16 last_tried_pos(-32768,-32768,-32768); // For error output
 	v3s16 p;
-	u8 flags;
+	u8 flags = 0;
 
 	map    = (ServerMap *)&(m_server->m_env->getMap());
 	emerge = m_server->m_emerge;
@@ -531,7 +493,7 @@ void *EmergeThread::Thread() {
 						VoxelArea(minp, maxp));
 					try {  // takes about 90ms with -O1 on an e3-1230v2
 						m_server->getScriptIface()->environment_OnGenerated(
-								minp, maxp, emerge->getBlockSeed(minp));
+								minp, maxp, mapgen->blockseed);
 					} catch(LuaError &e) {
 						m_server->setAsyncFatalError(e.what());
 					}
@@ -556,21 +518,40 @@ void *EmergeThread::Thread() {
 	}
 	catch (VersionMismatchException &e) {
 		std::ostringstream err;
-		err << "World data version mismatch in MapBlock "<<PP(last_tried_pos)<<std::endl;
-		err << "----"<<std::endl;
-		err << "\""<<e.what()<<"\""<<std::endl;
-		err << "See debug.txt."<<std::endl;
-		err << "World probably saved by a newer version of Minetest."<<std::endl;
+		err << "World data version mismatch in MapBlock " << PP(last_tried_pos) << std::endl
+			<< "----" << std::endl
+			<< "\"" << e.what() << "\"" << std::endl
+			<< "See debug.txt." << std::endl
+			<< "World probably saved by a newer version of " PROJECT_NAME_C "."
+			<< std::endl;
 		m_server->setAsyncFatalError(err.str());
 	}
 	catch (SerializationError &e) {
 		std::ostringstream err;
-		err << "Invalid data in MapBlock "<<PP(last_tried_pos)<<std::endl;
-		err << "----"<<std::endl;
-		err << "\""<<e.what()<<"\""<<std::endl;
-		err << "See debug.txt."<<std::endl;
-		err << "You can ignore this using [ignore_world_load_errors = true]."<<std::endl;
+		err << "Invalid data in MapBlock " << PP(last_tried_pos) << std::endl
+			<< "----" << std::endl
+			<< "\"" << e.what() << "\"" << std::endl
+			<< "See debug.txt." << std::endl
+			<< "You can ignore this using [ignore_world_load_errors = true]."
+			<< std::endl;
 		m_server->setAsyncFatalError(err.str());
+	}
+
+	{
+		JMutexAutoLock queuelock(emerge->queuemutex);
+		while (!blockqueue.empty())
+		{
+			v3s16 p = blockqueue.front();
+			blockqueue.pop();
+
+			std::map<v3s16, BlockEmergeData *>::iterator iter;
+			iter = emerge->blocks_enqueued.find(p);
+			if (iter == emerge->blocks_enqueued.end())
+				continue; //uh oh, queue and map out of sync!!
+
+			BlockEmergeData *bedata = iter->second;
+			delete bedata;
+		}
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER(errorstream)
